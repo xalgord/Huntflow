@@ -6,7 +6,7 @@ import path from 'node:path';
 const baseURL = process.env.HUNTFLOW_SCREENSHOT_URL ?? 'http://127.0.0.1:5173';
 const outputDir = path.resolve('docs/screenshots');
 const DB_NAME = 'huntflow';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 const ids = {
   neonBank: '11111111-1111-4111-8111-111111111111',
@@ -146,6 +146,37 @@ async function seedApp(page) {
               store.createIndex('by-updated', 'updatedAt', { unique: false });
             }
 
+            if (!db.objectStoreNames.contains('evidenceAssets')) {
+              const store = db.createObjectStore('evidenceAssets', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-session', 'sessionId', { unique: false });
+              store.createIndex('by-note', 'noteId', { unique: false });
+              store.createIndex('by-kind', 'kind', { unique: false });
+              store.createIndex('by-tags', 'tags', { unique: false, multiEntry: true });
+              store.createIndex('by-sync-state', 'syncState', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+
+            if (!db.objectStoreNames.contains('evidenceBlobs')) {
+              db.createObjectStore('evidenceBlobs', { keyPath: 'assetId' }).createIndex('by-updated', 'updatedAt', {
+                unique: false
+              });
+            }
+
+            if (!db.objectStoreNames.contains('evidenceLinks')) {
+              const store = db.createObjectStore('evidenceLinks', { keyPath: 'id' });
+              store.createIndex('by-from', 'fromKey', { unique: false });
+              store.createIndex('by-to', 'toKey', { unique: false });
+              store.createIndex('by-relationship', 'relationship', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+
+            if (!db.objectStoreNames.contains('evidenceCanvasViews')) {
+              const store = db.createObjectStore('evidenceCanvasViews', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+
             if (!db.objectStoreNames.contains('templates')) {
               db.createObjectStore('templates', { keyPath: 'id' }).createIndex('by-category', 'category', {
                 unique: false
@@ -164,9 +195,21 @@ async function seedApp(page) {
 
       const db = await openDatabase();
       await new Promise((resolve, reject) => {
-        const tx = db.transaction(['sessions', 'notes', 'targets', 'payouts', 'templates', 'settings'], 'readwrite');
+        const stores = [
+          'sessions',
+          'notes',
+          'targets',
+          'payouts',
+          'evidenceAssets',
+          'evidenceBlobs',
+          'evidenceLinks',
+          'evidenceCanvasViews',
+          'templates',
+          'settings'
+        ];
+        const tx = db.transaction(stores, 'readwrite');
 
-        for (const store of ['sessions', 'notes', 'targets', 'payouts', 'templates', 'settings']) {
+        for (const store of stores) {
           tx.objectStore(store).clear();
         }
 
@@ -174,6 +217,9 @@ async function seedApp(page) {
         for (const item of seed.notes) tx.objectStore('notes').put(item);
         for (const item of seed.targets) tx.objectStore('targets').put(item);
         for (const item of seed.payouts) tx.objectStore('payouts').put(item);
+        for (const item of seed.evidenceAssets) tx.objectStore('evidenceAssets').put(item);
+        for (const item of seed.evidenceLinks) tx.objectStore('evidenceLinks').put(item);
+        for (const item of seed.evidenceCanvasViews) tx.objectStore('evidenceCanvasViews').put(item);
         for (const [key, value] of Object.entries(seed.settings)) tx.objectStore('settings').put({ key, value });
 
         tx.oncomplete = () => resolve();
@@ -303,11 +349,36 @@ function createScreenshotSeed() {
     payout('p-005', 'MeshID', 'intigriti', 'medium', 950, 31, 'paid')
   ];
 
+  const evidenceAssets = [
+    evidenceAsset('e-001', 'OAuth replay screenshot', 'image', ids.neonBank, 's-002', ids.note, ['critical', 'needs-report'], 96_000),
+    evidenceAsset('e-002', 'Invoice export request', 'request', ids.neonBank, 's-001', ids.note, ['critical'], 1_240),
+    evidenceAsset('e-003', 'Avatar metadata URL', 'url', ids.meshId, 's-004', 'note-meshid-ssrf', ['high', 'paid'], 0)
+  ];
+
+  const evidenceLinks = [
+    {
+      id: 'el-001',
+      fromType: 'asset',
+      fromId: 'e-001',
+      fromKey: 'asset:e-001',
+      toType: 'note',
+      toId: ids.note,
+      toKey: `note:${ids.note}`,
+      relationship: 'proves',
+      label: 'primary proof',
+      createdAt: now - day,
+      updatedAt: now - day
+    }
+  ];
+
   return {
     targets,
     sessions,
     notes,
     payouts,
+    evidenceAssets,
+    evidenceLinks,
+    evidenceCanvasViews: [],
     settings: {
       defaultDuration: 1500,
       autoStartBreak: true,
@@ -336,6 +407,33 @@ function createScreenshotSeed() {
       templateId,
       quickNote: `${templateId} verification block for screenshot sample data.`,
       tags
+    };
+  }
+
+  function evidenceAsset(id, title, kind, targetId, sessionId, noteId, tags, size) {
+    const createdAt = now - day;
+    const fileName = kind === 'url' ? undefined : `${id}.${kind === 'image' ? 'png' : 'txt'}`;
+    const folderPath = kind === 'url' ? undefined : targetId === ids.neonBank ? 'neonbank/oauth' : 'meshid/recon';
+    return {
+      id,
+      title,
+      kind,
+      source: kind === 'url' ? 'url' : 'upload',
+      mimeType: kind === 'url' ? 'text/uri-list' : kind === 'image' ? 'image/png' : 'text/plain',
+      size,
+      fileName,
+      relativePath: fileName && folderPath ? `${folderPath}/${fileName}` : undefined,
+      folderPath,
+      url: kind === 'url' ? 'https://metadata.meshid.test/latest' : undefined,
+      description: 'Seeded evidence for README screenshots.',
+      targetId,
+      sessionId,
+      noteId,
+      tags,
+      syncState: kind === 'url' ? 'synced' : 'pending-upload',
+      capturedAt: createdAt,
+      createdAt,
+      updatedAt: createdAt
     };
   }
 

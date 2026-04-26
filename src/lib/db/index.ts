@@ -1,14 +1,30 @@
 import { openDB, type IDBPDatabase } from 'idb';
-import type { AppSettings, HuntFlowDB, Note, NoteTemplate, Payout, Session, Target } from './schema';
+import type {
+  AppSettings,
+  EvidenceAsset,
+  EvidenceBlob,
+  EvidenceCanvasView,
+  EvidenceLink,
+  HuntFlowDB,
+  Note,
+  NoteTemplate,
+  Payout,
+  Session,
+  Target
+} from './schema';
 
 export const DB_NAME = 'huntflow';
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
 
 interface MemoryHuntFlowDB {
   sessions: Map<string, Session>;
   notes: Map<string, Note>;
   targets: Map<string, Target>;
   payouts: Map<string, Payout>;
+  evidenceAssets: Map<string, EvidenceAsset>;
+  evidenceBlobs: Map<string, EvidenceBlob>;
+  evidenceLinks: Map<string, EvidenceLink>;
+  evidenceCanvasViews: Map<string, EvidenceCanvasView>;
   templates: Map<string, NoteTemplate>;
   settings: Map<string, AppSettings>;
 }
@@ -18,6 +34,10 @@ const memoryDB: MemoryHuntFlowDB = {
   notes: new Map(),
   targets: new Map(),
   payouts: new Map(),
+  evidenceAssets: new Map(),
+  evidenceBlobs: new Map(),
+  evidenceLinks: new Map(),
+  evidenceCanvasViews: new Map(),
   templates: new Map(),
   settings: new Map()
 };
@@ -57,6 +77,36 @@ function createStores(db: IDBPDatabase<HuntFlowDB>) {
     store.createIndex('by-severity', 'severity', { unique: false });
     store.createIndex('by-status', 'status', { unique: false });
     store.createIndex('by-date', 'date', { unique: false });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
+  if (!db.objectStoreNames.contains('evidenceAssets')) {
+    const store = db.createObjectStore('evidenceAssets', { keyPath: 'id' });
+    store.createIndex('by-target', 'targetId', { unique: false });
+    store.createIndex('by-session', 'sessionId', { unique: false });
+    store.createIndex('by-note', 'noteId', { unique: false });
+    store.createIndex('by-kind', 'kind', { unique: false });
+    store.createIndex('by-tags', 'tags', { unique: false, multiEntry: true });
+    store.createIndex('by-sync-state', 'syncState', { unique: false });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
+  if (!db.objectStoreNames.contains('evidenceBlobs')) {
+    const store = db.createObjectStore('evidenceBlobs', { keyPath: 'assetId' });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
+  if (!db.objectStoreNames.contains('evidenceLinks')) {
+    const store = db.createObjectStore('evidenceLinks', { keyPath: 'id' });
+    store.createIndex('by-from', 'fromKey', { unique: false });
+    store.createIndex('by-to', 'toKey', { unique: false });
+    store.createIndex('by-relationship', 'relationship', { unique: false });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
+  if (!db.objectStoreNames.contains('evidenceCanvasViews')) {
+    const store = db.createObjectStore('evidenceCanvasViews', { keyPath: 'id' });
+    store.createIndex('by-target', 'targetId', { unique: false });
     store.createIndex('by-updated', 'updatedAt', { unique: false });
   }
 
@@ -132,6 +182,10 @@ export function resetMemoryDB(): void {
   memoryDB.notes.clear();
   memoryDB.targets.clear();
   memoryDB.payouts.clear();
+  memoryDB.evidenceAssets.clear();
+  memoryDB.evidenceBlobs.clear();
+  memoryDB.evidenceLinks.clear();
+  memoryDB.evidenceCanvasViews.clear();
   memoryDB.templates.clear();
   memoryDB.settings.clear();
 }

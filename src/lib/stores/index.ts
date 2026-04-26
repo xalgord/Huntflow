@@ -17,6 +17,22 @@ export {
   noteStore
 } from './noteStore';
 export {
+  deleteEvidenceBlob,
+  evidenceAssetStore,
+  evidenceCanvasViewStore,
+  evidenceLinkStore,
+  getEvidenceAssetsByKind,
+  getEvidenceAssetsByNote,
+  getEvidenceAssetsBySession,
+  getEvidenceAssetsBySyncState,
+  getEvidenceAssetsByTag,
+  getEvidenceAssetsByTarget,
+  getEvidenceBlob,
+  getEvidenceLinksByNode,
+  getEvidenceLinksByRelationship,
+  putEvidenceBlob
+} from './evidenceStore';
+export {
   getPayoutsByPlatform,
   getPayoutsBySeverity,
   getPayoutsByStatus,

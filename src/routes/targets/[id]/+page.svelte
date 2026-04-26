@@ -4,9 +4,9 @@
   import PriorityBadge from '$lib/components/targets/PriorityBadge.svelte';
   import TargetForm from '$lib/components/targets/TargetForm.svelte';
   import TargetStatusBadge from '$lib/components/targets/TargetStatusBadge.svelte';
-  import { sessionStore, targetStore } from '$lib/stores';
+  import { evidenceAssetStore, sessionStore, targetStore } from '$lib/stores';
   import type { Session, Target, TargetStatus } from '$lib/types';
-  import { Archive, ArrowLeft, ExternalLink, Play, Trash2 } from 'lucide-svelte';
+  import { Archive, ArrowLeft, ExternalLink, Network, Play, Trash2 } from 'lucide-svelte';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
@@ -23,7 +23,7 @@
   let loaded = false;
 
   onMount(async () => {
-    await Promise.all([targetStore.load(), sessionStore.load()]);
+    await Promise.all([targetStore.load(), sessionStore.load(), evidenceAssetStore.load()]);
     loaded = true;
   });
 
@@ -34,6 +34,9 @@
     .sort((a, b) => b.startedAt - a.startedAt);
   $: completedSessions = targetSessions.filter((session) => session.status === 'completed');
   $: totalSeconds = completedSessions.reduce((sum, session) => sum + session.durationActual, 0);
+  $: targetAssets = $evidenceAssetStore
+    .filter((asset) => asset.targetId === targetId)
+    .sort((a, b) => b.updatedAt - a.updatedAt);
 
   function formatDate(timestamp?: number): string {
     if (!timestamp) return 'Never';
@@ -177,6 +180,35 @@
       <section class="hf-card p-4">
         <h2 class="mb-4 text-lg font-semibold text-slate-100">Target Details</h2>
         <TargetForm {target} submitLabel="Save Changes" on:submit={saveTarget} on:cancel={() => goto('/targets')} />
+      </section>
+
+      <section class="hf-card p-4">
+        <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 class="text-lg font-semibold text-slate-100">Evidence Assets</h2>
+            <p class="mt-1 text-sm text-slate-400">Proof files, URLs, and snippets attached to this target.</p>
+          </div>
+          <a href={`/assets?target=${target.id}`} class="hf-button-secondary">
+            <Network size={18} aria-hidden="true" />
+            Manage evidence
+          </a>
+        </div>
+
+        {#if targetAssets.length > 0}
+          <div class="grid gap-3 sm:grid-cols-2">
+            {#each targetAssets.slice(0, 4) as asset (asset.id)}
+              <a href={`/assets?target=${target.id}`} class="rounded-[14px] border border-border/70 bg-background/40 p-3 transition hover:border-primary/40 hover:bg-muted/40">
+                <p class="truncate text-sm font-semibold text-foreground">{asset.title}</p>
+                <p class="mt-1 text-xs text-muted-foreground">{asset.kind} · {asset.syncState}</p>
+              </a>
+            {/each}
+          </div>
+        {:else}
+          <div class="rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-center">
+            <p class="text-sm font-medium text-slate-300">No evidence attached</p>
+            <p class="mt-1 text-sm text-slate-500">Capture proof from the Evidence workspace with this target selected.</p>
+          </div>
+        {/if}
       </section>
 
       <section class="hf-card p-4">

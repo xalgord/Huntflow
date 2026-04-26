@@ -14,6 +14,10 @@ export const cloudConfigured = Boolean(convexUrl);
 export const cloudApi = {
   getSnapshot: anyApi.sync.getSnapshot,
   upsertSnapshot: anyApi.sync.upsertSnapshot,
+  generateAssetUploadUrl: anyApi.sync.generateAssetUploadUrl,
+  registerAssetFile: anyApi.sync.registerAssetFile,
+  getAssetFileUrl: anyApi.sync.getAssetFileUrl,
+  deleteAssetFile: anyApi.sync.deleteAssetFile,
   clearCloud: anyApi.sync.clearCloud
 };
 

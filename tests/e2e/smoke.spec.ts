@@ -75,7 +75,7 @@ test.describe('release smoke and responsive QA', () => {
         const active = document.activeElement as HTMLElement | null;
         return active?.innerText || active?.getAttribute('aria-label') || active?.getAttribute('href') || '';
       });
-      if (/Start hunt room|Capture evidence|Dashboard|Timer|Targets|Notes|Income|Settings/i.test(label)) return;
+      if (/Start hunt room|Capture evidence|Dashboard|Timer|Targets|Notes|Evidence|Income|Settings/i.test(label)) return;
     }
 
     throw new Error('Keyboard focus did not reach expected interactive shell or dashboard controls.');

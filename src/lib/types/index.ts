@@ -79,6 +79,93 @@ export interface Note {
   updatedAt: number;
 }
 
+export type EvidenceAssetKind = 'image' | 'pdf' | 'text' | 'request' | 'response' | 'archive' | 'binary' | 'url';
+
+export type EvidenceAssetSource = 'upload' | 'clipboard' | 'snippet' | 'url';
+
+export type EvidenceSyncState = 'local' | 'pending-upload' | 'synced' | 'remote' | 'error';
+
+export interface EvidenceAsset {
+  id: string;
+  title: string;
+  kind: EvidenceAssetKind;
+  source: EvidenceAssetSource;
+  mimeType: string;
+  size: number;
+  fileName?: string;
+  relativePath?: string;
+  folderPath?: string;
+  description?: string;
+  url?: string;
+  textContent?: string;
+  storageId?: string;
+  localBlobId?: string;
+  targetId?: string;
+  sessionId?: string;
+  noteId?: string;
+  tags: string[];
+  syncState: EvidenceSyncState;
+  syncError?: string;
+  capturedAt: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface EvidenceBlob {
+  assetId: string;
+  blob: Blob;
+  mimeType: string;
+  fileName?: string;
+  relativePath?: string;
+  size: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type EvidenceNodeType = 'target' | 'session' | 'note' | 'asset' | 'url';
+
+export type EvidenceRelationship =
+  | 'proves'
+  | 'references'
+  | 'derived-from'
+  | 'blocks'
+  | 'duplicates'
+  | 'belongs-to';
+
+export interface EvidenceLink {
+  id: string;
+  fromType: EvidenceNodeType;
+  fromId: string;
+  fromKey: string;
+  toType: EvidenceNodeType;
+  toId: string;
+  toKey: string;
+  relationship: EvidenceRelationship;
+  label?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface EvidenceCanvasPosition {
+  x: number;
+  y: number;
+}
+
+export interface EvidenceCanvasView {
+  id: string;
+  name: string;
+  targetId?: string;
+  includeSessions: boolean;
+  includeNotes: boolean;
+  includeUrls: boolean;
+  positions: Record<string, EvidenceCanvasPosition>;
+  zoom: number;
+  panX: number;
+  panY: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
 export interface NoteTemplate {
   id: string;
   name: string;
@@ -182,6 +269,44 @@ export interface HuntFlowDB extends DBSchema {
       'by-updated': number;
     };
   };
+  evidenceAssets: {
+    key: string;
+    value: EvidenceAsset;
+    indexes: {
+      'by-target': string;
+      'by-session': string;
+      'by-note': string;
+      'by-kind': string;
+      'by-tags': string;
+      'by-sync-state': string;
+      'by-updated': number;
+    };
+  };
+  evidenceBlobs: {
+    key: string;
+    value: EvidenceBlob;
+    indexes: {
+      'by-updated': number;
+    };
+  };
+  evidenceLinks: {
+    key: string;
+    value: EvidenceLink;
+    indexes: {
+      'by-from': string;
+      'by-to': string;
+      'by-relationship': string;
+      'by-updated': number;
+    };
+  };
+  evidenceCanvasViews: {
+    key: string;
+    value: EvidenceCanvasView;
+    indexes: {
+      'by-target': string;
+      'by-updated': number;
+    };
+  };
   templates: {
     key: string;
     value: NoteTemplate;
@@ -206,6 +331,9 @@ export interface HuntFlowExport {
     notes: Note[];
     targets: Target[];
     payouts: Payout[];
+    evidenceAssets?: EvidenceAsset[];
+    evidenceLinks?: EvidenceLink[];
+    evidenceCanvasViews?: EvidenceCanvasView[];
     settings: Settings;
   };
 }

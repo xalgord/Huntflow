@@ -1,3 +1,4 @@
+import { evidenceAssetDB, evidenceCanvasViewDB, evidenceLinkDB } from './evidence';
 import { noteDB } from './notes';
 import { payoutDB } from './payouts';
 import { sessionDB } from './sessions';
@@ -6,13 +7,17 @@ import { targetDB } from './targets';
 import type { HuntFlowExport } from './schema';
 
 export async function exportData(appVersion = '1.0.0'): Promise<HuntFlowExport> {
-  const [sessions, notes, targets, payouts, settings] = await Promise.all([
-    sessionDB.getAll(),
-    noteDB.getAll(),
-    targetDB.getAll(),
-    payoutDB.getAll(),
-    settingsDB.getSettings()
-  ]);
+  const [sessions, notes, targets, payouts, evidenceAssets, evidenceLinks, evidenceCanvasViews, settings] =
+    await Promise.all([
+      sessionDB.getAll(),
+      noteDB.getAll(),
+      targetDB.getAll(),
+      payoutDB.getAll(),
+      evidenceAssetDB.getAll(),
+      evidenceLinkDB.getAll(),
+      evidenceCanvasViewDB.getAll(),
+      settingsDB.getSettings()
+    ]);
 
   return {
     meta: {
@@ -25,6 +30,9 @@ export async function exportData(appVersion = '1.0.0'): Promise<HuntFlowExport> 
       notes,
       targets,
       payouts,
+      evidenceAssets,
+      evidenceLinks,
+      evidenceCanvasViews,
       settings
     }
   };

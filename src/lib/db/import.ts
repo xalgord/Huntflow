@@ -1,3 +1,4 @@
+import { evidenceAssetDB, evidenceCanvasViewDB, evidenceLinkDB } from './evidence';
 import { noteDB } from './notes';
 import { payoutDB } from './payouts';
 import { sessionDB } from './sessions';
@@ -5,6 +6,14 @@ import { settingsDB } from './settings';
 import { targetDB } from './targets';
 import {
   DEFAULT_SETTINGS,
+  type EvidenceAsset,
+  type EvidenceAssetKind,
+  type EvidenceAssetSource,
+  type EvidenceCanvasView,
+  type EvidenceLink,
+  type EvidenceNodeType,
+  type EvidenceRelationship,
+  type EvidenceSyncState,
   type HuntFlowExport,
   type Note,
   type Payout,
@@ -43,6 +52,18 @@ const PRIORITIES: Priority[] = [0, 1, 2, 3];
 const TARGET_STATUSES: TargetStatus[] = ['recon', 'testing', 'reported', 'paid', 'closed', 'archived'];
 const PAYOUT_SEVERITIES: PayoutSeverity[] = ['critical', 'high', 'medium', 'low', 'informational'];
 const PAYOUT_STATUSES: PayoutStatus[] = ['pending', 'triaged', 'paid'];
+const EVIDENCE_KINDS: EvidenceAssetKind[] = ['image', 'pdf', 'text', 'request', 'response', 'archive', 'binary', 'url'];
+const EVIDENCE_SOURCES: EvidenceAssetSource[] = ['upload', 'clipboard', 'snippet', 'url'];
+const EVIDENCE_SYNC_STATES: EvidenceSyncState[] = ['local', 'pending-upload', 'synced', 'remote', 'error'];
+const EVIDENCE_NODE_TYPES: EvidenceNodeType[] = ['target', 'session', 'note', 'asset', 'url'];
+const EVIDENCE_RELATIONSHIPS: EvidenceRelationship[] = [
+  'proves',
+  'references',
+  'derived-from',
+  'blocks',
+  'duplicates',
+  'belongs-to'
+];
 const THEMES: Settings['theme'][] = ['light', 'dark', 'system'];
 const ACCENT_COLORS: Settings['accentColor'][] = ['green', 'blue', 'orange', 'purple'];
 const FONT_SIZES: Settings['fontSize'][] = ['small', 'medium', 'large'];
@@ -322,6 +343,197 @@ function validatePayout(value: unknown, index: number, errors: string[]): Payout
   return payout as Payout;
 }
 
+function validateEvidenceAsset(
+  value: unknown,
+  index: number,
+  targetIds: Set<string>,
+  sessionIds: Set<string>,
+  noteIds: Set<string>,
+  errors: string[]
+): EvidenceAsset | null {
+  if (!isRecord(value)) {
+    errors.push(`evidenceAssets[${index}] must be an object`);
+    return null;
+  }
+
+  const asset = value as Partial<EvidenceAsset>;
+
+  if (!isString(asset.id) || !isValidUUID(asset.id)) errors.push(`evidenceAssets[${index}].id is invalid`);
+  if (!isString(asset.title) || asset.title.trim().length === 0 || asset.title.length > 160) {
+    errors.push(`evidenceAssets[${index}].title must be 1-160 characters`);
+  }
+  if (!EVIDENCE_KINDS.includes(asset.kind as EvidenceAssetKind)) {
+    errors.push(`evidenceAssets[${index}].kind is invalid`);
+  }
+  if (!EVIDENCE_SOURCES.includes(asset.source as EvidenceAssetSource)) {
+    errors.push(`evidenceAssets[${index}].source is invalid`);
+  }
+  if (!isString(asset.mimeType) || asset.mimeType.length > 120) {
+    errors.push(`evidenceAssets[${index}].mimeType must be a string <= 120 characters`);
+  }
+  if (!isNumber(asset.size) || asset.size < 0) {
+    errors.push(`evidenceAssets[${index}].size must be a non-negative number`);
+  }
+  if (asset.fileName !== undefined && (!isString(asset.fileName) || asset.fileName.length > 220)) {
+    errors.push(`evidenceAssets[${index}].fileName must be <= 220 characters when provided`);
+  }
+  if (asset.relativePath !== undefined && (!isString(asset.relativePath) || asset.relativePath.length > 1000)) {
+    errors.push(`evidenceAssets[${index}].relativePath must be <= 1000 characters when provided`);
+  }
+  if (asset.folderPath !== undefined && (!isString(asset.folderPath) || asset.folderPath.length > 900)) {
+    errors.push(`evidenceAssets[${index}].folderPath must be <= 900 characters when provided`);
+  }
+  if (asset.description !== undefined && (!isString(asset.description) || asset.description.length > 2000)) {
+    errors.push(`evidenceAssets[${index}].description must be <= 2000 characters when provided`);
+  }
+  if (asset.url !== undefined && (!isString(asset.url) || !isValidURL(asset.url))) {
+    errors.push(`evidenceAssets[${index}].url must be valid when provided`);
+  }
+  if (asset.source === 'url' && !asset.url) {
+    errors.push(`evidenceAssets[${index}].url is required for URL assets`);
+  }
+  if (asset.textContent !== undefined && (!isString(asset.textContent) || asset.textContent.length > 100000)) {
+    errors.push(`evidenceAssets[${index}].textContent must be <= 100000 characters when provided`);
+  }
+  if (asset.storageId !== undefined && !isString(asset.storageId)) {
+    errors.push(`evidenceAssets[${index}].storageId must be a string when provided`);
+  }
+  if (asset.localBlobId !== undefined && !isString(asset.localBlobId)) {
+    errors.push(`evidenceAssets[${index}].localBlobId must be a string when provided`);
+  }
+  if (asset.targetId !== undefined && (!isString(asset.targetId) || !targetIds.has(asset.targetId))) {
+    errors.push(`evidenceAssets[${index}].targetId must reference an imported or existing target`);
+  }
+  if (asset.sessionId !== undefined && (!isString(asset.sessionId) || !sessionIds.has(asset.sessionId))) {
+    errors.push(`evidenceAssets[${index}].sessionId must reference an imported or existing session`);
+  }
+  if (asset.noteId !== undefined && (!isString(asset.noteId) || !noteIds.has(asset.noteId))) {
+    errors.push(`evidenceAssets[${index}].noteId must reference an imported or existing note`);
+  }
+  if (!Array.isArray(asset.tags) || asset.tags.length > 12) {
+    errors.push(`evidenceAssets[${index}].tags must contain at most 12 tags`);
+  } else {
+    for (const tag of asset.tags) {
+      if (!isString(tag) || !isValidTag(tag)) {
+        errors.push(`evidenceAssets[${index}].tags contains invalid tag "${String(tag)}"`);
+      }
+    }
+  }
+  if (!EVIDENCE_SYNC_STATES.includes(asset.syncState as EvidenceSyncState)) {
+    errors.push(`evidenceAssets[${index}].syncState is invalid`);
+  }
+  if (asset.syncError !== undefined && (!isString(asset.syncError) || asset.syncError.length > 500)) {
+    errors.push(`evidenceAssets[${index}].syncError must be <= 500 characters when provided`);
+  }
+  if (!isNumber(asset.capturedAt)) errors.push(`evidenceAssets[${index}].capturedAt must be a number`);
+  if (!isNumber(asset.createdAt)) errors.push(`evidenceAssets[${index}].createdAt must be a number`);
+  if (!isNumber(asset.updatedAt)) errors.push(`evidenceAssets[${index}].updatedAt must be a number`);
+
+  return asset as EvidenceAsset;
+}
+
+function nodeExists(type: EvidenceNodeType, id: string, refs: {
+  targetIds: Set<string>;
+  sessionIds: Set<string>;
+  noteIds: Set<string>;
+  assetIds: Set<string>;
+}): boolean {
+  if (type === 'target') return refs.targetIds.has(id);
+  if (type === 'session') return refs.sessionIds.has(id);
+  if (type === 'note') return refs.noteIds.has(id);
+  return refs.assetIds.has(id);
+}
+
+function validateEvidenceLink(
+  value: unknown,
+  index: number,
+  refs: {
+    targetIds: Set<string>;
+    sessionIds: Set<string>;
+    noteIds: Set<string>;
+    assetIds: Set<string>;
+  },
+  errors: string[]
+): EvidenceLink | null {
+  if (!isRecord(value)) {
+    errors.push(`evidenceLinks[${index}] must be an object`);
+    return null;
+  }
+
+  const link = value as Partial<EvidenceLink>;
+
+  if (!isString(link.id) || !isValidUUID(link.id)) errors.push(`evidenceLinks[${index}].id is invalid`);
+  if (!EVIDENCE_NODE_TYPES.includes(link.fromType as EvidenceNodeType)) {
+    errors.push(`evidenceLinks[${index}].fromType is invalid`);
+  }
+  if (!isString(link.fromId) || !nodeExists(link.fromType as EvidenceNodeType, link.fromId, refs)) {
+    errors.push(`evidenceLinks[${index}].fromId must reference an existing graph node`);
+  }
+  if (!EVIDENCE_NODE_TYPES.includes(link.toType as EvidenceNodeType)) {
+    errors.push(`evidenceLinks[${index}].toType is invalid`);
+  }
+  if (!isString(link.toId) || !nodeExists(link.toType as EvidenceNodeType, link.toId, refs)) {
+    errors.push(`evidenceLinks[${index}].toId must reference an existing graph node`);
+  }
+  if (!EVIDENCE_RELATIONSHIPS.includes(link.relationship as EvidenceRelationship)) {
+    errors.push(`evidenceLinks[${index}].relationship is invalid`);
+  }
+  if (link.label !== undefined && (!isString(link.label) || link.label.length > 120)) {
+    errors.push(`evidenceLinks[${index}].label must be <= 120 characters when provided`);
+  }
+  if (!isNumber(link.createdAt)) errors.push(`evidenceLinks[${index}].createdAt must be a number`);
+  if (!isNumber(link.updatedAt)) errors.push(`evidenceLinks[${index}].updatedAt must be a number`);
+
+  return {
+    ...(link as EvidenceLink),
+    fromKey: `${link.fromType}:${link.fromId}`,
+    toKey: `${link.toType}:${link.toId}`
+  };
+}
+
+function validateEvidenceCanvasView(
+  value: unknown,
+  index: number,
+  targetIds: Set<string>,
+  errors: string[]
+): EvidenceCanvasView | null {
+  if (!isRecord(value)) {
+    errors.push(`evidenceCanvasViews[${index}] must be an object`);
+    return null;
+  }
+
+  const view = value as Partial<EvidenceCanvasView>;
+
+  if (!isString(view.id) || !isValidUUID(view.id)) errors.push(`evidenceCanvasViews[${index}].id is invalid`);
+  if (!isString(view.name) || view.name.trim().length === 0 || view.name.length > 80) {
+    errors.push(`evidenceCanvasViews[${index}].name must be 1-80 characters`);
+  }
+  if (view.targetId !== undefined && (!isString(view.targetId) || !targetIds.has(view.targetId))) {
+    errors.push(`evidenceCanvasViews[${index}].targetId must reference an imported or existing target`);
+  }
+  if (!isBoolean(view.includeSessions)) errors.push(`evidenceCanvasViews[${index}].includeSessions must be a boolean`);
+  if (!isBoolean(view.includeNotes)) errors.push(`evidenceCanvasViews[${index}].includeNotes must be a boolean`);
+  if (!isBoolean(view.includeUrls)) errors.push(`evidenceCanvasViews[${index}].includeUrls must be a boolean`);
+  if (!isRecord(view.positions)) {
+    errors.push(`evidenceCanvasViews[${index}].positions must be an object`);
+  } else {
+    for (const [key, position] of Object.entries(view.positions)) {
+      if (!isRecord(position) || !isNumber(position.x) || !isNumber(position.y)) {
+        errors.push(`evidenceCanvasViews[${index}].positions.${key} must contain numeric x and y`);
+      }
+    }
+  }
+  if (!isNumber(view.zoom) || view.zoom <= 0 || view.zoom > 4) {
+    errors.push(`evidenceCanvasViews[${index}].zoom must be between 0 and 4`);
+  }
+  if (!isNumber(view.panX)) errors.push(`evidenceCanvasViews[${index}].panX must be a number`);
+  if (!isNumber(view.panY)) errors.push(`evidenceCanvasViews[${index}].panY must be a number`);
+  if (!isNumber(view.createdAt)) errors.push(`evidenceCanvasViews[${index}].createdAt must be a number`);
+  if (!isNumber(view.updatedAt)) errors.push(`evidenceCanvasViews[${index}].updatedAt must be a number`);
+
+  return view as EvidenceCanvasView;
+}
+
 export async function validateImportData(payload: unknown): Promise<HuntFlowExport> {
   const parsed = parsePayload(payload);
   const errors: string[] = [];
@@ -345,6 +557,9 @@ export async function validateImportData(payload: unknown): Promise<HuntFlowExpo
   const rawSessions = Array.isArray(data.sessions) ? data.sessions : [];
   const rawNotes = Array.isArray(data.notes) ? data.notes : [];
   const rawPayouts = Array.isArray(data.payouts) ? data.payouts : [];
+  const rawEvidenceAssets = Array.isArray(data.evidenceAssets) ? data.evidenceAssets : [];
+  const rawEvidenceLinks = Array.isArray(data.evidenceLinks) ? data.evidenceLinks : [];
+  const rawEvidenceCanvasViews = Array.isArray(data.evidenceCanvasViews) ? data.evidenceCanvasViews : [];
 
   if (!Array.isArray(data.targets)) errors.push('data.targets must be an array');
   if (!Array.isArray(data.sessions)) errors.push('data.sessions must be an array');
@@ -352,11 +567,24 @@ export async function validateImportData(payload: unknown): Promise<HuntFlowExpo
   if (data.payouts !== undefined && !Array.isArray(data.payouts)) {
     errors.push('data.payouts must be an array when provided');
   }
+  if (data.evidenceAssets !== undefined && !Array.isArray(data.evidenceAssets)) {
+    errors.push('data.evidenceAssets must be an array when provided');
+  }
+  if (data.evidenceLinks !== undefined && !Array.isArray(data.evidenceLinks)) {
+    errors.push('data.evidenceLinks must be an array when provided');
+  }
+  if (data.evidenceCanvasViews !== undefined && !Array.isArray(data.evidenceCanvasViews)) {
+    errors.push('data.evidenceCanvasViews must be an array when provided');
+  }
 
   const existingTargets = await targetDB.getAll();
   const existingSessions = await sessionDB.getAll();
+  const existingNotes = await noteDB.getAll();
+  const existingAssets = await evidenceAssetDB.getAll();
   const targetIds = new Set(existingTargets.map((target) => target.id));
   const sessionIds = new Set(existingSessions.map((session) => session.id));
+  const noteIds = new Set(existingNotes.map((note) => note.id));
+  const assetIds = new Set(existingAssets.map((asset) => asset.id));
 
   const targets = rawTargets
     .map((target, index) => validateTarget(target, index, errors))
@@ -374,9 +602,27 @@ export async function validateImportData(payload: unknown): Promise<HuntFlowExpo
     .map((note, index) => validateNote(note, index, targetIds, sessionIds, errors))
     .filter((note): note is Note => Boolean(note));
 
+  for (const note of notes) noteIds.add(note.id);
+
   const payouts = rawPayouts
     .map((payout, index) => validatePayout(payout, index, errors))
     .filter((payout): payout is Payout => Boolean(payout));
+
+  const evidenceAssets = rawEvidenceAssets
+    .map((asset, index) => validateEvidenceAsset(asset, index, targetIds, sessionIds, noteIds, errors))
+    .filter((asset): asset is EvidenceAsset => Boolean(asset));
+
+  for (const asset of evidenceAssets) assetIds.add(asset.id);
+
+  const evidenceLinks = rawEvidenceLinks
+    .map((link, index) =>
+      validateEvidenceLink(link, index, { targetIds, sessionIds, noteIds, assetIds }, errors)
+    )
+    .filter((link): link is EvidenceLink => Boolean(link));
+
+  const evidenceCanvasViews = rawEvidenceCanvasViews
+    .map((view, index) => validateEvidenceCanvasView(view, index, targetIds, errors))
+    .filter((view): view is EvidenceCanvasView => Boolean(view));
 
   const settings = validateSettings(data.settings, errors);
 
@@ -389,6 +635,9 @@ export async function validateImportData(payload: unknown): Promise<HuntFlowExpo
       notes,
       targets,
       payouts,
+      evidenceAssets,
+      evidenceLinks,
+      evidenceCanvasViews,
       settings
     }
   };
@@ -402,6 +651,9 @@ export async function importData(payload: unknown): Promise<HuntFlowExport> {
     sessionDB.putBatch(validated.data.sessions),
     noteDB.putBatch(validated.data.notes),
     payoutDB.putBatch(validated.data.payouts),
+    evidenceAssetDB.putBatch(validated.data.evidenceAssets ?? []),
+    evidenceLinkDB.putBatch(validated.data.evidenceLinks ?? []),
+    evidenceCanvasViewDB.putBatch(validated.data.evidenceCanvasViews ?? []),
     settingsDB.putSettings(validated.data.settings)
   ]);
 

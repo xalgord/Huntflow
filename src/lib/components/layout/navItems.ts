@@ -1,4 +1,4 @@
-import { Crosshair, DollarSign, FileText, Flag, LayoutDashboard, Settings } from 'lucide-svelte';
+import { Crosshair, DollarSign, FileText, Flag, LayoutDashboard, Network, Settings } from 'lucide-svelte';
 import type { ComponentType } from 'svelte';
 
 export interface NavItemConfig {
@@ -32,6 +32,12 @@ export const navItems: NavItemConfig[] = [
     label: 'Notes',
     icon: FileText,
     match: (pathname) => pathname.startsWith('/notes')
+  },
+  {
+    href: '/assets',
+    label: 'Evidence',
+    icon: Network,
+    match: (pathname) => pathname.startsWith('/assets')
   },
   {
     href: '/income',

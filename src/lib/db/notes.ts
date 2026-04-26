@@ -65,11 +65,33 @@ export class NoteDB {
     const db = await getHuntFlowDB();
     if (!db) {
       getMemoryDB().notes.delete(id);
+      for (const [assetId, asset] of getMemoryDB().evidenceAssets) {
+        if (asset.noteId === id) {
+          getMemoryDB().evidenceAssets.set(assetId, { ...asset, noteId: undefined, updatedAt: Date.now() });
+        }
+      }
+      for (const [linkId, link] of getMemoryDB().evidenceLinks) {
+        if (link.fromKey === `note:${id}` || link.toKey === `note:${id}`) getMemoryDB().evidenceLinks.delete(linkId);
+      }
       return;
     }
 
     try {
-      await db.delete('notes', id);
+      const tx = db.transaction(['notes', 'evidenceAssets', 'evidenceLinks'], 'readwrite');
+      const assetsStore = tx.objectStore('evidenceAssets');
+      const linksStore = tx.objectStore('evidenceLinks');
+      const linkedAssets = await assetsStore.index('by-note').getAll(id);
+      const links = [
+        ...(await linksStore.index('by-from').getAll(`note:${id}`)),
+        ...(await linksStore.index('by-to').getAll(`note:${id}`))
+      ];
+
+      await Promise.all([
+        tx.objectStore('notes').delete(id),
+        ...linkedAssets.map((asset) => assetsStore.put({ ...asset, noteId: undefined, updatedAt: Date.now() })),
+        ...links.map((link) => linksStore.delete(link.id)),
+        tx.done
+      ]);
     } catch (error) {
       enableMemoryFallback(error);
       getMemoryDB().notes.delete(id);

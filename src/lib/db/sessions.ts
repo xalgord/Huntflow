@@ -72,13 +72,30 @@ export class SessionDB {
           getMemoryDB().notes.set(noteId, next);
         }
       }
+      for (const [assetId, asset] of getMemoryDB().evidenceAssets) {
+        if (asset.sessionId === id) {
+          getMemoryDB().evidenceAssets.set(assetId, { ...asset, sessionId: undefined, updatedAt: Date.now() });
+        }
+      }
+      for (const [linkId, link] of getMemoryDB().evidenceLinks) {
+        if (link.fromKey === `session:${id}` || link.toKey === `session:${id}`) {
+          getMemoryDB().evidenceLinks.delete(linkId);
+        }
+      }
       return;
     }
 
     try {
-      const tx = db.transaction(['sessions', 'notes'], 'readwrite');
+      const tx = db.transaction(['sessions', 'notes', 'evidenceAssets', 'evidenceLinks'], 'readwrite');
       const notesStore = tx.objectStore('notes');
+      const assetsStore = tx.objectStore('evidenceAssets');
+      const linksStore = tx.objectStore('evidenceLinks');
       const linkedNotes = await notesStore.index('by-session').getAll(id);
+      const linkedAssets = await assetsStore.index('by-session').getAll(id);
+      const links = [
+        ...(await linksStore.index('by-from').getAll(`session:${id}`)),
+        ...(await linksStore.index('by-to').getAll(`session:${id}`))
+      ];
 
       await Promise.all([
         tx.objectStore('sessions').delete(id),
@@ -87,6 +104,8 @@ export class SessionDB {
           delete next.sessionId;
           return notesStore.put(next);
         }),
+        ...linkedAssets.map((asset) => assetsStore.put({ ...asset, sessionId: undefined, updatedAt: Date.now() })),
+        ...links.map((link) => linksStore.delete(link.id)),
         tx.done
       ]);
     } catch (error) {

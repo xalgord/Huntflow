@@ -23,7 +23,7 @@ The screenshots below are captured from the real app with seeded sample bounty d
 - IndexedDB for local-first persistence
 - Convex for optional cloud sync
 - Clerk for authentication
-- Chart.js for stats and income charts
+- Chart.js for analytics charts and d3-force for the evidence graph canvas
 - Playwright and Vitest for testing
 - Static adapter with PWA support
 
@@ -32,6 +32,7 @@ The screenshots below are captured from the real app with seeded sample bounty d
 - Target tracker with platform, priority, status, scope, search, and session linking
 - Focus timer for hunt rooms with completion notes and tags
 - Markdown notes with templates, preview, autosave drafts, and explicit save
+- Evidence asset vault for proof files, folder uploads, URLs, snippets, relationships, analytics, and graph canvas views
 - Report Builder with note auto-population, severity suggestions, markdown export, and client PDF export
 - Stats dashboard derived from session data
 - Income tracker with payout status progression and tax CSV export
@@ -79,7 +80,9 @@ npm run build
 
 ## Testing
 
-The release checklist is in `docs/testing-checklist.md`. The Playwright suite covers onboarding, primary routes, responsive overflow, SEO basics, keyboard reachability, targets, timer, notes, income, settings data management, and cloud-sync state handling.
+The release checklist is in `docs/testing-checklist.md`. The Playwright suite covers onboarding, primary routes, responsive overflow, SEO basics, keyboard reachability, targets, timer, notes, evidence assets, income, settings data management, and cloud-sync state handling.
+
+For manual note, preview, and report-builder testing, use `docs/sample-note.md`.
 
 ## License
 

@@ -3,9 +3,9 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import NoteEditor from '$lib/components/notes/NoteEditor.svelte';
-  import { noteStore, sessionStore, targetStore } from '$lib/stores';
+  import { evidenceAssetStore, noteStore, sessionStore, targetStore } from '$lib/stores';
   import type { Note } from '$lib/types';
-  import { ArrowLeft, Trash2 } from 'lucide-svelte';
+  import { ArrowLeft, Network, Trash2 } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
 
   let loaded = false;
@@ -19,6 +19,9 @@
   $: existingNote = isNew ? undefined : $noteStore.find((note) => note.id === noteId);
   $: tagSuggestions = Array.from(new Set($noteStore.flatMap((note) => note.tags))).sort();
   $: title = workingNote?.title?.trim() || (isNew ? 'New Note' : 'Note');
+  $: noteAssets = workingNote
+    ? $evidenceAssetStore.filter((asset) => asset.noteId === workingNote?.id).sort((a, b) => b.updatedAt - a.updatedAt)
+    : [];
 
   function draftKey(id: string): string {
     return `huntflow-note-draft:${id}`;
@@ -98,7 +101,7 @@
   }
 
   onMount(async () => {
-    await Promise.all([noteStore.load(), targetStore.load(), sessionStore.load()]);
+    await Promise.all([noteStore.load(), targetStore.load(), sessionStore.load(), evidenceAssetStore.load()]);
     const baseNote = isNew ? createBlankNote() : existingNote;
     if (baseNote) {
       workingNote = loadDraft({ ...baseNote, tags: [...baseNote.tags] });
@@ -150,6 +153,37 @@
         on:change={handleDraftChange}
         on:save={saveNote}
       />
+
+      {#if !isNew}
+        <section class="hf-card p-4">
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 class="text-lg font-semibold text-slate-100">Attached Evidence</h2>
+              <p class="mt-1 text-sm text-slate-400">Proof files, URLs, and request traces linked to this note.</p>
+            </div>
+            <a href={`/assets?target=${workingNote.targetId}&note=${workingNote.id}`} class="hf-button-secondary">
+              <Network size={18} aria-hidden="true" />
+              Attach evidence
+            </a>
+          </div>
+
+          {#if noteAssets.length > 0}
+            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+              {#each noteAssets.slice(0, 4) as asset (asset.id)}
+                <a href={`/assets?target=${workingNote.targetId}&note=${workingNote.id}`} class="rounded-[14px] border border-border/70 bg-background/40 p-3 transition hover:border-primary/40 hover:bg-muted/40">
+                  <p class="truncate text-sm font-semibold text-foreground">{asset.title}</p>
+                  <p class="mt-1 text-xs text-muted-foreground">{asset.kind} · {asset.syncState}</p>
+                </a>
+              {/each}
+            </div>
+          {:else}
+            <div class="mt-4 rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-center">
+              <p class="text-sm font-medium text-slate-300">No evidence attached</p>
+              <p class="mt-1 text-sm text-slate-500">Attach proof from the Evidence workspace.</p>
+            </div>
+          {/if}
+        </section>
+      {/if}
     {:else if loaded}
       <section class="hf-card p-8 text-center">
         <h1 class="text-lg font-semibold text-slate-300">Note not found</h1>

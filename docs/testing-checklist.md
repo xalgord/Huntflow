@@ -8,7 +8,7 @@ Use this checklist before shipping UI, data, auth, sync, or PWA changes. The aut
 - [ ] `npm run test -- --run` passes all unit tests.
 - [ ] `npm run build` completes successfully; the known acceptable warning is the large Clerk chunk.
 - [ ] `npm run test:e2e` passes the Playwright route, responsive, onboarding, workflow, settings, data, and cloud-state tests.
-- [ ] Browser console has no app-level `console.error`, page error, 500, hydration mismatch, circular import, IndexedDB, Clerk, Convex, or service worker runtime failure on primary routes.
+- [ ] Browser console has no app-level `console.error`, page error, 500, hydration mismatch, circular import, IndexedDB, Clerk, Convex, canvas, or service worker runtime failure on primary routes including `/assets`.
 
 ## Visual, Responsive, And Accessibility QA
 
@@ -30,6 +30,7 @@ Use this checklist before shipping UI, data, auth, sync, or PWA changes. The aut
 - [ ] Timer blocks start without a target, then supports start, pause, resume, complete, abandon, and reset.
 - [ ] Completed sessions update session history, target status/count, dashboard metrics, and stats.
 - [ ] Notes can be created, templated, edited, previewed, tagged, autosaved as drafts, explicitly saved, searched, and deleted.
+- [ ] Evidence assets can be uploaded, pasted, captured as URLs/snippets, filtered, previewed, downloaded/opened, linked to targets/sessions/notes, deleted, and rendered on the graph canvas.
 - [ ] Report Builder auto-populates from notes, suggests severity from tags, previews markdown, exports `.md`, copies markdown, and triggers client PDF export.
 - [ ] Stats derive from sessions only and charts refresh after late store data loads.
 - [ ] Income supports payout create/edit/delete, Pending -> Triaged -> Paid advancement, charts, and tax CSV export.
@@ -39,9 +40,9 @@ Use this checklist before shipping UI, data, auth, sync, or PWA changes. The aut
 
 - [ ] Missing Clerk or Convex config shows actionable setup UI instead of a crash.
 - [ ] Signed-out Clerk state shows sign-in/sign-up actions; signed-in state shows user identity/profile controls.
-- [ ] Cloud sync can push/pull without duplicating local records.
+- [ ] Cloud sync can push/pull without duplicating local records, local evidence has no enforced size/quota cap, and cloud evidence uploads respect the 100MB file and 1GB user quota.
 - [ ] Sync failures/offline state never destroy local IndexedDB data silently.
-- [ ] Export/import round trip preserves targets, sessions, notes, payouts, templates, and settings.
+- [ ] Export/import round trip preserves targets, sessions, notes, payouts, evidence metadata/links/canvas views, templates, and settings.
 - [ ] PWA install prompt appears only under intended conditions and remembers dismissal.
 - [ ] Offline route load shows cached shell/offline banner and keeps local data available.
 - [ ] Clearing browser/site data resets onboarding and local app state predictably.

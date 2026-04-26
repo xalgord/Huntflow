@@ -1,15 +1,16 @@
 import { expect, type Page } from '@playwright/test';
 
 const DB_NAME = 'huntflow';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 export const seedIds = {
   target: '11111111-1111-4111-8111-111111111111',
   session: '22222222-2222-4222-8222-222222222222',
   note: '33333333-3333-4333-8333-333333333333',
-  payout: '44444444-4444-4444-8444-444444444444'
+  payout: '44444444-4444-4444-8444-444444444444',
+  asset: '55555555-5555-4555-8555-555555555555'
 };
 
-export const routes = ['/', '/timer', '/targets', '/notes', '/stats', '/income', '/settings', '/landing'];
+export const routes = ['/', '/timer', '/targets', '/notes', '/assets', '/stats', '/income', '/settings', '/landing'];
 
 export interface ConsoleWatcher {
   errors: string[];
@@ -46,7 +47,7 @@ export async function dismissOnboarding(page: Page): Promise<void> {
 
 export async function seedEmptyApp(page: Page): Promise<void> {
   await openStoragePage(page);
-  await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [] });
+  await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [], evidenceAssets: [], evidenceLinks: [], evidenceCanvasViews: [] });
   await gotoAppRoute(page, '/');
 }
 
@@ -102,6 +103,24 @@ export async function seedDemoApp(page: Page): Promise<TestSeed> {
       status: 'triaged',
       createdAt: now - 3_600_000,
       updatedAt: now - 60_000
+    },
+    asset: {
+      id: seedIds.asset,
+      title: 'Replay proof screenshot',
+      kind: 'url',
+      source: 'url',
+      mimeType: 'text/uri-list',
+      size: 0,
+      url: 'https://example.com/replay-proof',
+      description: 'Hosted proof showing stale state replay.',
+      targetId: seedIds.target,
+      sessionId: seedIds.session,
+      noteId: seedIds.note,
+      tags: ['high', 'needs-report'],
+      syncState: 'synced',
+      capturedAt: now - 30_000,
+      createdAt: now - 30_000,
+      updatedAt: now - 30_000
     }
   };
 
@@ -110,7 +129,10 @@ export async function seedDemoApp(page: Page): Promise<TestSeed> {
     targets: [seed.target],
     sessions: [seed.session],
     notes: [seed.note],
-    payouts: [seed.payout]
+    payouts: [seed.payout],
+    evidenceAssets: [seed.asset],
+    evidenceLinks: [],
+    evidenceCanvasViews: []
   });
   await page.evaluate(() => localStorage.setItem('huntflow-cloud-last-sync-at', String(Date.now())));
   await gotoAppRoute(page, '/');
@@ -119,7 +141,7 @@ export async function seedDemoApp(page: Page): Promise<TestSeed> {
 
 export async function seedFirstRunApp(page: Page): Promise<void> {
   await openStoragePage(page);
-  await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [] }, false);
+  await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [], evidenceAssets: [], evidenceLinks: [], evidenceCanvasViews: [] }, false);
   await gotoAppRoute(page, '/');
 }
 
@@ -194,6 +216,9 @@ async function seedIndexedDB(
     sessions: unknown[];
     notes: unknown[];
     payouts: unknown[];
+    evidenceAssets?: unknown[];
+    evidenceLinks?: unknown[];
+    evidenceCanvasViews?: unknown[];
   },
   onboardingCompleted = true
 ): Promise<void> {
@@ -237,6 +262,33 @@ async function seedIndexedDB(
               store.createIndex('by-date', 'date', { unique: false });
               store.createIndex('by-updated', 'updatedAt', { unique: false });
             }
+            if (!db.objectStoreNames.contains('evidenceAssets')) {
+              const store = db.createObjectStore('evidenceAssets', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-session', 'sessionId', { unique: false });
+              store.createIndex('by-note', 'noteId', { unique: false });
+              store.createIndex('by-kind', 'kind', { unique: false });
+              store.createIndex('by-tags', 'tags', { unique: false, multiEntry: true });
+              store.createIndex('by-sync-state', 'syncState', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('evidenceBlobs')) {
+              db.createObjectStore('evidenceBlobs', { keyPath: 'assetId' }).createIndex('by-updated', 'updatedAt', {
+                unique: false
+              });
+            }
+            if (!db.objectStoreNames.contains('evidenceLinks')) {
+              const store = db.createObjectStore('evidenceLinks', { keyPath: 'id' });
+              store.createIndex('by-from', 'fromKey', { unique: false });
+              store.createIndex('by-to', 'toKey', { unique: false });
+              store.createIndex('by-relationship', 'relationship', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('evidenceCanvasViews')) {
+              const store = db.createObjectStore('evidenceCanvasViews', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
             if (!db.objectStoreNames.contains('templates')) {
               db.createObjectStore('templates', { keyPath: 'id' }).createIndex('by-category', 'category', {
                 unique: false
@@ -268,12 +320,19 @@ async function seedIndexedDB(
 
       const db = await openDatabase();
       await new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(['sessions', 'notes', 'targets', 'payouts', 'templates', 'settings'], 'readwrite');
+        const tx = db.transaction(
+          ['sessions', 'notes', 'targets', 'payouts', 'evidenceAssets', 'evidenceBlobs', 'evidenceLinks', 'evidenceCanvasViews', 'templates', 'settings'],
+          'readwrite'
+        );
 
         tx.objectStore('sessions').clear();
         tx.objectStore('notes').clear();
         tx.objectStore('targets').clear();
         tx.objectStore('payouts').clear();
+        tx.objectStore('evidenceAssets').clear();
+        tx.objectStore('evidenceBlobs').clear();
+        tx.objectStore('evidenceLinks').clear();
+        tx.objectStore('evidenceCanvasViews').clear();
         tx.objectStore('templates').clear();
         tx.objectStore('settings').clear();
 
@@ -281,6 +340,9 @@ async function seedIndexedDB(
         for (const item of seed.notes) tx.objectStore('notes').put(item);
         for (const item of seed.targets) tx.objectStore('targets').put(item);
         for (const item of seed.payouts) tx.objectStore('payouts').put(item);
+        for (const item of seed.evidenceAssets ?? []) tx.objectStore('evidenceAssets').put(item);
+        for (const item of seed.evidenceLinks ?? []) tx.objectStore('evidenceLinks').put(item);
+        for (const item of seed.evidenceCanvasViews ?? []) tx.objectStore('evidenceCanvasViews').put(item);
         for (const [key, value] of Object.entries(settings)) tx.objectStore('settings').put({ key, value });
 
         tx.oncomplete = () => resolve();
@@ -315,4 +377,5 @@ interface TestSeed {
   session: Record<string, unknown>;
   note: Record<string, unknown>;
   payout: Record<string, unknown>;
+  asset: Record<string, unknown>;
 }
