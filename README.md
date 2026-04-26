@@ -83,4 +83,4 @@ The release checklist is in `docs/testing-checklist.md`. The Playwright suite co
 
 ## License
 
-No license has been selected yet. Add a license before accepting external contributions or distributing this as open source.
+HuntFlow is released under the MIT License. See `LICENSE` for details.
