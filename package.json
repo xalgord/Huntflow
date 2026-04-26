@@ -9,6 +9,7 @@
     "convex:deploy": "convex deploy",
     "build": "vite build",
     "preview": "vite preview",
+    "screenshots": "node scripts/capture-readme-screenshots.mjs",
     "test": "vitest",
     "test:e2e": "playwright test",
     "lint": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",

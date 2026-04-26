@@ -2,6 +2,20 @@
 
 HuntFlow is a local-first bug bounty workflow app for tracking targets, timed hunt sessions, evidence notes, report drafts, payout income, and optional cloud sync.
 
+## Screenshots
+
+The screenshots below are captured from the real app with seeded sample bounty data.
+
+![HuntFlow dashboard with sample targets, evidence, payouts, and sync status](docs/screenshots/dashboard.png)
+
+| Target detail | Notes preview |
+| --- | --- |
+| ![Target detail screen showing status pipeline, scope, and session history](docs/screenshots/target-detail.png) | ![Markdown note preview showing reproduction steps, impact, and remediation](docs/screenshots/notes-preview.png) |
+
+| Stats dashboard | Income tracker |
+| --- | --- |
+| ![Stats dashboard with hunting time, streak, weekly activity, and vulnerability charts](docs/screenshots/stats.png) | ![Income tracker with payout totals, earnings chart, tax export, and payout rows](docs/screenshots/income.png) |
+
 ## Stack
 
 - SvelteKit, Svelte 4, TypeScript, Vite
@@ -59,6 +73,7 @@ npm run dev
 npm run check
 npm run test -- --run
 npm run test:e2e
+npm run screenshots
 npm run build
 ```
 

@@ -46,7 +46,7 @@
     return templates.find((template) => template.id === id)?.name ?? id;
   }
 
-  function periodSeconds(days: number, offsetDays = 0): number {
+  function periodSeconds(sessions: Session[], days: number, offsetDays = 0): number {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
     end.setDate(end.getDate() - offsetDays);
@@ -54,7 +54,7 @@
     start.setDate(end.getDate() - days + 1);
     start.setHours(0, 0, 0, 0);
 
-    return $sessionStore
+    return sessions
       .filter((session) => session.status === 'completed' && session.startedAt >= start.getTime() && session.startedAt <= end.getTime())
       .reduce((sum, session) => sum + session.durationActual, 0);
   }
@@ -93,9 +93,9 @@
   $: todaySessions = $sessionStore.filter(
     (session) => session.status === 'completed' && sessionDateKey(session.startedAt) === todayKey
   ).length;
-  $: weekSeconds = periodSeconds(7);
-  $: previousWeekSeconds = periodSeconds(7, 7);
-  $: monthSeconds = periodSeconds(30);
+  $: weekSeconds = periodSeconds($sessionStore, 7);
+  $: previousWeekSeconds = periodSeconds($sessionStore, 7, 7);
+  $: monthSeconds = periodSeconds($sessionStore, 30);
   $: activeTargets = $targetStore.filter((target) => target.status !== 'archived' && target.status !== 'closed').length;
   $: completedTargets = $targetStore.filter((target) => target.status === 'paid' || target.status === 'closed').length;
   $: archivedTargets = $targetStore.filter((target) => target.status === 'archived').length;
