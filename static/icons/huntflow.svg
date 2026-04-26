@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title>HuntFlow</title>
+  <rect width="512" height="512" rx="112" fill="#0f172a" />
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#16a34a" stroke-width="32" />
+  <circle cx="256" cy="256" r="72" fill="none" stroke="#4ade80" stroke-width="28" />
+  <path d="M256 64v92M256 356v92M64 256h92M356 256h92" stroke="#f8fafc" stroke-width="28" stroke-linecap="round" />
+  <circle cx="256" cy="256" r="22" fill="#22c55e" />
+</svg>

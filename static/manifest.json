@@ -1,0 +1,48 @@
+{
+  "name": "HuntFlow",
+  "short_name": "HuntFlow",
+  "description": "Hunt smarter. Stay consistent. Get paid.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f172a",
+  "theme_color": "#16a34a",
+  "categories": ["productivity", "security", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/huntflow.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Start Focus Session",
+      "short_name": "Timer",
+      "description": "Start a bug bounty focus timer.",
+      "url": "/timer",
+      "icons": [
+        {
+          "src": "/icons/huntflow.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Targets",
+      "short_name": "Targets",
+      "description": "Open tracked bounty targets.",
+      "url": "/targets",
+      "icons": [
+        {
+          "src": "/icons/huntflow.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
