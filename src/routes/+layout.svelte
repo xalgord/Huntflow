@@ -137,20 +137,39 @@
   $: clerkLoading = $clerkAuthStore.loading;
   $: clerkSignedIn = $clerkAuthStore.signedIn;
 
+  // Demo mode: when a visitor enters via /demo we set this tab-scoped
+  // sessionStorage flag, which lets them navigate the seeded workspace
+  // without being bounced to /sign-in. Closing the tab clears the flag,
+  // so Clerk remains the source of truth for any non-demo session.
+  // We re-read on every pathname change so navigation through the seeded
+  // app keeps the flag honored even after a soft route swap.
+  let demoMode = false;
+  $: if (browser) {
+    pathname; // re-evaluate on route change
+    try {
+      demoMode = sessionStorage.getItem('huntflow-demo-mode') === '1';
+    } catch {
+      demoMode = false;
+    }
+  }
+
   // Block the app shell from rendering while we're either waiting on Clerk
   // to load or about to redirect an anonymous visitor to /sign-in. This
   // prevents the protected dashboard from flashing into view before the
-  // redirect lands.
+  // redirect lands. Demo mode skips the spinner entirely so the seeded
+  // workspace renders immediately.
   $: authBlocking =
-    browser && requiresAuth && clerkConfigured && (clerkLoading || !clerkSignedIn);
+    browser && requiresAuth && clerkConfigured && !demoMode && (clerkLoading || !clerkSignedIn);
 
   // Once Clerk has finished loading and we still don't have a session,
   // bounce to the sign-in page with a return path so the user lands back
-  // here after authenticating.
+  // here after authenticating. Demo-mode tabs are exempt — the visitor
+  // is exploring sample data, not their own workspace.
   $: if (
     browser &&
     requiresAuth &&
     clerkConfigured &&
+    !demoMode &&
     !clerkLoading &&
     !clerkSignedIn
   ) {
