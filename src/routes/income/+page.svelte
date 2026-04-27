@@ -346,7 +346,7 @@
                 {/if}
 
                 {@const submissionExists =
-                  Boolean(payout.submissionId) && existingSubmissionIds.has(payout.submissionId!)}
+                  payout.submissionId != null && existingSubmissionIds.has(payout.submissionId)}
                 <button
                   type="button"
                   class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md transition {submissionExists
