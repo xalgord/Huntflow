@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import ContactSection from '$lib/components/landing/ContactSection.svelte';
   import FaqSection from '$lib/components/landing/FaqSection.svelte';
   import FeatureGrid from '$lib/components/landing/FeatureGrid.svelte';
   import InstallCommand from '$lib/components/landing/InstallCommand.svelte';
@@ -163,6 +164,7 @@
         <a class="transition hover:text-slate-100" href="#cloud-sync">Cloud Sync</a>
         <a class="transition hover:text-slate-100" href="/pricing">Pricing</a>
         <a class="transition hover:text-slate-100" href="#faq">FAQ</a>
+        <a class="transition hover:text-slate-100" href="#contact">Contact</a>
       </nav>
 
       <div class="flex items-center gap-2">
@@ -372,6 +374,9 @@
 
   <!-- FAQ -->
   <FaqSection />
+
+  <!-- Contact form (Resend-powered) -->
+  <ContactSection />
 
   <!-- Closing CTA -->
   <section class="border-b border-slate-800 bg-slate-900 px-4 py-20 sm:px-6 lg:px-8">
