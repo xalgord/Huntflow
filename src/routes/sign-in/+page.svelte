@@ -56,6 +56,21 @@
       <span class="font-mono text-amber-200">VITE_CLERK_PUBLISHABLE_KEY</span> in your environment to enable
       authentication.
     </div>
+  {:else if $clerkAuthStore.error}
+    <!-- Surface real Clerk failure modes (invalid publishable key, paused
+         instance, origin not allowlisted, network blocked) instead of
+         hanging on an indefinite spinner. -->
+    <div class="space-y-3 rounded-md border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">
+      <p class="font-medium">Sign-in couldn&apos;t load.</p>
+      <p class="text-rose-100/80">{$clerkAuthStore.error}</p>
+      <button
+        type="button"
+        class="inline-flex h-9 items-center rounded-md border border-rose-300/30 bg-rose-500/10 px-3 text-xs font-medium text-rose-100 transition hover:border-rose-200/50 hover:bg-rose-500/20"
+        on:click={() => (browser ? window.location.reload() : null)}
+      >
+        Retry
+      </button>
+    </div>
   {:else}
     <div bind:this={mountNode} class="hf-clerk-mount" data-mounted={mounted}></div>
     {#if !mounted}
