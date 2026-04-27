@@ -311,6 +311,8 @@
 
         <div class="divide-y divide-slate-700">
           {#each filteredPayouts as payout (payout.id)}
+            {@const submissionExists =
+              payout.submissionId != null && existingSubmissionIds.has(payout.submissionId)}
             <article class="grid gap-3 p-4 lg:grid-cols-[minmax(180px,1fr)_150px_130px_120px_120px_220px] lg:items-center">
               <div>
                 <h2 class="font-semibold text-slate-100">{payout.program}</h2>
@@ -345,8 +347,6 @@
                   </button>
                 {/if}
 
-                {@const submissionExists =
-                  payout.submissionId != null && existingSubmissionIds.has(payout.submissionId)}
                 <button
                   type="button"
                   class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md transition {submissionExists
