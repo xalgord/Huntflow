@@ -98,10 +98,13 @@
       if (targetFilter !== 'all' && s.targetId !== targetFilter) return false;
       const search = query.trim().toLowerCase();
       if (!search) return true;
+      // `tags` may be undefined on submissions migrated from legacy payouts
+      // or older schemas — guard before calling `.some`.
+      const tags = s.tags ?? [];
       return (
         s.title.toLowerCase().includes(search) ||
         (s.vulnerabilityType ?? '').toLowerCase().includes(search) ||
-        s.tags.some((tag) => tag.toLowerCase().includes(search))
+        tags.some((tag) => tag.toLowerCase().includes(search))
       );
     })
     .sort((a, b) => (b.submittedAt ?? b.updatedAt) - (a.submittedAt ?? a.updatedAt));
@@ -313,9 +316,9 @@
                   <p class="text-sm text-slate-400 line-clamp-2">{submission.notes}</p>
                 {/if}
 
-                {#if submission.tags.length > 0}
+                {#if (submission.tags ?? []).length > 0}
                   <div class="flex flex-wrap gap-1">
-                    {#each submission.tags as tag}
+                    {#each submission.tags ?? [] as tag}
                       <span class="rounded-md border border-slate-700 bg-slate-850 px-1.5 py-0.5 text-[11px] text-slate-400">{tag}</span>
                     {/each}
                   </div>

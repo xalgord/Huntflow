@@ -159,10 +159,13 @@
       return (b.lastSessionAt ?? b.updatedAt) - (a.lastSessionAt ?? a.updatedAt);
     });
   $: activeSession = $timerStore.sessionId ? $sessionStore.find((session) => session.id === $timerStore.sessionId) : undefined;
+  // Resolution order: the live timer's target → the highest-priority active
+  // target → undefined. Previously this fell through to `$targetStore[0]`,
+  // which happily surfaced an archived/closed target on the dashboard when
+  // the user had no active programs left.
   $: activeTarget =
     (activeSession ? $targetStore.find((target) => target.id === activeSession.targetId) : undefined) ??
-    activeTargets[0] ??
-    $targetStore[0];
+    activeTargets[0];
   $: targetNotes = activeTarget ? $noteStore.filter((note) => note.targetId === activeTarget.id) : $noteStore;
   $: targetReconAssets = activeTarget
     ? $reconAssetStore.filter((asset) => asset.targetId === activeTarget.id)

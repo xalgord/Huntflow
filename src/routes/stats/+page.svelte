@@ -21,7 +21,8 @@
   import { onMount } from 'svelte';
 
   let templates: NoteTemplate[] = [];
-  let weekTrend: 'up' | 'down' | 'flat' = 'flat';
+  // weekTrend is derived from the reactive block below — no top-level `let`
+  // needed; Svelte will infer the binding from the `$:` assignment.
 
   function localDateKey(date: Date): string {
     const year = date.getFullYear();
@@ -66,12 +67,17 @@
       { label: 'Evening', hours: [18, 19, 20, 21, 22, 23] },
       { label: 'Night', hours: [0, 1, 2, 3, 4, 5] }
     ];
-    return windows
+    const ranked = windows
       .map((window) => ({
         label: window.label,
         count: window.hours.reduce((sum, hour) => sum + (byHour[hour] ?? 0), 0)
       }))
-      .sort((a, b) => b.count - a.count)[0]?.label ?? 'No pattern';
+      .sort((a, b) => b.count - a.count);
+    // Without this guard the function used to claim "Morning" was the most
+    // active window even when the user had zero completed sessions — every
+    // bucket scored 0 and the array order won.
+    if (!ranked[0] || ranked[0].count === 0) return 'No pattern';
+    return ranked[0].label;
   }
 
   function daysSinceLastCompleted(sessions: Session[]): number | null {

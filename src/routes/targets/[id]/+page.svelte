@@ -23,6 +23,7 @@
   } from '$lib/stores';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
+  import { deleteTargetCascade, previewTargetCascade } from '$lib/utils/cascade';
 
   const statusPipeline: TargetStatus[] = ['recon', 'testing', 'reported', 'paid', 'closed', 'archived'];
   const statusLabels: Record<TargetStatus, string> = {
@@ -102,8 +103,26 @@
 
   async function deleteTarget() {
     if (!target) return;
-    if (!confirm('Delete this target and all related sessions and notes?')) return;
-    await targetStore.delete(target.id);
+    // Build a real preview so the user knows the blast radius — the previous
+    // copy promised cascading deletes but the implementation only removed
+    // the target row, leaving sessions/notes/submissions/etc. orphaned.
+    const preview = previewTargetCascade(target.id);
+    const lines = [
+      `Permanently delete "${target.name}"?`,
+      '',
+      `This will also remove:`,
+      `  · ${preview.sessions} session${preview.sessions === 1 ? '' : 's'}`,
+      `  · ${preview.notes} note${preview.notes === 1 ? '' : 's'}`,
+      `  · ${preview.reconAssets} recon asset${preview.reconAssets === 1 ? '' : 's'}`,
+      `  · ${preview.evidenceAssets} evidence asset${preview.evidenceAssets === 1 ? '' : 's'} (incl. files)`,
+      `  · ${preview.checklistInstances} checklist${preview.checklistInstances === 1 ? '' : 's'}`,
+      `  · ${preview.submissions} submission${preview.submissions === 1 ? '' : 's'}`,
+      `  · ${preview.payouts} payout${preview.payouts === 1 ? '' : 's'}`,
+      '',
+      'This cannot be undone.'
+    ];
+    if (!confirm(lines.join('\n'))) return;
+    await deleteTargetCascade(target.id);
     await goto('/targets');
   }
 
@@ -327,7 +346,7 @@
         <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 class="text-lg font-semibold text-red-400">Danger Zone</h2>
-            <p class="mt-1 text-sm text-red-300/80">Deleting cascades to related sessions and notes.</p>
+            <p class="mt-1 text-sm text-red-300/80">Deletion cascades to sessions, notes, recon, evidence, checklists, submissions, and payouts attached to this target.</p>
           </div>
           <button
             type="button"
