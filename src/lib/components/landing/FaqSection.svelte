@@ -47,7 +47,7 @@
     {
       question: 'Is there a self-hosted Pro option?',
       answer:
-        'Self-host coming Q3 — bring your own Convex deployment and you can run sync without our infrastructure. Email hello@huntflow.app if you want early access.'
+        'Self-host coming Q3 — bring your own Convex deployment and you can run sync without our infrastructure. Use the contact form below or email <a href="mailto:huntflow@xalgorix.com" class="text-primary-300 underline-offset-4 hover:underline">huntflow@xalgorix.com</a> if you want early access.'
     }
   ];
 
@@ -64,7 +64,10 @@
       <p class="hf-eyebrow">FAQ</p>
       <h2 class="mt-2 text-3xl font-bold leading-tight text-slate-100 sm:text-4xl">Things people ask before they install.</h2>
       <p class="mt-3 text-sm leading-6 text-slate-400">
-        Still have questions? Email <a href="mailto:hello@huntflow.app" class="text-primary-300 underline-offset-4 hover:underline">hello@huntflow.app</a>.
+        Still have questions? Use the
+        <a href="#contact" class="text-primary-300 underline-offset-4 hover:underline">contact form below</a>
+        or email
+        <a href="mailto:huntflow@xalgorix.com" class="text-primary-300 underline-offset-4 hover:underline">huntflow@xalgorix.com</a>.
       </p>
     </div>
 
@@ -88,7 +91,8 @@
           </button>
           {#if isOpen}
             <div id="faq-panel-{index}" class="px-5 pb-5 text-sm leading-6 text-slate-400">
-              {faq.answer}
+              <!-- Answers are author-controlled (no user input) so HTML is safe to render. -->
+              {@html faq.answer}
             </div>
           {/if}
         </li>

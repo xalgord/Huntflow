@@ -70,7 +70,28 @@ export async function initClerk(): Promise<ClerkInstance | null> {
     try {
       const { Clerk } = await import('@clerk/clerk-js');
       const clerk = new Clerk(publishableKey);
-      await clerk.load();
+
+      // clerk.load() can hang silently when the publishable key is invalid,
+      // the instance is paused, or the origin isn't allowlisted on a Clerk
+      // production instance. Race it against a 12s timeout so the auth pages
+      // can surface a real error instead of an indefinite "Loading..." state.
+      const LOAD_TIMEOUT_MS = 12_000;
+      await Promise.race([
+        clerk.load(),
+        new Promise<never>((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  `Clerk did not finish loading within ${LOAD_TIMEOUT_MS / 1000}s. ` +
+                    'Check that VITE_CLERK_PUBLISHABLE_KEY matches your active instance and that ' +
+                    `${typeof window !== 'undefined' ? window.location.origin : 'this origin'} is allowed in Clerk → Domains.`
+                )
+              ),
+            LOAD_TIMEOUT_MS
+          )
+        )
+      ]);
 
       if (!listenerAttached) {
         clerk.addListener(() => {
@@ -93,11 +114,15 @@ export async function initClerk(): Promise<ClerkInstance | null> {
       return clerk;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Clerk failed to initialize.';
+      console.error('[v0] Clerk init failed:', message);
       clerkAuthStore.update((state) => ({
         ...state,
         loading: false,
         error: message
       }));
+      // Reset cached promise so a future call (e.g. user retry) can try again
+      // from scratch instead of replaying the same rejection forever.
+      clerkPromise = null;
       return null;
     }
   })();
