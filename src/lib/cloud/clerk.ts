@@ -1,16 +1,21 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
-// Static import (not dynamic). `@clerk/clerk-js@6` ships UI components as a
-// lazy sub-chunk and the dynamic-import path has a known race where
-// `clerk.load()` can resolve before the UI components chunk is registered,
-// causing `mountSignIn/mountSignUp/mountPricingTable` to throw
-// "Clerk was not loaded with UI components". Importing statically forces
-// Vite to bundle the UI components alongside Clerk core, guaranteeing they
-// are ready by the time `clerk.load()` resolves.
-import { Clerk } from '@clerk/clerk-js';
+// Type-only import — the runtime instance is loaded from Clerk's CDN below.
+// This avoids Vite's chunk-splitting of clerk-js@6, which silently drops the
+// side-effect that registers `componentControls` onto the Clerk instance
+// when UI components load as separate chunks. With the CDN approach, a
+// single self-contained bundle (including UI) is served from the Frontend
+// API host, so `mountSignIn/mountSignUp/mountPricingTable` always work.
+import type { Clerk as ClerkClass } from '@clerk/clerk-js';
 import { configureConvexAuth } from './convex';
 
-type ClerkInstance = Clerk;
+type ClerkInstance = ClerkClass;
+
+declare global {
+  interface Window {
+    Clerk?: ClerkInstance;
+  }
+}
 
 export interface ClerkAuthState {
   configured: boolean;
@@ -24,6 +29,7 @@ export interface ClerkAuthState {
 }
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
+const frontendApiUrl = import.meta.env.VITE_CLERK_FRONTEND_API_URL as string | undefined;
 const redirectUrl = typeof window !== 'undefined' ? window.location.href : '/settings';
 
 const initialState: ClerkAuthState = {
@@ -62,6 +68,82 @@ function updateState(clerk: ClerkInstance | null, patch: Partial<ClerkAuthState>
   }));
 }
 
+// Load Clerk from the Frontend API CDN as a single self-contained script.
+// Clerk's CDN-hosted bundle ships UI components and core in one file, so
+// `mountSignIn` / `mountSignUp` / `mountPricingTable` work without the
+// chunk-splitting issues that affect npm-bundled clerk-js@6 under Vite.
+// The script auto-instantiates `window.Clerk` using the publishable key
+// passed via `data-clerk-publishable-key`.
+async function loadClerkFromCDN(
+  pk: string,
+  fapi: string | undefined
+): Promise<ClerkInstance> {
+  if (window.Clerk) return window.Clerk;
+
+  // Derive Frontend API host from the publishable key when env var isn't set.
+  // Clerk publishable keys encode the host as a base64-decoded payload after
+  // the `pk_test_` / `pk_live_` prefix, e.g.
+  // `pk_test_bm90YWJsZS10b3VjYW4tNTEuY2xlcmsuYWNjb3VudHMuZGV2JA` decodes to
+  // `notable-toucan-51.clerk.accounts.dev$`.
+  let host = fapi?.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  if (!host) {
+    try {
+      const payload = pk.split('_').pop() ?? '';
+      host = atob(payload).replace(/\$$/, '');
+    } catch {
+      throw new Error(
+        'Could not determine Clerk Frontend API host. Set VITE_CLERK_FRONTEND_API_URL.'
+      );
+    }
+  }
+  if (!host) {
+    throw new Error(
+      'VITE_CLERK_FRONTEND_API_URL is required to load Clerk from the CDN.'
+    );
+  }
+
+  return new Promise((resolve, reject) => {
+    const existing = document.querySelector<HTMLScriptElement>(
+      'script[data-clerk-script="huntflow"]'
+    );
+    const script = existing ?? document.createElement('script');
+    script.async = true;
+    script.crossOrigin = 'anonymous';
+    script.src = `https://${host}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
+    script.setAttribute('data-clerk-publishable-key', pk);
+    script.setAttribute('data-clerk-script', 'huntflow');
+    script.addEventListener(
+      'load',
+      () => {
+        if (window.Clerk) {
+          resolve(window.Clerk);
+        } else {
+          reject(
+            new Error(
+              'Clerk CDN script loaded but window.Clerk is undefined. ' +
+                'Check that the publishable key matches the Frontend API host.'
+            )
+          );
+        }
+      },
+      { once: true }
+    );
+    script.addEventListener(
+      'error',
+      () => {
+        reject(
+          new Error(
+            `Failed to load Clerk from https://${host}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js. ` +
+              'Check that VITE_CLERK_FRONTEND_API_URL is correct and reachable.'
+          )
+        );
+      },
+      { once: true }
+    );
+    if (!existing) document.head.appendChild(script);
+  });
+}
+
 export async function initClerk(): Promise<ClerkInstance | null> {
   if (!browser || !publishableKey) {
     clerkAuthStore.update((state) => ({
@@ -76,7 +158,7 @@ export async function initClerk(): Promise<ClerkInstance | null> {
 
   clerkPromise = (async () => {
     try {
-      const clerk = new Clerk(publishableKey);
+      const clerk = await loadClerkFromCDN(publishableKey, frontendApiUrl);
 
       // clerk.load() can hang silently when the publishable key is invalid,
       // the instance is paused, or the origin isn't allowlisted on a Clerk
