@@ -32,9 +32,22 @@ export interface ReportFields {
   vulnerabilityType: string;
   references: string;
   rawNotes: string;
+  cvssVector?: string;
+  cvssScore?: number;
 }
 
-export type ReportFieldKey = keyof ReportFields;
+export type ReportFieldKey =
+  | 'title'
+  | 'severity'
+  | 'summary'
+  | 'reproductionSteps'
+  | 'impact'
+  | 'proofOfConcept'
+  | 'remediation'
+  | 'affectedAsset'
+  | 'vulnerabilityType'
+  | 'references'
+  | 'rawNotes';
 
 export interface ReportDraft {
   platform: ReportPlatform;
@@ -227,7 +240,9 @@ export function createEmptyReportFields(): ReportFields {
     affectedAsset: '',
     vulnerabilityType: '',
     references: '',
-    rawNotes: ''
+    rawNotes: '',
+    cvssVector: '',
+    cvssScore: undefined
   };
 }
 
@@ -321,6 +336,11 @@ export function renderReportMarkdown(template: ReportTemplate, fields: ReportFie
     if (section.id === 'title') {
       lines.push(`# ${value || 'Untitled Report'}`);
       lines.push('');
+      const cvssLine = formatCvssMetadata(fields);
+      if (cvssLine) {
+        lines.push(cvssLine);
+        lines.push('');
+      }
       continue;
     }
 
@@ -478,6 +498,18 @@ function formatSectionValue(section: ReportSection, value: string): string {
 function formatSeverity(severity: ReportSeverity): string {
   if (severity === 'informational') return 'Informational';
   return `${severity.charAt(0).toUpperCase()}${severity.slice(1)}`;
+}
+
+function formatCvssMetadata(fields: ReportFields): string {
+  const parts: string[] = [];
+  if (fields.severity) parts.push(`**Severity:** ${formatSeverity(fields.severity)}`);
+  if (typeof fields.cvssScore === 'number' && Number.isFinite(fields.cvssScore)) {
+    parts.push(`**CVSS:** ${fields.cvssScore.toFixed(1)}`);
+  }
+  if (fields.cvssVector && fields.cvssVector.trim()) {
+    parts.push(`**Vector:** \`${fields.cvssVector.trim()}\``);
+  }
+  return parts.length > 0 ? parts.join(' · ') : '';
 }
 
 function resolveFieldFromHeading(heading: string): ReportFieldKey | null {

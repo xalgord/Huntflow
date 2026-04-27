@@ -1,20 +1,45 @@
 import { browser } from '$app/environment';
 import { uploadEvidenceAssetFile } from '$lib/cloud/assets';
+import { bookmarkDB } from '$lib/db/bookmarks';
+import { checklistInstanceDB, checklistTemplateDB } from '$lib/db/checklists';
 import { evidenceAssetDB, evidenceBlobDB, evidenceCanvasViewDB, evidenceLinkDB } from '$lib/db/evidence';
 import { noteDB } from '$lib/db/notes';
+import { payloadDB } from '$lib/db/payloads';
 import { payoutDB } from '$lib/db/payouts';
+import { reconAssetDB } from '$lib/db/recon';
 import { sessionDB } from '$lib/db/sessions';
+import { submissionDB } from '$lib/db/submissions';
 import { targetDB } from '$lib/db/targets';
 import {
+  bookmarkStore,
+  checklistInstanceStore,
+  checklistTemplateStore,
   evidenceAssetStore,
   evidenceCanvasViewStore,
   evidenceLinkStore,
   noteStore,
+  payloadStore,
   payoutStore,
+  reconAssetStore,
   sessionStore,
+  submissionStore,
   targetStore
 } from '$lib/stores';
-import type { EvidenceAsset, EvidenceCanvasView, EvidenceLink, Note, Payout, Session, Target } from '$lib/types';
+import type {
+  Bookmark,
+  ChecklistInstance,
+  ChecklistTemplate,
+  EvidenceAsset,
+  EvidenceCanvasView,
+  EvidenceLink,
+  Note,
+  Payload,
+  Payout,
+  ReconAsset,
+  Session,
+  Submission,
+  Target
+} from '$lib/types';
 import { cloudApi, cloudConfigured, getConvexClient } from './convex';
 
 export type SyncCollection =
@@ -24,12 +49,33 @@ export type SyncCollection =
   | 'payouts'
   | 'evidenceAssets'
   | 'evidenceLinks'
-  | 'evidenceCanvasViews';
+  | 'evidenceCanvasViews'
+  | 'reconAssets'
+  | 'payloads'
+  | 'checklistTemplates'
+  | 'checklistInstances'
+  | 'submissions'
+  | 'bookmarks';
+
+type SyncPayload =
+  | Session
+  | Note
+  | Target
+  | Payout
+  | EvidenceAsset
+  | EvidenceLink
+  | EvidenceCanvasView
+  | ReconAsset
+  | Payload
+  | ChecklistTemplate
+  | ChecklistInstance
+  | Submission
+  | Bookmark;
 
 export interface SyncItem {
   collection: SyncCollection;
   localId: string;
-  payload: Session | Note | Target | Payout | EvidenceAsset | EvidenceLink | EvidenceCanvasView;
+  payload: SyncPayload;
   updatedAt: number;
 }
 
@@ -57,21 +103,11 @@ function sessionUpdatedAt(session: Session): number {
   return session.endedAt ?? session.startedAt;
 }
 
-function toSyncItem(collection: 'sessions', item: Session): SyncItem;
-function toSyncItem(collection: 'notes', item: Note): SyncItem;
-function toSyncItem(collection: 'targets', item: Target): SyncItem;
-function toSyncItem(collection: 'payouts', item: Payout): SyncItem;
-function toSyncItem(collection: 'evidenceAssets', item: EvidenceAsset): SyncItem;
-function toSyncItem(collection: 'evidenceLinks', item: EvidenceLink): SyncItem;
-function toSyncItem(collection: 'evidenceCanvasViews', item: EvidenceCanvasView): SyncItem;
-function toSyncItem(
-  collection: SyncCollection,
-  item: Session | Note | Target | Payout | EvidenceAsset | EvidenceLink | EvidenceCanvasView
-): SyncItem {
+function toSyncItem(collection: SyncCollection, item: SyncPayload): SyncItem {
   const updatedAt =
     collection === 'sessions'
       ? sessionUpdatedAt(item as Session)
-      : (item as Note | Target | Payout | EvidenceAsset | EvidenceLink | EvidenceCanvasView).updatedAt;
+      : (item as { updatedAt: number }).updatedAt;
 
   return {
     collection,
@@ -81,6 +117,22 @@ function toSyncItem(
   };
 }
 
+const KNOWN_COLLECTIONS: SyncCollection[] = [
+  'sessions',
+  'notes',
+  'targets',
+  'payouts',
+  'evidenceAssets',
+  'evidenceLinks',
+  'evidenceCanvasViews',
+  'reconAssets',
+  'payloads',
+  'checklistTemplates',
+  'checklistInstances',
+  'submissions',
+  'bookmarks'
+];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -88,22 +140,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 function normalizeRemoteItem(value: unknown): SyncItem | null {
   if (!isRecord(value)) return null;
   const { collection, localId, payload, updatedAt } = value;
-  if (
-    collection !== 'sessions' &&
-    collection !== 'notes' &&
-    collection !== 'targets' &&
-    collection !== 'payouts' &&
-    collection !== 'evidenceAssets' &&
-    collection !== 'evidenceLinks' &&
-    collection !== 'evidenceCanvasViews'
-  ) {
+  if (typeof collection !== 'string' || !KNOWN_COLLECTIONS.includes(collection as SyncCollection)) {
     return null;
   }
   if (typeof localId !== 'string' || !isRecord(payload) || typeof updatedAt !== 'number') return null;
   if (payload.id !== localId) return null;
 
   return {
-    collection,
+    collection: collection as SyncCollection,
     localId,
     payload: payload as unknown as SyncItem['payload'],
     updatedAt
@@ -111,16 +155,35 @@ function normalizeRemoteItem(value: unknown): SyncItem | null {
 }
 
 async function getLocalItems(): Promise<SyncItem[]> {
-  const [sessions, notes, targets, payouts, evidenceAssets, evidenceLinks, evidenceCanvasViews] =
-    await Promise.all([
-      sessionDB.getAll(),
-      noteDB.getAll(),
-      targetDB.getAll(),
-      payoutDB.getAll(),
-      evidenceAssetDB.getAll(),
-      evidenceLinkDB.getAll(),
-      evidenceCanvasViewDB.getAll()
-    ]);
+  const [
+    sessions,
+    notes,
+    targets,
+    payouts,
+    evidenceAssets,
+    evidenceLinks,
+    evidenceCanvasViews,
+    reconAssets,
+    payloads,
+    checklistTemplates,
+    checklistInstances,
+    submissions,
+    bookmarks
+  ] = await Promise.all([
+    sessionDB.getAll(),
+    noteDB.getAll(),
+    targetDB.getAll(),
+    payoutDB.getAll(),
+    evidenceAssetDB.getAll(),
+    evidenceLinkDB.getAll(),
+    evidenceCanvasViewDB.getAll(),
+    reconAssetDB.getAll(),
+    payloadDB.getAll(),
+    checklistTemplateDB.getAll(),
+    checklistInstanceDB.getAll(),
+    submissionDB.getAll(),
+    bookmarkDB.getAll()
+  ]);
 
   return [
     ...sessions.map((item) => toSyncItem('sessions', item)),
@@ -129,7 +192,13 @@ async function getLocalItems(): Promise<SyncItem[]> {
     ...payouts.map((item) => toSyncItem('payouts', item)),
     ...evidenceAssets.map((item) => toSyncItem('evidenceAssets', item)),
     ...evidenceLinks.map((item) => toSyncItem('evidenceLinks', item)),
-    ...evidenceCanvasViews.map((item) => toSyncItem('evidenceCanvasViews', item))
+    ...evidenceCanvasViews.map((item) => toSyncItem('evidenceCanvasViews', item)),
+    ...reconAssets.map((item) => toSyncItem('reconAssets', item)),
+    ...payloads.map((item) => toSyncItem('payloads', item)),
+    ...checklistTemplates.map((item) => toSyncItem('checklistTemplates', item)),
+    ...checklistInstances.map((item) => toSyncItem('checklistInstances', item)),
+    ...submissions.map((item) => toSyncItem('submissions', item)),
+    ...bookmarks.map((item) => toSyncItem('bookmarks', item))
   ];
 }
 
@@ -183,27 +252,25 @@ function mergeItems(localItems: SyncItem[], remoteItems: SyncItem[]): SyncItem[]
 }
 
 async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {
-  const sessions = items
-    .filter((item) => item.collection === 'sessions')
-    .map((item) => item.payload as Session);
-  const notes = items
-    .filter((item) => item.collection === 'notes')
-    .map((item) => item.payload as Note);
-  const targets = items
-    .filter((item) => item.collection === 'targets')
-    .map((item) => item.payload as Target);
-  const payouts = items
-    .filter((item) => item.collection === 'payouts')
-    .map((item) => item.payload as Payout);
-  const evidenceAssets = items
-    .filter((item) => item.collection === 'evidenceAssets')
-    .map((item) => item.payload as EvidenceAsset);
-  const evidenceLinks = items
-    .filter((item) => item.collection === 'evidenceLinks')
-    .map((item) => item.payload as EvidenceLink);
-  const evidenceCanvasViews = items
-    .filter((item) => item.collection === 'evidenceCanvasViews')
-    .map((item) => item.payload as EvidenceCanvasView);
+  function pickPayloads<T>(collection: SyncCollection): T[] {
+    return items
+      .filter((item) => item.collection === collection)
+      .map((item) => item.payload as T);
+  }
+
+  const sessions = pickPayloads<Session>('sessions');
+  const notes = pickPayloads<Note>('notes');
+  const targets = pickPayloads<Target>('targets');
+  const payouts = pickPayloads<Payout>('payouts');
+  const evidenceAssets = pickPayloads<EvidenceAsset>('evidenceAssets');
+  const evidenceLinks = pickPayloads<EvidenceLink>('evidenceLinks');
+  const evidenceCanvasViews = pickPayloads<EvidenceCanvasView>('evidenceCanvasViews');
+  const reconAssets = pickPayloads<ReconAsset>('reconAssets');
+  const payloads = pickPayloads<Payload>('payloads');
+  const checklistTemplates = pickPayloads<ChecklistTemplate>('checklistTemplates');
+  const checklistInstances = pickPayloads<ChecklistInstance>('checklistInstances');
+  const submissions = pickPayloads<Submission>('submissions');
+  const bookmarks = pickPayloads<Bookmark>('bookmarks');
 
   await Promise.all([
     sessionDB.putBatch(sessions),
@@ -212,7 +279,13 @@ async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {
     payoutDB.putBatch(payouts),
     evidenceAssetDB.putBatch(evidenceAssets),
     evidenceLinkDB.putBatch(evidenceLinks),
-    evidenceCanvasViewDB.putBatch(evidenceCanvasViews)
+    evidenceCanvasViewDB.putBatch(evidenceCanvasViews),
+    reconAssetDB.putBatch(reconAssets),
+    payloadDB.putBatch(payloads),
+    checklistTemplateDB.putBatch(checklistTemplates),
+    checklistInstanceDB.putBatch(checklistInstances),
+    submissionDB.putBatch(submissions),
+    bookmarkDB.putBatch(bookmarks)
   ]);
 
   await Promise.all([
@@ -222,7 +295,13 @@ async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {
     payoutStore.refresh(),
     evidenceAssetStore.refresh(),
     evidenceLinkStore.refresh(),
-    evidenceCanvasViewStore.refresh()
+    evidenceCanvasViewStore.refresh(),
+    reconAssetStore.refresh(),
+    payloadStore.refresh(),
+    checklistTemplateStore.refresh(),
+    checklistInstanceStore.refresh(),
+    submissionStore.refresh(),
+    bookmarkStore.refresh()
   ]);
 }
 
