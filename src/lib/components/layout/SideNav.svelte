@@ -1,8 +1,9 @@
 <script lang="ts">
-  import { Crosshair, PanelLeftClose, PanelLeftOpen, Search, UserRound } from 'lucide-svelte';
+  import { Crosshair, Keyboard, PanelLeftClose, PanelLeftOpen, Search, UserRound } from 'lucide-svelte';
   import { clerkAuthStore } from '$lib/cloud/clerk';
   import { cloudConfigured } from '$lib/cloud/convex';
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
+  import { shortcutsHelpStore } from '$lib/utils/shortcuts';
   import NavItem from './NavItem.svelte';
   import { navItems } from './navItems';
 
@@ -104,6 +105,28 @@
         />
       {/each}
     </nav>
+
+    <div class="px-3">
+      <button
+        type="button"
+        class="flex w-full items-center gap-2 rounded-[14px] px-2.5 py-2 text-xs text-muted-foreground transition hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 {collapsed
+          ? 'justify-center'
+          : ''}"
+        aria-label="Show keyboard shortcuts"
+        title="Keyboard shortcuts (?)"
+        on:click={() => shortcutsHelpStore.set(true)}
+      >
+        <Keyboard size={14} aria-hidden="true" class="shrink-0" />
+        {#if !collapsed}
+          <span class="flex-1 truncate text-left">Keyboard shortcuts</span>
+          <kbd
+            class="rounded-md border border-border/70 bg-background/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground shadow-inner-line"
+          >
+            ?
+          </kbd>
+        {/if}
+      </button>
+    </div>
 
     {#if !collapsed}
       <a

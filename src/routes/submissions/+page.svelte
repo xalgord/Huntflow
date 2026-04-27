@@ -1,9 +1,12 @@
 <script lang="ts">
+  import SlaIndicator from '$lib/components/submissions/SlaIndicator.svelte';
   import SubmissionForm from '$lib/components/submissions/SubmissionForm.svelte';
+  import WeeklyRecap from '$lib/components/submissions/WeeklyRecap.svelte';
   import PlatformIcon from '$lib/components/targets/PlatformIcon.svelte';
   import StatCard from '$lib/components/stats/StatCard.svelte';
   import {
     payoutStore,
+    sessionStore,
     submissionStore,
     targetStore
   } from '$lib/stores';
@@ -59,7 +62,13 @@
   let targetFilter = 'all';
 
   onMount(async () => {
-    await Promise.all([submissionStore.load(), targetStore.load(), payoutStore.load()]);
+    await Promise.all([
+      submissionStore.load(),
+      targetStore.load(),
+      payoutStore.load(),
+      // Sessions are needed for the WeeklyRecap focus-time aggregation.
+      sessionStore.load()
+    ]);
     const target = $page.url.searchParams.get('target');
     if (target) targetFilter = target;
     const action = $page.url.searchParams.get('new');
@@ -208,6 +217,8 @@
       />
     </section>
 
+    <WeeklyRecap submissions={$submissionStore} sessions={$sessionStore} />
+
     {#if showForm}
       <section class="hf-card p-4">
         <h2 class="mb-4 text-lg font-semibold text-slate-100">{editing ? 'Edit Submission' : 'New Submission'}</h2>
@@ -310,6 +321,7 @@
                       {money(submission.bountyAmount)}
                     </span>
                   {/if}
+                  <SlaIndicator {submission} />
                 </div>
 
                 {#if submission.notes}

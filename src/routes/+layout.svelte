@@ -3,6 +3,7 @@
   import { page } from '$app/stores';
   import BottomNav from '$lib/components/layout/BottomNav.svelte';
   import CommandPalette from '$lib/components/command/CommandPalette.svelte';
+  import KeyboardShortcutsHelp from '$lib/components/KeyboardShortcutsHelp.svelte';
   import MobileHeader from '$lib/components/layout/MobileHeader.svelte';
   import OnboardingModal from '$lib/components/onboarding/OnboardingModal.svelte';
   import PageTransition from '$lib/components/layout/PageTransition.svelte';
@@ -11,6 +12,7 @@
   import OfflineBanner from '$lib/components/pwa/OfflineBanner.svelte';
   import { flushAllStores, settingsStore } from '$lib/stores';
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
+  import { installGlobalShortcuts } from '$lib/utils/shortcuts';
   import { onMount } from 'svelte';
   import '../app.css';
 
@@ -89,6 +91,11 @@
         commandPaletteStore.open();
       };
       window.addEventListener('keydown', handleSlash);
+
+      // Two-key navigation sequences (g d, g t, g r, …), `c` for create,
+      // and `?` for the help cheatsheet. Reads pathname lazily so the `c`
+      // shortcut always knows the current route.
+      installGlobalShortcuts(() => $page.url.pathname);
     }
   });
 
@@ -147,4 +154,5 @@
 
 {#if !isLanding}
   <CommandPalette />
+  <KeyboardShortcutsHelp />
 {/if}
