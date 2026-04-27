@@ -27,6 +27,19 @@
   onMount(async () => {
     if (!browser) return;
     try {
+      // Mark this browser tab as a demo session BEFORE seeding so the
+      // auth gate in +layout.svelte lets the user navigate freely between
+      // app screens without being bounced to /sign-in. Stored in
+      // sessionStorage so it auto-clears when the tab closes — Clerk
+      // remains the source of truth for any tab the user opens later.
+      try {
+        sessionStorage.setItem('huntflow-demo-mode', '1');
+      } catch {
+        // Private-mode / disabled storage: the demo will still seed
+        // IndexedDB, but the auth gate will redirect to /sign-in if Clerk
+        // is configured. Surface a clearer error in that case below.
+      }
+
       await loadDemoWorkspace();
       await settingsStore.setValue('onboardingCompleted', true);
       status = 'redirecting';
