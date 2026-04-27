@@ -72,6 +72,11 @@
     completionSessionId = $timerStore.sessionId;
     completionRemainingMs = $timerStore.remainingMs;
     completionModalOpen = true;
+    // Persist the session as completed up-front so a tab close before the
+    // user fills in the Save modal still records the run. The modal then
+    // enriches the row with quickNote + tags rather than being the only
+    // path to mark it complete.
+    void persistCompletionEarly($timerStore.sessionId);
     if (soundPlayedForSessionId !== $timerStore.sessionId) {
       soundPlayedForSessionId = $timerStore.sessionId;
       playCompleteSound();
@@ -163,6 +168,30 @@
     timerStore.complete();
   }
 
+  // Mark the session as `completed` in IndexedDB the moment the timer rings,
+  // before the user interacts with the Save modal. Idempotent: skips if the
+  // session is already saved as completed/abandoned. Survives tab close.
+  async function persistCompletionEarly(sessionId: string): Promise<void> {
+    const session = sessionStore.getById(sessionId);
+    if (!session) return;
+    if (session.status === 'completed' || session.status === 'abandoned') return;
+
+    const remainingMs = $timerStore.remainingMs;
+    const actualSeconds =
+      remainingMs > 0
+        ? Math.max(1, session.durationPlanned - Math.ceil(remainingMs / 1000))
+        : session.durationPlanned;
+
+    await sessionStore.put({
+      ...session,
+      status: 'completed',
+      durationActual: Math.min(actualSeconds, session.durationPlanned),
+      endedAt: Date.now()
+    });
+    await sessionStore.persistNow();
+    await updateTargetAfterCompletion(session.targetId, session.startedAt);
+  }
+
   async function abandonSession() {
     if (!activeSession) {
       timerStore.reset(durationSeconds() * 1000);
@@ -188,6 +217,8 @@
   async function saveCompletedSession(event: CustomEvent<{ quickNote?: string; tags: SessionTag[] }>) {
     if (!activeSession) return;
 
+    const wasAlreadyCompleted = activeSession.status === 'completed';
+
     const actualSeconds =
       completionRemainingMs > 0
         ? Math.max(1, activeSession.durationPlanned - Math.ceil(completionRemainingMs / 1000))
@@ -197,13 +228,18 @@
       ...activeSession,
       status: 'completed',
       durationActual: Math.min(actualSeconds, activeSession.durationPlanned),
-      endedAt: Date.now(),
+      endedAt: activeSession.endedAt ?? Date.now(),
       quickNote: event.detail.quickNote,
       tags: event.detail.tags
     };
 
     await sessionStore.put(completedSession);
-    await updateTargetAfterCompletion(completedSession.targetId, completedSession.startedAt);
+    await sessionStore.persistNow();
+    // Only bump the target's sessionCount if `persistCompletionEarly` didn't
+    // already do it. Otherwise saving via the modal would double-count.
+    if (!wasAlreadyCompleted) {
+      await updateTargetAfterCompletion(completedSession.targetId, completedSession.startedAt);
+    }
     timerStore.reset(durationSeconds() * 1000);
     completionModalOpen = false;
     completionSessionId = '';

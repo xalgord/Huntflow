@@ -8,7 +8,7 @@
   import SideNav from '$lib/components/layout/SideNav.svelte';
   import InstallPrompt from '$lib/components/pwa/InstallPrompt.svelte';
   import OfflineBanner from '$lib/components/pwa/OfflineBanner.svelte';
-  import { settingsStore } from '$lib/stores';
+  import { flushAllStores, settingsStore } from '$lib/stores';
   import { onMount } from 'svelte';
   import '../app.css';
 
@@ -29,6 +29,22 @@
       navCollapsed = localStorage.getItem('huntflow-side-nav-collapsed') === 'true';
       navReady = true;
       document.documentElement.dataset.huntflowReady = 'true';
+
+      // Drain debounced store writes (500ms timer) before the tab is unloaded
+      // so the latest session state, notes, recon edits, etc. always survive
+      // a quick close after an action. `pagehide` fires reliably on mobile
+      // Safari/Chrome where `beforeunload` does not.
+      const handleUnload = () => {
+        void flushAllStores();
+      };
+      window.addEventListener('pagehide', handleUnload);
+      window.addEventListener('beforeunload', handleUnload);
+      // Also flush when the page is just hidden (mobile app switch) so
+      // background-killed tabs don't lose recent edits.
+      const handleVisibility = () => {
+        if (document.visibilityState === 'hidden') void flushAllStores();
+      };
+      document.addEventListener('visibilitychange', handleVisibility);
     }
   });
 
