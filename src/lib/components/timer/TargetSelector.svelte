@@ -90,36 +90,37 @@
 
   {#if creating}
     <!--
-      The selector lives inside a 360px aside on lg+, so a 4-column inline grid
-      overflows the card. Stack Name on its own row, put Platform + Priority
-      side-by-side, and give Save its own full-width row.
+      The selector lives inside a 360px aside on lg+, so a horizontal 4-column
+      grid overflows the card and clips the Save button. Use a vertical flex
+      column with explicit w-full controls — bulletproof against any parent
+      grid-template propagation.
     -->
-    <div class="space-y-3 rounded-lg border border-border/70 bg-background/50 p-3 shadow-inner-line">
-      <label class="block">
+    <div class="flex flex-col gap-3 rounded-lg border border-border/70 bg-background/50 p-3 shadow-inner-line">
+      <label class="flex w-full flex-col gap-1">
         <span class="text-xs font-medium text-muted-foreground">Name</span>
         <input
           bind:value={name}
-          class="hf-input mt-1"
+          class="hf-input w-full"
           placeholder="Example Corp"
         />
       </label>
-      <div class="grid grid-cols-2 gap-3">
-        <label class="block min-w-0">
+      <div class="flex w-full gap-3">
+        <label class="flex min-w-0 flex-1 flex-col gap-1">
           <span class="text-xs font-medium text-muted-foreground">Platform</span>
           <select
             bind:value={platform}
-            class="hf-select mt-1"
+            class="hf-select w-full"
           >
             {#each platforms as item}
               <option value={item.value}>{item.label}</option>
             {/each}
           </select>
         </label>
-        <label class="block min-w-0">
+        <label class="flex min-w-0 flex-1 flex-col gap-1">
           <span class="text-xs font-medium text-muted-foreground">Priority</span>
           <select
             bind:value={priority}
-            class="hf-select mt-1"
+            class="hf-select w-full"
           >
             <option value={0}>P0</option>
             <option value={1}>P1</option>
@@ -130,7 +131,7 @@
       </div>
       <button
         type="button"
-        class="hf-button-primary w-full"
+        class="hf-button-primary w-full justify-center"
         on:click={createTarget}
       >
         Save
