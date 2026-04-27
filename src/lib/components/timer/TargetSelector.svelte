@@ -89,7 +89,12 @@
   {/if}
 
   {#if creating}
-    <div class="grid gap-3 rounded-lg border border-border/70 bg-background/50 p-3 shadow-inner-line sm:grid-cols-[1fr_160px_96px_auto]">
+    <!--
+      The selector lives inside a 360px aside on lg+, so a 4-column inline grid
+      overflows the card. Stack Name on its own row, put Platform + Priority
+      side-by-side, and give Save its own full-width row.
+    -->
+    <div class="space-y-3 rounded-lg border border-border/70 bg-background/50 p-3 shadow-inner-line">
       <label class="block">
         <span class="text-xs font-medium text-muted-foreground">Name</span>
         <input
@@ -98,40 +103,40 @@
           placeholder="Example Corp"
         />
       </label>
-      <label class="block">
-        <span class="text-xs font-medium text-muted-foreground">Platform</span>
-        <select
-          bind:value={platform}
-          class="hf-select mt-1"
-        >
-          {#each platforms as item}
-            <option value={item.value}>{item.label}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="block">
-        <span class="text-xs font-medium text-muted-foreground">Priority</span>
-        <select
-          bind:value={priority}
-          class="hf-select mt-1"
-        >
-          <option value={0}>P0</option>
-          <option value={1}>P1</option>
-          <option value={2}>P2</option>
-          <option value={3}>P3</option>
-        </select>
-      </label>
-      <div class="flex items-end">
-        <button
-          type="button"
-          class="hf-button-primary"
-          on:click={createTarget}
-        >
-          Save
-        </button>
+      <div class="grid grid-cols-2 gap-3">
+        <label class="block min-w-0">
+          <span class="text-xs font-medium text-muted-foreground">Platform</span>
+          <select
+            bind:value={platform}
+            class="hf-select mt-1"
+          >
+            {#each platforms as item}
+              <option value={item.value}>{item.label}</option>
+            {/each}
+          </select>
+        </label>
+        <label class="block min-w-0">
+          <span class="text-xs font-medium text-muted-foreground">Priority</span>
+          <select
+            bind:value={priority}
+            class="hf-select mt-1"
+          >
+            <option value={0}>P0</option>
+            <option value={1}>P1</option>
+            <option value={2}>P2</option>
+            <option value={3}>P3</option>
+          </select>
+        </label>
       </div>
+      <button
+        type="button"
+        class="hf-button-primary w-full"
+        on:click={createTarget}
+      >
+        Save
+      </button>
       {#if error}
-        <p class="text-xs text-red-300 sm:col-span-4">{error}</p>
+        <p class="text-xs text-red-300">{error}</p>
       {/if}
     </div>
   {/if}
