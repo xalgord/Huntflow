@@ -3,8 +3,6 @@
   "framework": "sveltekit",
   "buildCommand": "npm run build",
   "outputDirectory": "build",
-  "cleanUrls": true,
-  "trailingSlash": false,
   "redirects": [
     { "source": "/login", "destination": "/sign-in", "permanent": false },
     { "source": "/signup", "destination": "/sign-up", "permanent": false },
