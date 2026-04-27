@@ -62,6 +62,15 @@
     expandedSection = expandedSection === id ? null : id;
   }
 
+  // Extracted from an inline `on:blur` handler — Svelte's template parser
+  // rejects TS-only syntax like `as HTMLTextAreaElement` inside `{...}`
+  // expressions, so the cast must live in a script-block helper.
+  function handleNotesBlur(itemId: string, status: ChecklistItemStatus, event: Event) {
+    const target = event.target as HTMLTextAreaElement | null;
+    if (!target) return;
+    updateItem(itemId, status, target.value);
+  }
+
   function updateItem(itemId: string, status: ChecklistItemStatus, notes?: string) {
     const next: Record<string, ChecklistInstanceItemState> = { ...instance.itemStates };
     const existing = next[itemId];
@@ -204,7 +213,7 @@
                           class="hf-input mt-2 text-xs"
                           placeholder="Notes (e.g. payload, endpoint, evidence link)"
                           value={state?.notes ?? ''}
-                          on:blur={(e) => updateItem(item.id, status, (e.target as HTMLTextAreaElement).value)}
+                          on:blur={(e) => handleNotesBlur(item.id, status, e)}
                         ></textarea>
                       {/if}
                     </div>
