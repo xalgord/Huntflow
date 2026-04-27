@@ -12,23 +12,35 @@ const baseStore = createPersistedArrayStore<Payload>(payloadDB, {
 });
 
 let seeded = false;
+let seedingPromise: Promise<void> | null = null;
 
 async function ensureSeeded(): Promise<void> {
   if (seeded) return;
-  const items = await baseStore.load();
-  if (items.length === 0) {
-    await baseStore.set(BUILT_IN_PAYLOADS);
-    await baseStore.persistNow();
-  } else {
-    // Merge in any new built-ins added in app updates without overwriting user edits.
-    const existingIds = new Set(items.map((item) => item.id));
-    const missing = BUILT_IN_PAYLOADS.filter((seed) => !existingIds.has(seed.id));
-    if (missing.length > 0) {
-      await baseStore.putBatch(missing);
+  // Dedup concurrent callers so we never seed twice in parallel.
+  if (seedingPromise) return seedingPromise;
+
+  seedingPromise = (async () => {
+    const items = await baseStore.load();
+    if (items.length === 0) {
+      await baseStore.set(BUILT_IN_PAYLOADS);
       await baseStore.persistNow();
+    } else {
+      // Merge in any new built-ins added in app updates without overwriting user edits.
+      const existingIds = new Set(items.map((item) => item.id));
+      const missing = BUILT_IN_PAYLOADS.filter((seed) => !existingIds.has(seed.id));
+      if (missing.length > 0) {
+        await baseStore.putBatch(missing);
+        await baseStore.persistNow();
+      }
     }
+    seeded = true;
+  })();
+
+  try {
+    await seedingPromise;
+  } finally {
+    seedingPromise = null;
   }
-  seeded = true;
 }
 
 export const payloadStore = {
@@ -57,4 +69,6 @@ export async function recordPayloadUse(id: string): Promise<void> {
     lastUsedAt: Date.now(),
     updatedAt: Date.now()
   });
+  // Persist immediately so usage stats survive a quick tab close.
+  await baseStore.persistNow();
 }

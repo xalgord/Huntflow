@@ -13,9 +13,22 @@
   export let initialContent = '';
   export let initialFormat: 'raw' | 'curl' = 'raw';
 
+  export let allowInsert = false;
+
   const dispatch = createEventDispatcher<{
     change: { request: HttpRequest | null; raw: string; format: 'raw' | 'curl' };
+    insert: { markdown: string; raw: string; format: 'raw' | 'curl' };
   }>();
+
+  function handleInsert() {
+    if (!content.trim()) return;
+    const fence = format === 'curl' ? 'bash' : 'http';
+    const heading = parsed
+      ? `**${summarizeHttpRequest(parsed)}**`
+      : `**HTTP Request (${format})**`;
+    const markdown = `${heading}\n\n\`\`\`${fence}\n${content.trim()}\n\`\`\``;
+    dispatch('insert', { markdown, raw: content, format });
+  }
 
   let content = initialContent;
   let format: 'raw' | 'curl' = initialFormat;
@@ -111,6 +124,12 @@
       <Download size={14} aria-hidden="true" />
       Download
     </button>
+
+    {#if allowInsert}
+      <button type="button" class="hf-button-primary" disabled={!content.trim()} on:click={handleInsert}>
+        Insert into report
+      </button>
+    {/if}
 
     {#if parsed}
       <span class="op-mono ml-auto text-[11px] text-muted-foreground">

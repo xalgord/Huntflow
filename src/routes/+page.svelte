@@ -189,8 +189,7 @@
           : activeTarget
             ? `${platformLabels[activeTarget.platform]} scope queued — import recon assets`
             : 'Add a target to start the chain',
-      state:
-        activeTarget && targetReconCount > 0 ? 'done' : activeTarget ? 'active' : 'active',
+      state: activeTarget && targetReconCount > 0 ? 'done' : 'active',
       meta:
         activeTarget && targetReconCount > 0
           ? 'Recon mapped'

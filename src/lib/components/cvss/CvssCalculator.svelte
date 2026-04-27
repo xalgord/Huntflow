@@ -9,28 +9,51 @@
     severityColorClass,
     type CvssBaseMetrics
   } from '$lib/utils/cvss';
-  import type { CvssVector } from '$lib/types';
+  import type { CvssBaseSeverity } from '$lib/types';
   import { Check, Copy } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
 
-  export let initialVector: CvssVector | undefined = undefined;
+  /**
+   * Existing CVSS:3.1 vector string (e.g. "CVSS:3.1/AV:N/...") to seed the
+   * calculator. Ignored if it can't be parsed.
+   */
+  export let vector = '';
   export let compact = false;
 
-  const dispatch = createEventDispatcher<{ change: { vector: CvssVector } }>();
+  const dispatch = createEventDispatcher<{
+    change: { vector: string; score: number; severity: CvssBaseSeverity };
+  }>();
 
-  let metrics: CvssBaseMetrics = (() => {
-    if (initialVector) {
-      const parsed = parseCvssVector(initialVector.vectorString);
-      if (parsed) return parsed;
-    }
-    return { ...CVSS_DEFAULT_METRICS };
-  })();
+  function metricsFromVector(input: string): CvssBaseMetrics {
+    const parsed = parseCvssVector(input);
+    return parsed ?? { ...CVSS_DEFAULT_METRICS };
+  }
+
+  let metrics: CvssBaseMetrics = metricsFromVector(vector);
+  let lastEmittedString = '';
   let copied = false;
   let copyTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  $: vector = calculateCvss(metrics);
-  $: vectorString = buildVectorString(metrics);
-  $: dispatch('change', { vector });
+  // Keep metrics in sync if the parent provides a different vector at runtime
+  // (e.g. switching between drafts). We only re-parse on actual external change.
+  $: if (vector && vector !== buildVectorString(metrics)) {
+    const parsed = parseCvssVector(vector);
+    if (parsed) metrics = parsed;
+  }
+
+  $: cvss = calculateCvss(metrics);
+  $: vectorString = cvss.vectorString;
+
+  // Emit change after computation, but only when the resulting vector differs
+  // from the last emit to avoid feedback loops with the parent.
+  $: if (vectorString !== lastEmittedString) {
+    lastEmittedString = vectorString;
+    dispatch('change', {
+      vector: vectorString,
+      score: cvss.baseScore,
+      severity: cvss.baseSeverity
+    });
+  }
 
   const metricKeys: (keyof CvssBaseMetrics)[] = ['AV', 'AC', 'PR', 'UI', 'S', 'C', 'I', 'A'];
 
@@ -58,6 +81,12 @@
       metrics = parsed;
     }
   }
+
+  function handleVectorInput(event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    const parsed = parseCvssVector(value);
+    if (parsed) metrics = parsed;
+  }
 </script>
 
 <div class="space-y-4">
@@ -67,11 +96,11 @@
     <div>
       <p class="hf-eyebrow">CVSS 3.1 Base Score</p>
       <div class="mt-1 flex items-baseline gap-3">
-        <span class="op-mono text-4xl font-semibold text-foreground">{vector.baseScore.toFixed(1)}</span>
+        <span class="op-mono text-4xl font-semibold text-foreground">{cvss.baseScore.toFixed(1)}</span>
         <span
-          class="inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] {severityColorClass(vector.baseSeverity)}"
+          class="inline-flex rounded-md border px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.12em] {severityColorClass(cvss.baseSeverity)}"
         >
-          {vector.baseSeverity}
+          {cvss.baseSeverity}
         </span>
       </div>
     </div>
@@ -84,10 +113,7 @@
           <input
             value={vectorString}
             on:paste={handlePaste}
-            on:input={(e) => {
-              const parsed = parseCvssVector((e.target as HTMLInputElement).value);
-              if (parsed) metrics = parsed;
-            }}
+            on:input={handleVectorInput}
             class="op-mono min-h-[44px] w-full bg-transparent text-xs text-foreground focus:outline-none"
             spellcheck="false"
           />

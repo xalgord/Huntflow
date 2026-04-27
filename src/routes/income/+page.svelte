@@ -62,9 +62,9 @@
     await Promise.all([payoutStore.load(), targetStore.load(), submissionStore.load()]);
   });
 
-  $: linkedSubmissionIds = new Set(
-    $payoutStore.flatMap((payout) => (payout.submissionId ? [payout.submissionId] : []))
-  );
+  // Set of submission IDs that actually exist, so we can tell when a payout's
+  // linked submission has been deleted (and offer re-promotion in that case).
+  $: existingSubmissionIds = new Set($submissionStore.map((submission) => submission.id));
 
   $: years = Array.from(new Set($payoutStore.map((payout) => String(new Date(payout.date).getFullYear())))).sort(
     (a, b) => Number(b) - Number(a)
@@ -166,10 +166,15 @@
   }
 
   async function promoteToSubmission(payout: Payout): Promise<void> {
-    if (payout.submissionId) {
-      await goto(`/submissions?target=all`);
+    // If already linked to a still-existing submission, just navigate to it.
+    if (payout.submissionId && existingSubmissionIds.has(payout.submissionId)) {
+      const linked = $submissionStore.find((s) => s.id === payout.submissionId);
+      const targetId = linked?.targetId ?? 'all';
+      await goto(`/submissions?target=${targetId}`);
       return;
     }
+    // Otherwise build a fresh submission (covers both unlinked payouts and
+    // payouts whose linked submission was deleted).
     const { submission, updatedPayout } = buildSubmissionFromPayout(payout, $targetStore);
     if (!submission.targetId) {
       alert('Add a target first so the submission can be linked to a program.');
@@ -340,13 +345,16 @@
                   </button>
                 {/if}
 
+                {@const submissionExists =
+                  Boolean(payout.submissionId) && existingSubmissionIds.has(payout.submissionId!)}
                 <button
                   type="button"
-                  class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md text-slate-400 transition hover:bg-primary/10 hover:text-primary disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400"
-                  aria-label={payout.submissionId ? 'View linked submission' : 'Promote to submission'}
-                  title={payout.submissionId ? 'Linked submission' : 'Promote to submission'}
+                  class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md transition {submissionExists
+                    ? 'text-primary hover:bg-primary/10'
+                    : 'text-slate-400 hover:bg-primary/10 hover:text-primary'}"
+                  aria-label={submissionExists ? 'View linked submission' : 'Promote to submission'}
+                  title={submissionExists ? 'View linked submission' : 'Promote to submission'}
                   on:click={() => promoteToSubmission(payout)}
-                  disabled={Boolean(payout.submissionId) && !linkedSubmissionIds.has(payout.submissionId)}
                 >
                   <Send size={16} aria-hidden="true" />
                 </button>

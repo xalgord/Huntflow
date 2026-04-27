@@ -102,6 +102,17 @@
       });
     }
 
+    // Coerce cleared/invalid number inputs to undefined so we never persist
+    // empty strings or NaN into the typed store.
+    const normalizedCvssScore =
+      cvssScore == null || Number.isNaN(Number(cvssScore))
+        ? undefined
+        : Math.max(0, Math.min(10, Number(cvssScore)));
+    const normalizedBounty =
+      bountyAmount == null || Number.isNaN(Number(bountyAmount))
+        ? undefined
+        : Math.max(0, Number(bountyAmount));
+
     const next: Submission = {
       id: submission?.id ?? generateId(),
       title: title.trim(),
@@ -110,7 +121,7 @@
       platform,
       vulnerabilityType: vulnerabilityType.trim() || undefined,
       severity,
-      cvssScore,
+      cvssScore: normalizedCvssScore,
       cvssVector: cvssVector.trim() || undefined,
       reportUrl: reportUrl.trim() || undefined,
       reportMarkdown: submission?.reportMarkdown,
@@ -124,7 +135,7 @@
         (['resolved', 'rewarded', 'closed'].includes(status) ? now : undefined),
       rewardedAt:
         submission?.rewardedAt ?? (status === 'rewarded' ? now : undefined),
-      bountyAmount,
+      bountyAmount: normalizedBounty,
       payoutIds: submission?.payoutIds ?? [],
       duplicateOf: submission?.duplicateOf,
       notes: notes.trim() || undefined,

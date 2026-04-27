@@ -20,7 +20,8 @@
   import { createEventDispatcher, onDestroy } from 'svelte';
   import CvssCalculator from '$lib/components/cvss/CvssCalculator.svelte';
   import HttpRequestEditor from '$lib/components/http/HttpRequestEditor.svelte';
-  import { severityFromCvssScore } from '$lib/utils/cvss';
+  import { severityToReportSeverity } from '$lib/utils/cvss';
+  import type { CvssBaseSeverity } from '$lib/types';
   import ReportPreview from './ReportPreview.svelte';
 
   let cvssOpen = false;
@@ -152,14 +153,19 @@
     emitChange();
   }
 
-  function handleCvssChange(event: CustomEvent<{ vector: string; score: number; severity: string }>): void {
-    const { vector, score } = event.detail;
-    const mapped = severityFromCvssScore(score);
+  function handleCvssChange(
+    event: CustomEvent<{ vector: string; score: number; severity: CvssBaseSeverity }>
+  ): void {
+    const { vector, score, severity } = event.detail;
+    // Only auto-promote severity when the calculator reports a real score (>0).
+    // Score 0 means the user hasn't filled in impact metrics yet — leave severity as-is.
+    const nextSeverity: ReportSeverity =
+      score > 0 ? severityToReportSeverity(severity) : fields.severity;
     fields = {
       ...fields,
       cvssVector: vector,
       cvssScore: score,
-      severity: mapped === 'none' ? fields.severity : (mapped as ReportSeverity)
+      severity: nextSeverity
     };
     emitChange();
   }
@@ -384,6 +390,7 @@
             <div class="border-t border-slate-700 p-4">
               <CvssCalculator
                 vector={fields.cvssVector ?? ''}
+                compact
                 on:change={handleCvssChange}
               />
             </div>
@@ -461,7 +468,7 @@
           </button>
           {#if httpOpen}
             <div class="border-t border-slate-700 p-4">
-              <HttpRequestEditor on:insert={handleHttpInsert} />
+              <HttpRequestEditor allowInsert on:insert={handleHttpInsert} />
             </div>
           {/if}
         </div>

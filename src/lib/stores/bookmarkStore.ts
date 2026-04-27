@@ -11,22 +11,33 @@ const baseStore = createPersistedArrayStore<Bookmark>(bookmarkDB, {
 });
 
 let seeded = false;
+let seedingPromise: Promise<void> | null = null;
 
 async function ensureSeeded(): Promise<void> {
   if (seeded) return;
-  const items = await baseStore.load();
-  if (items.length === 0) {
-    await baseStore.set(BUILT_IN_BOOKMARKS);
-    await baseStore.persistNow();
-  } else {
-    const existingIds = new Set(items.map((item) => item.id));
-    const missing = BUILT_IN_BOOKMARKS.filter((seed) => !existingIds.has(seed.id));
-    if (missing.length > 0) {
-      await baseStore.putBatch(missing);
+  if (seedingPromise) return seedingPromise;
+
+  seedingPromise = (async () => {
+    const items = await baseStore.load();
+    if (items.length === 0) {
+      await baseStore.set(BUILT_IN_BOOKMARKS);
       await baseStore.persistNow();
+    } else {
+      const existingIds = new Set(items.map((item) => item.id));
+      const missing = BUILT_IN_BOOKMARKS.filter((seed) => !existingIds.has(seed.id));
+      if (missing.length > 0) {
+        await baseStore.putBatch(missing);
+        await baseStore.persistNow();
+      }
     }
+    seeded = true;
+  })();
+
+  try {
+    await seedingPromise;
+  } finally {
+    seedingPromise = null;
   }
-  seeded = true;
 }
 
 export const bookmarkStore = {

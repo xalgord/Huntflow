@@ -11,22 +11,33 @@ const templateBase = createPersistedArrayStore<ChecklistTemplate>(checklistTempl
 });
 
 let templatesSeeded = false;
+let templatesSeedingPromise: Promise<void> | null = null;
 
 async function ensureTemplatesSeeded(): Promise<void> {
   if (templatesSeeded) return;
-  const items = await templateBase.load();
-  if (items.length === 0) {
-    await templateBase.set(BUILT_IN_CHECKLIST_TEMPLATES);
-    await templateBase.persistNow();
-  } else {
-    const existingIds = new Set(items.map((item) => item.id));
-    const missing = BUILT_IN_CHECKLIST_TEMPLATES.filter((seed) => !existingIds.has(seed.id));
-    if (missing.length > 0) {
-      await templateBase.putBatch(missing);
+  if (templatesSeedingPromise) return templatesSeedingPromise;
+
+  templatesSeedingPromise = (async () => {
+    const items = await templateBase.load();
+    if (items.length === 0) {
+      await templateBase.set(BUILT_IN_CHECKLIST_TEMPLATES);
       await templateBase.persistNow();
+    } else {
+      const existingIds = new Set(items.map((item) => item.id));
+      const missing = BUILT_IN_CHECKLIST_TEMPLATES.filter((seed) => !existingIds.has(seed.id));
+      if (missing.length > 0) {
+        await templateBase.putBatch(missing);
+        await templateBase.persistNow();
+      }
     }
+    templatesSeeded = true;
+  })();
+
+  try {
+    await templatesSeedingPromise;
+  } finally {
+    templatesSeedingPromise = null;
   }
-  templatesSeeded = true;
 }
 
 export const checklistTemplateStore = {

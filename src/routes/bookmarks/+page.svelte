@@ -65,8 +65,8 @@
   let formError = '';
 
   onMount(async () => {
+    // bookmarkStore.load() seeds the built-in library on first run automatically.
     await bookmarkStore.load();
-    await bookmarkStore.seedBuiltInsIfEmpty();
   });
 
   $: filtered = $bookmarkStore
