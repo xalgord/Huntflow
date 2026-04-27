@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import BottomNav from '$lib/components/layout/BottomNav.svelte';
+  import CommandPalette from '$lib/components/command/CommandPalette.svelte';
   import MobileHeader from '$lib/components/layout/MobileHeader.svelte';
   import OnboardingModal from '$lib/components/onboarding/OnboardingModal.svelte';
   import PageTransition from '$lib/components/layout/PageTransition.svelte';
@@ -9,6 +10,7 @@
   import InstallPrompt from '$lib/components/pwa/InstallPrompt.svelte';
   import OfflineBanner from '$lib/components/pwa/OfflineBanner.svelte';
   import { flushAllStores, settingsStore } from '$lib/stores';
+  import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
   import { onMount } from 'svelte';
   import '../app.css';
 
@@ -45,6 +47,48 @@
         if (document.visibilityState === 'hidden') void flushAllStores();
       };
       document.addEventListener('visibilitychange', handleVisibility);
+
+      // Global Cmd/Ctrl+K opens the Command Palette from anywhere except
+      // when the user is typing inside an input/textarea/contenteditable
+      // (those should still get their normal Ctrl+K behavior).
+      const handleKeyShortcut = (event: KeyboardEvent) => {
+        const isCmdK = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
+        if (!isCmdK) return;
+        const target = event.target as HTMLElement | null;
+        const tag = target?.tagName;
+        const editable = target?.isContentEditable;
+        const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || editable;
+        // Allow the shortcut even from inputs — that's what users expect
+        // from Linear/Notion/Raycast — but don't block native shortcuts on
+        // selects.
+        if (tag === 'SELECT') return;
+        event.preventDefault();
+        if (inField && target instanceof HTMLInputElement && target.value) {
+          // Pre-seed the palette with whatever the user was already typing.
+          commandPaletteStore.open(target.value);
+        } else {
+          commandPaletteStore.toggle();
+        }
+      };
+      window.addEventListener('keydown', handleKeyShortcut);
+
+      // Forward-slash also opens the palette (when not in a field), matching
+      // GitHub/Linear conventions.
+      const handleSlash = (event: KeyboardEvent) => {
+        if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+        const target = event.target as HTMLElement | null;
+        const tag = target?.tagName;
+        if (
+          tag === 'INPUT' ||
+          tag === 'TEXTAREA' ||
+          tag === 'SELECT' ||
+          target?.isContentEditable
+        )
+          return;
+        event.preventDefault();
+        commandPaletteStore.open();
+      };
+      window.addEventListener('keydown', handleSlash);
     }
   });
 
@@ -99,4 +143,8 @@
 
 {#if !isLanding && settingsReady && !$settingsStore.onboardingCompleted}
   <OnboardingModal open />
+{/if}
+
+{#if !isLanding}
+  <CommandPalette />
 {/if}

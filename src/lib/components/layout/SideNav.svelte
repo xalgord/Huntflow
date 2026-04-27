@@ -1,12 +1,18 @@
 <script lang="ts">
-  import { Crosshair, PanelLeftClose, PanelLeftOpen, UserRound } from 'lucide-svelte';
+  import { Crosshair, PanelLeftClose, PanelLeftOpen, Search, UserRound } from 'lucide-svelte';
   import { clerkAuthStore } from '$lib/cloud/clerk';
   import { cloudConfigured } from '$lib/cloud/convex';
+  import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
   import NavItem from './NavItem.svelte';
   import { navItems } from './navItems';
 
   export let pathname = '/';
   export let collapsed = false;
+
+  // Detect macOS so we can show the right modifier hint (⌘K vs Ctrl K).
+  const isMac =
+    typeof navigator !== 'undefined' &&
+    /Mac|iPhone|iPod|iPad/.test(navigator.platform || navigator.userAgent || '');
 
   // "Pro workspace" only when the user is actually signed in AND cloud sync is
   // configured. Otherwise show "Local workspace" — honest about the offline-first
@@ -60,6 +66,28 @@
           <PanelLeftOpen size={20} aria-hidden="true" />
         {:else}
           <PanelLeftClose size={20} aria-hidden="true" />
+        {/if}
+      </button>
+    </div>
+
+    <div class="px-3 pt-4">
+      <button
+        type="button"
+        class="group flex w-full items-center gap-2 rounded-[14px] border border-border/70 bg-muted/40 px-2.5 py-2 text-left text-sm text-muted-foreground shadow-inner-line transition hover:border-primary/30 hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 {collapsed
+          ? 'justify-center'
+          : ''}"
+        aria-label="Open command palette"
+        title="Search and quick actions"
+        on:click={() => commandPaletteStore.open()}
+      >
+        <Search size={16} class="shrink-0 text-muted-foreground group-hover:text-foreground" aria-hidden="true" />
+        {#if !collapsed}
+          <span class="flex-1 truncate text-xs">Search…</span>
+          <kbd
+            class="hidden items-center gap-0.5 rounded-md border border-border/70 bg-background/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground shadow-inner-line sm:inline-flex"
+          >
+            {isMac ? '⌘' : 'Ctrl'}K
+          </kbd>
         {/if}
       </button>
     </div>
