@@ -23,10 +23,10 @@ export interface NavItemConfig {
 
 export const navItems: NavItemConfig[] = [
   {
-    href: '/',
+    href: '/dashboard',
     label: 'Dashboard',
     icon: LayoutDashboard,
-    match: (pathname) => pathname === '/',
+    match: (pathname) => pathname === '/dashboard' || pathname.startsWith('/dashboard/'),
     primary: true
   },
   {

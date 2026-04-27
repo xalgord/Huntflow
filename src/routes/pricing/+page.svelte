@@ -64,7 +64,7 @@
 <div class="pricing-page min-h-screen overflow-hidden bg-slate-950 text-slate-100">
   <header class="border-b border-slate-900 bg-slate-950/90 backdrop-blur">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
-      <a href="/landing" class="flex min-h-[44px] items-center gap-2.5 text-slate-100">
+      <a href="/" class="flex min-h-[44px] items-center gap-2.5 text-slate-100">
         <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white">
           <Crosshair size={18} aria-hidden="true" />
         </span>
@@ -72,15 +72,15 @@
       </a>
 
       <nav class="hidden items-center gap-7 text-sm text-slate-400 md:flex" aria-label="Pricing nav">
-        <a class="transition hover:text-slate-100" href="/landing#features">Features</a>
-        <a class="transition hover:text-slate-100" href="/landing#cloud-sync">Cloud Sync</a>
-        <a class="transition hover:text-slate-100" href="/landing#faq">FAQ</a>
+        <a class="transition hover:text-slate-100" href="/#features">Features</a>
+        <a class="transition hover:text-slate-100" href="/#cloud-sync">Cloud Sync</a>
+        <a class="transition hover:text-slate-100" href="/#faq">FAQ</a>
       </nav>
 
       <div class="flex items-center gap-2">
         {#if $clerkAuthStore.signedIn}
           <a
-            href="/"
+            href="/dashboard"
             class="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500"
           >
             Open app
@@ -164,7 +164,7 @@
             {/each}
           </ul>
           <a
-            href="/"
+            href="/dashboard"
             class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
           >
             Open the app
@@ -259,9 +259,9 @@
     <div class="mx-auto flex max-w-6xl flex-col gap-4 text-sm text-slate-500 md:flex-row md:items-center md:justify-between">
       <p>&copy; 2026 HuntFlow. All rights reserved.</p>
       <div class="flex flex-wrap items-center gap-4">
-        <a class="hover:text-slate-200" href="/landing">Home</a>
-        <a class="hover:text-slate-200" href="/landing#features">Features</a>
-        <a class="hover:text-slate-200" href="/landing#faq">FAQ</a>
+        <a class="hover:text-slate-200" href="/">Home</a>
+        <a class="hover:text-slate-200" href="/#features">Features</a>
+        <a class="hover:text-slate-200" href="/#faq">FAQ</a>
       </div>
     </div>
   </footer>

@@ -36,8 +36,8 @@ Vercel (static SvelteKit build, served from huntflow.xalgorix.com)
 4. Settings → Customization → Paths:
    - Sign-in URL: `/sign-in`
    - Sign-up URL: `/sign-up`
-   - After sign-in URL: `/`
-   - After sign-up URL: `/`
+   - After sign-in URL: `/dashboard`
+   - After sign-up URL: `/dashboard`
 5. Settings → Sessions → JWT templates → **New template** named `convex`,
    audience `convex`, issuer auto-filled. Save the issuer URL — you'll
    paste it into Convex.
@@ -94,8 +94,9 @@ Set these in Vercel → Project → Settings → Environment Variables (Producti
 
 After the first push to `main`:
 
-- `https://huntflow.xalgorix.com/` → app dashboard
-- `https://huntflow.xalgorix.com/landing` → marketing page
+- `https://huntflow.xalgorix.com/` → marketing landing page (public)
+- `https://huntflow.xalgorix.com/dashboard` → app dashboard
+- `https://huntflow.xalgorix.com/landing` → 302 redirect to `/` (back-compat)
 - `https://huntflow.xalgorix.com/sign-in` → embedded Clerk sign-in
 - `https://huntflow.xalgorix.com/sign-up` → embedded Clerk sign-up
 - `https://huntflow.xalgorix.com/pricing` → Clerk Billing pricing table

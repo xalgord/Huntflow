@@ -103,7 +103,7 @@
       <span class="h-2.5 w-2.5 rounded-full bg-slate-700" aria-hidden="true"></span>
       <span class="h-2.5 w-2.5 rounded-full bg-slate-700" aria-hidden="true"></span>
       <div class="ml-3 hidden truncate font-mono text-xs text-slate-500 sm:block">
-        huntflow.xalgorix.com{activeShot.id === 'dashboard' ? '/' : `/${activeShot.id}`}
+        huntflow.xalgorix.com/{activeShot.id}
       </div>
     </div>
 

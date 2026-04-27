@@ -107,7 +107,7 @@
     try {
       await loadDemoWorkspace();
       await settingsStore.setValue('onboardingCompleted', true);
-      await goto('/');
+      await goto('/dashboard');
     } catch (error) {
       demoError = error instanceof Error ? error.message : 'Could not load the demo workspace.';
     } finally {

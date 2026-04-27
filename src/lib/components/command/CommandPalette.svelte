@@ -189,7 +189,7 @@
   // ─── Navigation ───────────────────────────────────────────────────────────
   function buildNavigation(): CommandItem[] {
     const iconForHref = new Map<string, IconComponent>([
-      ['/', LayoutDashboard],
+      ['/dashboard', LayoutDashboard],
       ['/timer', Crosshair],
       ['/targets', Flag],
       ['/payloads', Sword],

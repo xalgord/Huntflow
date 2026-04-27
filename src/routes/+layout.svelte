@@ -105,8 +105,12 @@
   // headers and footers and don't need the side nav, bottom nav, or
   // command palette overlays. Keeps the marketing surface decoupled from
   // the app shell.
+  // The root `/` is the public marketing landing page. Auth, pricing, and
+  // any nested Clerk catch-all routes (sign-in/factor-one, etc.) are also
+  // chromeless so they have their own headers/footers and don't render
+  // the app shell, side nav, or command palette overlays.
   $: isMarketing =
-    pathname === '/landing' ||
+    pathname === '/' ||
     pathname === '/sign-in' ||
     pathname === '/sign-up' ||
     pathname === '/pricing' ||

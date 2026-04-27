@@ -9,14 +9,14 @@
 <div class="auth-shell min-h-screen overflow-hidden bg-slate-950 text-slate-100">
   <header class="border-b border-slate-900 bg-slate-950/90 backdrop-blur">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
-      <a href="/landing" class="flex min-h-[44px] items-center gap-2.5 text-slate-100">
+      <a href="/" class="flex min-h-[44px] items-center gap-2.5 text-slate-100">
         <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white">
           <Crosshair size={18} aria-hidden="true" />
         </span>
         <span class="text-base font-semibold tracking-tight">HuntFlow</span>
       </a>
 
-      <a href="/landing" class="inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
+      <a href="/" class="inline-flex items-center gap-1.5 text-sm text-slate-400 transition hover:text-slate-100">
         <ArrowLeft size={14} aria-hidden="true" />
         Back to home
       </a>

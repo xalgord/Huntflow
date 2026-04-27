@@ -47,7 +47,7 @@ export const navTargets: NavTarget[] = [
     trigger: 'd',
     keys: ['g', 'd'],
     label: 'Dashboard',
-    href: '/'
+    href: '/dashboard'
   },
   {
     group: 'Navigation',

@@ -16,8 +16,8 @@
     if (!browser || !mountNode) return;
     unmount = await mountClerkSignIn(mountNode, {
       signUpUrl: '/sign-up',
-      forceRedirectUrl: '/',
-      fallbackRedirectUrl: '/'
+      forceRedirectUrl: '/dashboard',
+      fallbackRedirectUrl: '/dashboard'
     });
     mounted = true;
   });

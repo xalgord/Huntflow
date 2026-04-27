@@ -11,11 +11,12 @@
   onMount(async () => {
     if (!browser || !mountNode) return;
     unmount = await mountClerkSignIn(mountNode, {
-      // Stay on /sign-in until the Clerk widget redirects to redirectUrl
-      // on success. We send everyone to the dashboard root afterwards.
+      // Stay on /sign-in until the Clerk widget redirects on success. We
+      // send authenticated users straight into the app at /dashboard so
+      // they don't bounce back to the marketing landing page.
       signUpUrl: '/sign-up',
-      forceRedirectUrl: '/',
-      fallbackRedirectUrl: '/'
+      forceRedirectUrl: '/dashboard',
+      fallbackRedirectUrl: '/dashboard'
     });
     mounted = true;
   });
