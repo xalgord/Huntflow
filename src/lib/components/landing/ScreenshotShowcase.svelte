@@ -1,11 +1,10 @@
 <script lang="ts">
   // Marketing carousel that shows the real product UI.
   //
-  // Each slide loads a Playwright-captured PNG from /screenshots/<id>.png
-  // (the same files the README links to from docs/screenshots/, copied
-  // into static/screenshots/ at build time so SvelteKit serves them).
-  // If a PNG ever fails to load we fall back to the matching CSS mockup
-  // so the page never looks broken in dev or fresh clones.
+  // Each slide loads a real captured PNG from /screenshots/<id>.png
+  // (committed under static/screenshots/ so SvelteKit serves them as
+  // hashed static assets). If a PNG ever fails to load we fall back to
+  // a CSS mockup so the page never looks broken in dev or fresh clones.
   import { onDestroy, onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { ComponentType } from 'svelte';
@@ -23,49 +22,82 @@
   }
 
   // Each `id` matches a real PNG in static/screenshots/ that was captured
-  // from the running app with seeded sample bounty data. Order is the
-  // hunting flow: pick a target, write evidence, ship reports, get paid.
+  // from the running app with seeded sample bounty data. Order follows
+  // the natural hunting workflow: see the day, focus, pick a target,
+  // write findings, attach proof, look up payloads, run utilities,
+  // ship the report, then reach for references.
   const shots: Shot[] = [
     {
       id: 'dashboard',
       title: 'Dashboard',
       description:
-        'Streak, focused hours, earnings, and active programs at a glance. Pick up the timer where you paused yesterday.',
+        'Local vault overview: today\u2019s focused time, active targets, evidence captured, and pending payouts. Pick up the timer where you paused yesterday.',
       fallback: DashboardMockup,
-      alt: 'HuntFlow dashboard with sample targets, evidence, payouts, and sync status'
+      alt: 'HuntFlow dashboard with Acme Bug Bounty hunt-room, stats, and exploit chain status'
+    },
+    {
+      id: 'timer',
+      title: 'Focus timer',
+      description:
+        'Pomodoro-style focus sessions tied to a target. Track streaks, completed sessions, and best run, so deep work compounds instead of slipping away.',
+      fallback: DashboardMockup,
+      alt: 'Focus session timer running 12:43 against Acme Bug Bounty with streak and session counters'
     },
     {
       id: 'targets',
-      title: 'Target detail',
+      title: 'Targets',
       description:
-        'Status pipeline, scope, session history, and per-target ROI. Cut underperforming programs quickly.',
+        'Program tracker for HackerOne, Bugcrowd, Intigriti, and self-hosted scopes. Sort by priority and status so you spend time on what actually pays.',
       fallback: TargetsMockup,
-      alt: 'Target detail screen showing status pipeline, scope, and session history'
+      alt: 'Targets list with Acme Bug Bounty, Globex Public, and Initech Lite ranked by priority'
     },
     {
       id: 'notes',
-      title: 'Notes preview',
+      title: 'Notes',
       description:
-        'Markdown templates for SSRF, IDOR, XSS, RCE and more. Reproduction steps, impact, and remediation in one view.',
+        'Markdown templates for IDOR, SSRF, JWT, race conditions and more. Reproduction steps, impact, and remediation captured per target while it\u2019s fresh.',
       fallback: NotesMockup,
-      alt: 'Markdown note preview showing reproduction steps, impact, and remediation'
+      alt: 'Notes grid showing IDOR, JWT alg=none, and race-condition findings filtered by target'
     },
     {
-      id: 'stats',
-      title: 'Stats dashboard',
+      id: 'evidence',
+      title: 'Evidence',
       description:
-        'Hunting time, streaks, weekly activity, and vulnerability mix derived from real session data.',
-      fallback: StatsMockup,
-      alt: 'Stats dashboard with hunting time, streak, weekly activity, and vulnerability charts'
+        'Drop, paste, or capture proof files, request traces, and report-ready URLs. Vault metrics flag what is critical, high, or marked needs-report.',
+      fallback: DashboardMockup,
+      alt: 'Evidence command center with drag-drop vault, capture URL, snippet capture, and analytics'
     },
     {
-      id: 'income',
-      title: 'Income tracker',
+      id: 'payloads',
+      title: 'Payloads',
       description:
-        'Payout totals, earnings chart, tax CSV export, and per-payout rows. The data hunters actually want to see.',
-      // Income view is close enough to the stats look for a graceful fallback.
+        'Curated battle library of XSS, SQLi, SSRF, SSTI, RCE, IDOR, and bypass payloads. Tag favorites and copy in one click without alt-tabbing to a wiki.',
+      fallback: DashboardMockup,
+      alt: 'Payload library with category filters and copy-ready 2nd-order SQLi, attribute breakout XSS, and CSRF form payloads'
+    },
+    {
+      id: 'toolkit',
+      title: 'Toolkit',
+      description:
+        'Encoder/decoder, JWT inspector, hash tools, random generators, and a real scope validator \u2014 all offline. Stop alt-tabbing to CyberChef.',
+      fallback: DashboardMockup,
+      alt: 'Hunter Toolkit utilities with Encoder/Decoder, JWT, Hash, Random, and Scope Validator tabs'
+    },
+    {
+      id: 'submissions',
+      title: 'Submissions',
+      description:
+        'Track every report from draft through triage, resolution, and reward. Weekly recap shows submitted, triaged, bounty earned, and hours hunted.',
       fallback: StatsMockup,
-      alt: 'Income tracker with payout totals, earnings chart, tax export, and payout rows'
+      alt: 'Submissions pipeline with 4 reports, 2 in triage, 2 resolved, $1,000 total bounty, and weekly recap'
+    },
+    {
+      id: 'references',
+      title: 'References',
+      description:
+        'Knowledge base of writeups, CVEs, tools, cheatsheets, and videos organised by vuln class. Build a personal corpus that travels with you.',
+      fallback: NotesMockup,
+      alt: 'Bookmarks grid with recon, tools, and CVE references including Burp, Caido, and crt.sh'
     }
   ];
 
@@ -131,10 +163,11 @@
       </div>
     </div>
 
-    <!-- 16:10 frame with `object-contain` so the real captured PNGs
-         render at their full aspect ratio without cropping. The dark
-         slate-950 background fills any letterbox space so it blends
-         with the page. -->
+    <!-- 16:10 frame with `object-cover top` so the real captured PNGs
+         (which are slightly taller than 16:10) fill the frame edge-to-edge
+         and the most important top portion (header + first card row) is
+         always visible. Letterboxed slate-950 fills any leftover space so
+         it blends into the page. -->
     <div class="relative aspect-[16/10] overflow-hidden bg-slate-950">
       {#each shots as shot, index}
         <div
@@ -150,7 +183,7 @@
             <img
               src="/screenshots/{shot.id}.png"
               alt={shot.alt}
-              class="h-full w-full object-contain"
+              class="h-full w-full object-cover object-top"
               loading={index === 0 ? 'eager' : 'lazy'}
               decoding="async"
               on:error={() => handleImgError(shot.id)}
