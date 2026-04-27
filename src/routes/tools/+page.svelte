@@ -84,7 +84,7 @@
       </div>
     </header>
 
-    <nav
+    <div
       class="hf-card flex flex-wrap gap-2 p-2"
       aria-label="Toolkit sections"
       role="tablist"
@@ -107,9 +107,9 @@
           <span>{tab.label}</span>
         </button>
       {/each}
-    </nav>
+    </div>
 
-    <section
+    <div
       class="hf-card p-5"
       id="tool-panel-{active.id}"
       role="tabpanel"
@@ -117,6 +117,6 @@
     >
       <p class="mb-4 text-sm text-muted-foreground">{active.description}</p>
       <svelte:component this={active.component} />
-    </section>
+    </div>
   </div>
 </main>
