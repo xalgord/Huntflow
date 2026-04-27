@@ -1,8 +1,16 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
+// Static import (not dynamic). `@clerk/clerk-js@6` ships UI components as a
+// lazy sub-chunk and the dynamic-import path has a known race where
+// `clerk.load()` can resolve before the UI components chunk is registered,
+// causing `mountSignIn/mountSignUp/mountPricingTable` to throw
+// "Clerk was not loaded with UI components". Importing statically forces
+// Vite to bundle the UI components alongside Clerk core, guaranteeing they
+// are ready by the time `clerk.load()` resolves.
+import { Clerk } from '@clerk/clerk-js';
 import { configureConvexAuth } from './convex';
 
-type ClerkInstance = import('@clerk/clerk-js').Clerk;
+type ClerkInstance = Clerk;
 
 export interface ClerkAuthState {
   configured: boolean;
@@ -68,7 +76,6 @@ export async function initClerk(): Promise<ClerkInstance | null> {
 
   clerkPromise = (async () => {
     try {
-      const { Clerk } = await import('@clerk/clerk-js');
       const clerk = new Clerk(publishableKey);
 
       // clerk.load() can hang silently when the publishable key is invalid,
@@ -203,14 +210,31 @@ type MountSignInOptions = Parameters<ClerkInstance['mountSignIn']>[1];
 type MountSignUpOptions = Parameters<ClerkInstance['mountSignUp']>[1];
 type MountPricingTableOptions = Parameters<ClerkInstance['mountPricingTable']>[1];
 
+// Wrap every `clerk.mount*` call so mount-time exceptions (e.g. UI components
+// chunk failed to load, instance paused, plan misconfigured) surface as a
+// readable error in `clerkAuthStore.error` and the auth pages flip from the
+// "Loading..." spinner to the actionable red error card with a Retry button.
+// Without this guard, a synchronous throw inside mountSignUp leaves an
+// unhandled promise rejection in the console and an indefinite spinner on screen.
+function reportMountError(scope: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : `${scope} failed to mount.`;
+  console.error(`[v0] Clerk ${scope} mount failed:`, message);
+  clerkAuthStore.update((state) => ({ ...state, loading: false, error: message }));
+}
+
 export async function mountClerkSignIn(
   node: HTMLElement,
   options: MountSignInOptions = {}
 ): Promise<() => void> {
   const clerk = await initClerk();
   if (!clerk) return () => {};
-  clerk.mountSignIn(node, { appearance: huntflowClerkAppearance, ...options });
-  return () => clerk.unmountSignIn(node);
+  try {
+    clerk.mountSignIn(node, { appearance: huntflowClerkAppearance, ...options });
+    return () => clerk.unmountSignIn(node);
+  } catch (error) {
+    reportMountError('sign-in', error);
+    return () => {};
+  }
 }
 
 export async function mountClerkSignUp(
@@ -219,8 +243,13 @@ export async function mountClerkSignUp(
 ): Promise<() => void> {
   const clerk = await initClerk();
   if (!clerk) return () => {};
-  clerk.mountSignUp(node, { appearance: huntflowClerkAppearance, ...options });
-  return () => clerk.unmountSignUp(node);
+  try {
+    clerk.mountSignUp(node, { appearance: huntflowClerkAppearance, ...options });
+    return () => clerk.unmountSignUp(node);
+  } catch (error) {
+    reportMountError('sign-up', error);
+    return () => {};
+  }
 }
 
 export async function mountClerkPricingTable(
@@ -232,8 +261,13 @@ export async function mountClerkPricingTable(
   // mountPricingTable is part of Clerk Billing — only available when the
   // dashboard has the billing addon enabled. Fall back gracefully if not.
   if (typeof clerk.mountPricingTable !== 'function') return () => {};
-  clerk.mountPricingTable(node, { appearance: huntflowClerkAppearance, ...options });
-  return () => clerk.unmountPricingTable?.(node);
+  try {
+    clerk.mountPricingTable(node, { appearance: huntflowClerkAppearance, ...options });
+    return () => clerk.unmountPricingTable?.(node);
+  } catch (error) {
+    reportMountError('pricing table', error);
+    return () => {};
+  }
 }
 
 // Pro entitlement helpers. Clerk Billing exposes `user.has({ plan })` to check
