@@ -4,9 +4,21 @@
   import TaxExport from '$lib/components/income/TaxExport.svelte';
   import PlatformIcon from '$lib/components/targets/PlatformIcon.svelte';
   import StatCard from '$lib/components/stats/StatCard.svelte';
-  import { payoutStore, targetStore } from '$lib/stores';
+  import { payoutStore, submissionStore, targetStore } from '$lib/stores';
   import type { Payout, PayoutSeverity, PayoutStatus, Platform } from '$lib/types';
-  import { Banknote, CalendarDays, DollarSign, Pencil, Plus, Receipt, Trash2, TrendingUp } from 'lucide-svelte';
+  import { buildSubmissionFromPayout } from '$lib/utils/migrations';
+  import {
+    Banknote,
+    CalendarDays,
+    DollarSign,
+    Pencil,
+    Plus,
+    Receipt,
+    Send,
+    Trash2,
+    TrendingUp
+  } from 'lucide-svelte';
+  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
   type StatusFilter = PayoutStatus | 'all';
@@ -47,8 +59,12 @@
   let yearFilter = 'all';
 
   onMount(async () => {
-    await Promise.all([payoutStore.load(), targetStore.load()]);
+    await Promise.all([payoutStore.load(), targetStore.load(), submissionStore.load()]);
   });
+
+  $: linkedSubmissionIds = new Set(
+    $payoutStore.flatMap((payout) => (payout.submissionId ? [payout.submissionId] : []))
+  );
 
   $: years = Array.from(new Set($payoutStore.map((payout) => String(new Date(payout.date).getFullYear())))).sort(
     (a, b) => Number(b) - Number(a)
@@ -147,6 +163,22 @@
     if (!status) return;
     await payoutStore.put({ ...payout, status, updatedAt: Date.now() });
     await payoutStore.persistNow();
+  }
+
+  async function promoteToSubmission(payout: Payout): Promise<void> {
+    if (payout.submissionId) {
+      await goto(`/submissions?target=all`);
+      return;
+    }
+    const { submission, updatedPayout } = buildSubmissionFromPayout(payout, $targetStore);
+    if (!submission.targetId) {
+      alert('Add a target first so the submission can be linked to a program.');
+      return;
+    }
+    await submissionStore.put(submission);
+    await payoutStore.put(updatedPayout);
+    await Promise.all([submissionStore.persistNow(), payoutStore.persistNow()]);
+    await goto(`/submissions?target=${submission.targetId}`);
   }
 
   async function deletePayout(payout: Payout): Promise<void> {
@@ -307,6 +339,17 @@
                     Mark {statusLabel(nextStatus(payout.status) ?? payout.status)}
                   </button>
                 {/if}
+
+                <button
+                  type="button"
+                  class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md text-slate-400 transition hover:bg-primary/10 hover:text-primary disabled:opacity-50 disabled:hover:bg-transparent disabled:hover:text-slate-400"
+                  aria-label={payout.submissionId ? 'View linked submission' : 'Promote to submission'}
+                  title={payout.submissionId ? 'Linked submission' : 'Promote to submission'}
+                  on:click={() => promoteToSubmission(payout)}
+                  disabled={Boolean(payout.submissionId) && !linkedSubmissionIds.has(payout.submissionId)}
+                >
+                  <Send size={16} aria-hidden="true" />
+                </button>
 
                 <button
                   type="button"
