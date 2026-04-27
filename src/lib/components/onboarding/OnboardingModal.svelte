@@ -1,9 +1,18 @@
 <script lang="ts">
   import Button from '$lib/components/ui/Button.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
+  import { loadDemoWorkspace } from '$lib/seeds/demoWorkspace';
   import { settingsStore } from '$lib/stores';
   import { goto } from '$app/navigation';
-  import { BarChart3, CheckCircle2, FileText, Flame, Target, Timer } from 'lucide-svelte';
+  import {
+    BarChart3,
+    CheckCircle2,
+    FileText,
+    Flame,
+    Sparkles,
+    Target,
+    Timer
+  } from 'lucide-svelte';
   import type { ComponentType } from 'svelte';
 
   interface OnboardingStep {
@@ -18,6 +27,8 @@
   let stepIndex = 0;
   let touchStartX = 0;
   let saving = false;
+  let loadingDemo = false;
+  let demoError = '';
 
   const steps: OnboardingStep[] = [
     {
@@ -89,6 +100,21 @@
     }
   }
 
+  async function loadDemoAndContinue(): Promise<void> {
+    if (loadingDemo) return;
+    loadingDemo = true;
+    demoError = '';
+    try {
+      await loadDemoWorkspace();
+      await settingsStore.setValue('onboardingCompleted', true);
+      await goto('/dashboard');
+    } catch (error) {
+      demoError = error instanceof Error ? error.message : 'Could not load the demo workspace.';
+    } finally {
+      loadingDemo = false;
+    }
+  }
+
   function handleTouchStart(event: TouchEvent): void {
     touchStartX = event.changedTouches[0]?.clientX ?? 0;
   }
@@ -111,6 +137,26 @@
       </div>
 
       <p class="mt-5 text-center text-sm leading-6 text-slate-400">{currentStep.description}</p>
+
+      {#if isLastStep}
+        <button
+          type="button"
+          class="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-primary-500/30 bg-primary-500/10 px-4 py-3 text-sm font-medium text-primary-200 transition hover:bg-primary-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 disabled:cursor-not-allowed disabled:opacity-60"
+          on:click={loadDemoAndContinue}
+          disabled={loadingDemo || saving}
+        >
+          <Sparkles size={16} aria-hidden="true" />
+          {loadingDemo ? 'Loading sample workspace…' : 'Try with sample data instead'}
+        </button>
+        <p class="mt-2 text-center text-xs text-slate-500">
+          Loads 3 demo programs, sessions, notes, recon assets, and a paid submission so you can explore every screen.
+        </p>
+        {#if demoError}
+          <p class="mt-2 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-center text-xs text-red-300">
+            {demoError}
+          </p>
+        {/if}
+      {/if}
 
       <div class="mt-5 flex justify-center gap-2" aria-label="Onboarding steps">
         {#each steps as step, index}

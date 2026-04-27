@@ -3,7 +3,7 @@
   import TargetFilter from '$lib/components/targets/TargetFilter.svelte';
   import TargetForm from '$lib/components/targets/TargetForm.svelte';
   import TargetSearch from '$lib/components/targets/TargetSearch.svelte';
-  import { targetStore } from '$lib/stores';
+  import { sessionStore, submissionStore, targetStore } from '$lib/stores';
   import type { Platform, Priority, Target, TargetStatus } from '$lib/types';
   import { Flag, Plus } from 'lucide-svelte';
   import { onMount } from 'svelte';
@@ -18,7 +18,9 @@
   let status: StatusFilter = 'active';
 
   onMount(() => {
-    void targetStore.load();
+    // Sessions and submissions power the ROI columns ($/hr, acceptance %)
+    // on each TargetCard. Loaded in parallel — none depend on each other.
+    void Promise.all([targetStore.load(), sessionStore.load(), submissionStore.load()]);
   });
 
   $: sortedTargets = [...$targetStore].sort((a, b) => {

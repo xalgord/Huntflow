@@ -1,6 +1,7 @@
 <script lang="ts">
   import AboutSection from '$lib/components/settings/AboutSection.svelte';
   import AppearanceSettings from '$lib/components/settings/AppearanceSettings.svelte';
+  import BackupRestore from '$lib/components/settings/BackupRestore.svelte';
   import CloudSyncSettings from '$lib/components/settings/CloudSyncSettings.svelte';
   import DataSettings from '$lib/components/settings/DataSettings.svelte';
   import TimerSettings from '$lib/components/settings/TimerSettings.svelte';
@@ -38,6 +39,7 @@
     <TimerSettings settings={$settingsStore} />
     <AppearanceSettings settings={$settingsStore} />
     <CloudSyncSettings />
+    <BackupRestore />
     <DataSettings />
     <AboutSection />
   </div>

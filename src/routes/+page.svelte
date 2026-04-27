@@ -1,583 +1,485 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import {
-    noteStore,
-    payoutStore,
-    reconAssetStore,
-    sessionStore,
-    submissionStore,
-    targetStore,
-    timerStore,
-    todayMinutesStore
-  } from '$lib/stores';
-  import type { Note, Platform, Session, Target } from '$lib/types';
+  import FaqSection from '$lib/components/landing/FaqSection.svelte';
+  import FeatureGrid from '$lib/components/landing/FeatureGrid.svelte';
+  import InstallCommand from '$lib/components/landing/InstallCommand.svelte';
+  import ProSpotlight from '$lib/components/landing/ProSpotlight.svelte';
+  import ScreenshotShowcase from '$lib/components/landing/ScreenshotShowcase.svelte';
   import {
     ArrowRight,
-    Cloud,
-    DollarSign,
-    FileText,
-    Play,
-    Target as TargetIcon,
-    Timer
+    Check,
+    Crosshair,
+    Github,
+    LayoutDashboard,
+    Sparkles,
+    Twitter,
+    WifiOff,
+    X as XIcon
   } from 'lucide-svelte';
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
 
-  type WorkflowState = 'done' | 'active' | 'pending';
-
-  interface WorkflowStep {
-    number: number;
-    title: string;
-    detail: string;
-    state: WorkflowState;
-    meta: string;
-  }
-
-  const platformLabels: Record<Platform, string> = {
-    hackerone: 'HackerOne',
-    bugcrowd: 'Bugcrowd',
-    intigriti: 'Intigriti',
-    synack: 'Synack',
-    yeswehack: 'YesWeHack',
-    'self-hosted': 'Self-hosted',
-    other: 'Other'
+  type BeforeInstallPromptEvent = Event & {
+    prompt(): Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
   };
-  const LAST_SYNC_KEY = 'huntflow-cloud-last-sync-at';
 
-  let lastSyncAt: number | null = null;
-  let selectedWorkflow = 3;
-  let workflow: WorkflowStep[] = [];
-
-  function localDateKey(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+  interface Step {
+    title: string;
+    description: string;
   }
 
-  function sessionDateKey(timestamp: number): string {
-    return localDateKey(new Date(timestamp));
+  interface PlanFeature {
+    label: string;
+    free: boolean;
+    pro: boolean;
   }
 
-  function formatClock(totalSeconds: number): string {
-    const seconds = Math.max(0, Math.round(totalSeconds));
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(
-      remainingSeconds
-    ).padStart(2, '0')}`;
-  }
+  let deferredPrompt: BeforeInstallPromptEvent | null = null;
+  let installMessage = '';
+  let isStandalone = false;
 
-  function formatMinutes(minutes: number): string {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours === 0) return `${mins}m`;
-    return `${hours}h ${mins}m`;
-  }
-
-  function formatMoney(value: number): string {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0
-    }).format(value);
-  }
-
-  function formatTime(timestamp?: number): string {
-    if (!timestamp) return '--:--';
-    return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(new Date(timestamp));
-  }
-
-  function formatShortDate(timestamp?: number | null): string {
-    if (!timestamp) return 'Never';
-    return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(
-      new Date(timestamp)
-    );
-  }
-
-  function noteExcerpt(note: Note): string {
-    return note.content
-      .replace(/```[\s\S]*?```/g, ' code ')
-      .replace(/[#>*_`[\]()]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim()
-      .slice(0, 72);
-  }
-
-  function riskLabel(target: Target | undefined): string {
-    if (!target) return 'standby';
-    if (target.priority <= 1) return 'high';
-    if (target.priority === 2) return 'medium';
-    return 'low';
-  }
-
-  function stepClass(state: WorkflowState, active: boolean): string {
-    if (active) return '-mx-3 rounded-[14px] bg-primary/10 px-3 text-primary';
-    if (state === 'done') return 'text-primary';
-    return 'text-muted-foreground hover:text-foreground';
-  }
-
-  function statusText(state: WorkflowState): string {
-    if (state === 'done') return 'Done';
-    if (state === 'active') return 'In progress';
-    return 'Pending';
-  }
-
-  function timelineLabel(index: number): string {
-    return new Intl.DateTimeFormat(undefined, { hour: '2-digit', minute: '2-digit' }).format(
-      new Date(Date.now() - (4 - index) * 18 * 60 * 1000)
-    );
-  }
-
-  function getLastSyncAt(): number | null {
-    if (!browser) return null;
-    const value = Number(localStorage.getItem(LAST_SYNC_KEY));
-    return Number.isFinite(value) && value > 0 ? value : null;
-  }
-
-  onMount(async () => {
-    await Promise.all([
-      sessionStore.load(),
-      targetStore.load(),
-      noteStore.load(),
-      payoutStore.load(),
-      submissionStore.load(),
-      reconAssetStore.load()
-    ]);
-    lastSyncAt = getLastSyncAt();
-  });
-
-  $: todayKey = localDateKey(new Date());
-  $: completedSessions = $sessionStore
-    .filter((session) => session.status === 'completed')
-    .sort((a, b) => (b.endedAt ?? b.startedAt) - (a.endedAt ?? a.startedAt));
-  $: todaySessions = completedSessions.filter((session) => sessionDateKey(session.startedAt) === todayKey);
-  $: activeTargets = $targetStore
-    .filter((target) => target.status !== 'archived' && target.status !== 'closed')
-    .sort((a, b) => {
-      if (a.priority !== b.priority) return a.priority - b.priority;
-      return (b.lastSessionAt ?? b.updatedAt) - (a.lastSessionAt ?? a.updatedAt);
-    });
-  $: activeSession = $timerStore.sessionId ? $sessionStore.find((session) => session.id === $timerStore.sessionId) : undefined;
-  $: activeTarget =
-    (activeSession ? $targetStore.find((target) => target.id === activeSession.targetId) : undefined) ??
-    activeTargets[0] ??
-    $targetStore[0];
-  $: targetNotes = activeTarget ? $noteStore.filter((note) => note.targetId === activeTarget.id) : $noteStore;
-  $: targetReconAssets = activeTarget
-    ? $reconAssetStore.filter((asset) => asset.targetId === activeTarget.id)
-    : [];
-  $: targetReconCount = targetReconAssets.length;
-  $: targetReconVulnerable = targetReconAssets.filter((asset) => asset.status === 'vulnerable').length;
-  $: recentNotes = [...$noteStore].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
-  $: activeTargetNotes = [...targetNotes].sort((a, b) => b.updatedAt - a.updatedAt);
-  $: needsReport = targetNotes.some((note) => note.tags.includes('needs-report'));
-  $: reportReady = needsReport || targetNotes.length > 1;
-  $: paidTotal = $payoutStore.filter((payout) => payout.status === 'paid').reduce((sum, payout) => sum + payout.amount, 0);
-  $: pendingTotal = $payoutStore
-    .filter((payout) => payout.status !== 'paid')
-    .reduce((sum, payout) => sum + payout.amount, 0);
-  $: timerActive = $timerStore.status === 'running' || $timerStore.status === 'paused' || $timerStore.status === 'completed';
-  $: displayTime = timerActive ? formatClock(Math.ceil($timerStore.remainingMs / 1000)) : formatClock($todayMinutesStore * 60);
-  $: workflow = [
+  const steps: Step[] = [
     {
-      number: 1,
-      title: 'Recon & discovery',
-      detail:
-        activeTarget && targetReconCount > 0
-          ? `${targetReconCount} asset${targetReconCount === 1 ? '' : 's'} mapped${targetReconVulnerable > 0 ? ` · ${targetReconVulnerable} flagged` : ''}`
-          : activeTarget
-            ? `${platformLabels[activeTarget.platform]} scope queued — import recon assets`
-            : 'Add a target to start the chain',
-      state: activeTarget && targetReconCount > 0 ? 'done' : 'active',
-      meta:
-        activeTarget && targetReconCount > 0
-          ? 'Recon mapped'
-          : activeTarget
-            ? 'Recon pending'
-            : 'Missing target'
+      title: 'Pick a target',
+      description:
+        'Add a program with platform, scope rules and priority. The scope validator catches out-of-scope URLs before you waste time.'
     },
     {
-      number: 2,
-      title: 'Vulnerability signal',
-      detail: targetNotes.length > 0 ? `${targetNotes.length} evidence note${targetNotes.length === 1 ? '' : 's'} attached` : 'Capture first payload or behavior',
-      state: targetNotes.length > 0 ? 'done' : activeTarget ? 'active' : 'pending',
-      meta: targetNotes.length > 0 ? 'Evidence' : 'Waiting'
+      title: 'Run a focused hunt',
+      description:
+        'Start the timer. Use a vulnerability template. Capture evidence on the canvas. Quick-tag everything so search works later.'
     },
     {
-      number: 3,
-      title: 'Exploit & validate',
-      detail: activeTargetNotes[0] ? noteExcerpt(activeTargetNotes[0]) || activeTargetNotes[0].title : 'Confirm impact and data access',
-      state: targetNotes.length > 0 && !reportReady ? 'active' : reportReady ? 'done' : 'pending',
-      meta: targetNotes.some((note) => note.tags.includes('critical') || note.tags.includes('high')) ? 'Elevated' : 'Analysis'
-    },
-    {
-      number: 4,
-      title: 'Document & report',
-      detail: reportReady ? 'Report builder has enough source material' : 'Create clear reproduction steps',
-      state: reportReady ? 'active' : 'pending',
-      meta: reportReady ? 'Ready' : 'Pending'
-    },
-    {
-      number: 5,
-      title: 'Submit & track',
-      detail:
-        $submissionStore.length > 0
-          ? `${$submissionStore.length} report${$submissionStore.length === 1 ? '' : 's'} · ${$submissionStore.filter((s) => ['submitted', 'triaged', 'accepted'].includes(s.status)).length} in triage`
-          : $payoutStore.length > 0
-            ? `${$payoutStore.length} legacy payout record${$payoutStore.length === 1 ? '' : 's'}`
-            : 'Monitor triage, severity, and bounty pipeline',
-      state: ($submissionStore.length > 0 || $payoutStore.length > 0) ? 'done' : 'pending',
-      meta: $submissionStore.length > 0 ? 'Tracked' : 'Pending'
+      title: 'Ship the report',
+      description:
+        'Drag findings into a draft, link evidence, attach the request/response, and export. Track payout and acceptance rate per program.'
     }
   ];
-  $: selectedStep = workflow.find((step) => step.number === selectedWorkflow) ?? workflow[2];
-  $: timelineSessions = todaySessions.slice(0, 4);
-  $: timelineEvents =
-    timelineSessions.length > 0
-      ? timelineSessions.map((session) => ({
-          label: formatTime(session.startedAt),
-          title: $targetStore.find((target) => target.id === session.targetId)?.name ?? 'Session capture'
-        }))
-      : [
-          { label: timelineLabel(1), title: 'Ready state' },
-          { label: timelineLabel(2), title: activeTarget ? 'Target selected' : 'Add target' },
-          { label: timelineLabel(3), title: targetNotes.length > 0 ? 'Evidence available' : 'Capture evidence' },
-          { label: timelineLabel(4), title: reportReady ? 'Report ready' : 'Validate impact' }
-        ];
+
+  const planFeatures: PlanFeature[] = [
+    { label: 'Unlimited targets, sessions, notes', free: true, pro: true },
+    { label: 'Vulnerability templates and tagging', free: true, pro: true },
+    { label: 'Evidence canvas and recon assets', free: true, pro: true },
+    { label: 'Hunter toolkit (encoder, JWT, scope validator)', free: true, pro: true },
+    { label: 'Stats, streaks, and ROI per program', free: true, pro: true },
+    { label: 'Encrypted local backup and restore', free: true, pro: true },
+    { label: 'Real-time cloud sync across devices', free: false, pro: true },
+    { label: 'End-to-end encrypted evidence storage', free: false, pro: true },
+    { label: 'Priority support', free: false, pro: true }
+  ];
+
+  function handleBeforeInstallPrompt(event: Event): void {
+    event.preventDefault();
+    deferredPrompt = event as BeforeInstallPromptEvent;
+    installMessage = '';
+  }
+
+  async function installApp(): Promise<void> {
+    if (isStandalone) {
+      installMessage = 'HuntFlow is already installed on this device.';
+      return;
+    }
+
+    if (!deferredPrompt) {
+      installMessage = 'Use your browser menu to add HuntFlow to your home screen, or run the npm command above.';
+      return;
+    }
+
+    await deferredPrompt.prompt();
+    const choice = await deferredPrompt.userChoice;
+    installMessage =
+      choice.outcome === 'accepted'
+        ? 'Install started. HuntFlow will be available from your home screen.'
+        : 'Install dismissed. You can always run the npm command above instead.';
+    deferredPrompt = null;
+  }
+
+  onMount(() => {
+    if (!browser) return;
+
+    isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  });
+
+  onDestroy(() => {
+    if (!browser) return;
+    window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  });
 </script>
 
 <svelte:head>
-  <title>Bug bounty workspace | HuntFlow</title>
+  <title>HuntFlow | The bug bounty workflow OS</title>
   <meta
     name="description"
-    content="HuntFlow is a focused bug bounty workspace for targets, timed hunt rooms, evidence notes, report prep, cloud sync, and payouts."
+    content="HuntFlow is a dark, offline-first workspace for bug bounty hunters. Track targets, run timed sessions, write notes, build evidence, ship reports — and sync everything across devices in real time with Pro."
   />
+  <meta property="og:title" content="HuntFlow | The bug bounty workflow OS" />
+  <meta
+    property="og:description"
+    content="A dark, offline-first workspace for bug bounty hunters. Targets, timed sessions, evidence canvas, hunter toolkit. Real-time cloud sync with Pro."
+  />
+  <meta property="og:url" content="https://huntflow.xalgorix.com" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="HuntFlow | The bug bounty workflow OS" />
+  <meta
+    name="twitter:description"
+    content="A dark, offline-first workspace for bug bounty hunters. Real-time cloud sync with Pro."
+  />
+  <link rel="canonical" href="https://huntflow.xalgorix.com" />
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "HuntFlow",
+      "applicationCategory": "ProductivityApplication",
+      "operatingSystem": "Web",
+      "description": "Offline-first bug bounty workspace for targets, focused sessions, notes, reports, payouts, and real-time cloud sync.",
+      "url": "https://huntflow.xalgorix.com",
+      "offers": [
+        { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD" },
+        { "@type": "Offer", "name": "Pro", "price": "6", "priceCurrency": "USD" }
+      ]
+    }
+  </script>
 </svelte:head>
 
-<main class="hf-page overflow-hidden">
-  <div class="mx-auto max-w-[1500px] space-y-6">
-    <header class="op-panel rounded-[24px] px-5 py-6 sm:px-8 lg:px-10 lg:py-10">
-      <div class="relative z-10 grid gap-8 xl:grid-cols-[minmax(0,1fr)_560px] xl:items-center">
-        <div>
-          <div class="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">
-            <span class="h-1.5 w-1.5 rounded-full bg-primary"></span>
-            Local vault · Pro sync ready
-          </div>
-          <h1 class="mt-6 max-w-4xl text-4xl font-semibold leading-[1.05] tracking-normal text-foreground sm:text-5xl lg:text-6xl">
-            Bug bounty work,
-            <span class="text-primary">without the lost proof.</span>
-          </h1>
-          <p class="mt-5 max-w-2xl text-base leading-7 text-muted-foreground">
-            HuntFlow keeps targets, timed rooms, evidence, reports, payouts, and cloud sync in one focused workspace for researchers who ship clear findings.
-          </p>
+<main class="landing-page min-h-screen overflow-hidden bg-slate-950 text-slate-100">
+  <!-- Site header -->
+  <header class="sticky top-0 z-30 border-b border-slate-900/80 bg-slate-950/80 backdrop-blur">
+    <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
+      <a href="/" class="flex min-h-[44px] items-center gap-2.5 text-slate-100">
+        <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white">
+          <Crosshair size={18} aria-hidden="true" />
+        </span>
+        <span class="text-base font-semibold tracking-tight">HuntFlow</span>
+      </a>
 
-          <div class="mt-6 flex flex-wrap gap-3 text-sm text-muted-foreground">
-            <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full border border-primary bg-primary/30"></span>Encrypted local-first notes</span>
-            <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full border border-primary bg-primary/30"></span>Coordinated report prep</span>
-            <span class="inline-flex items-center gap-2"><span class="h-2 w-2 rounded-full border border-primary bg-primary/30"></span>Payout tracking</span>
-          </div>
+      <nav class="hidden items-center gap-7 text-sm text-slate-400 md:flex" aria-label="Landing navigation">
+        <a class="transition hover:text-slate-100" href="#features">Features</a>
+        <a class="transition hover:text-slate-100" href="#cloud-sync">Cloud Sync</a>
+        <a class="transition hover:text-slate-100" href="/pricing">Pricing</a>
+        <a class="transition hover:text-slate-100" href="#faq">FAQ</a>
+      </nav>
 
-          <div class="mt-7 flex flex-col gap-3 sm:flex-row">
-            <a href="/timer" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 active:scale-[0.98]">
-              <Play size={18} aria-hidden="true" />
-              Start hunt room
-              <ArrowRight size={16} aria-hidden="true" />
-            </a>
-            <a href="/notes/new" class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] border border-border bg-background/40 px-5 text-sm font-medium text-foreground transition hover:bg-muted">
-              Capture evidence
-            </a>
-          </div>
+      <div class="flex items-center gap-2">
+        <a
+          href="/sign-in"
+          class="hidden min-h-[36px] items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-slate-100 sm:inline-flex"
+        >
+          Sign in
+        </a>
+        <a
+          href="/sign-up"
+          class="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500"
+        >
+          Get started
+          <ArrowRight size={14} aria-hidden="true" />
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero -->
+  <section class="relative isolate border-b border-slate-800">
+    <!-- Background grid + radial accent. Pure CSS, no images. -->
+    <div class="absolute inset-0 -z-10" aria-hidden="true">
+      <div class="absolute inset-0 bg-slate-950"></div>
+      <div
+        class="absolute inset-x-0 top-0 h-[640px] bg-[radial-gradient(ellipse_at_top,_rgba(20,184,166,0.18),_transparent_55%)]"
+      ></div>
+      <div
+        class="absolute inset-0 opacity-[0.18]"
+        style="background-image: linear-gradient(to right, rgb(30 41 59 / 0.5) 1px, transparent 1px), linear-gradient(to bottom, rgb(30 41 59 / 0.5) 1px, transparent 1px); background-size: 56px 56px; mask-image: radial-gradient(ellipse at center top, black 0%, transparent 70%);"
+      ></div>
+    </div>
+
+    <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
+      <div class="mx-auto max-w-3xl text-center">
+        <div class="inline-flex items-center gap-2 rounded-full border border-primary-500/30 bg-slate-900/80 px-3 py-1 text-xs font-medium text-primary-200">
+          <WifiOff size={13} aria-hidden="true" />
+          Offline-first PWA · npm-installable · open core
         </div>
 
-        <div class="rounded-[24px] border border-border/80 bg-black/45 p-4 shadow-dark-lg">
-          <div class="flex items-center justify-between border-b border-border/70 pb-3">
-            <div class="flex items-center gap-2">
-              <span class="h-2 w-2 rounded-full bg-red-400"></span>
-              <span class="h-2 w-2 rounded-full bg-amber-300"></span>
-              <span class="h-2 w-2 rounded-full bg-primary"></span>
-              <span class="op-mono ml-3 text-[10px] uppercase tracking-[0.18em] text-muted-foreground">hunt-room · {activeTarget?.name ?? 'unassigned'}</span>
+        <h1 class="mt-6 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-6xl lg:text-7xl">
+          The bug bounty
+          <span class="bg-gradient-to-br from-primary-200 via-primary-400 to-cyan-500 bg-clip-text text-transparent">
+            workflow OS.
+          </span>
+        </h1>
+
+        <p class="mx-auto mt-6 max-w-2xl text-pretty text-base leading-7 text-slate-300 sm:text-lg">
+          Track targets, run focused sessions, write reproducible notes, build visual evidence, and ship reports —
+          all in a single dark workspace that works offline and syncs in real time across every device with Pro.
+        </p>
+
+        <div class="mx-auto mt-8 max-w-xl">
+          <InstallCommand />
+        </div>
+
+        <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a
+            href="/dashboard"
+            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+          >
+            <LayoutDashboard size={16} aria-hidden="true" />
+            Open the app
+          </a>
+          <button
+            type="button"
+            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-6 py-3 text-sm font-medium text-slate-100 transition hover:bg-slate-800"
+            on:click={installApp}
+          >
+            Install as PWA
+          </button>
+        </div>
+        {#if installMessage}
+          <p class="mt-3 text-sm text-slate-400" aria-live="polite">{installMessage}</p>
+        {/if}
+      </div>
+
+      <!-- Screenshot showcase right under the hero CTA -->
+      <div class="mt-16 sm:mt-20">
+        <ScreenshotShowcase />
+      </div>
+    </div>
+  </section>
+
+  <!-- Feature grid -->
+  <FeatureGrid />
+
+  <!-- 3-step loop -->
+  <section class="border-b border-slate-800 bg-slate-900 px-4 py-20 sm:px-6 lg:px-8">
+    <div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+      <div>
+        <p class="hf-eyebrow">How it works</p>
+        <h2 class="mt-2 text-3xl font-bold leading-tight text-slate-100 sm:text-4xl">A three-step loop that turns hours into reports.</h2>
+        <p class="mt-3 text-sm leading-6 text-slate-400">
+          Every screen in HuntFlow exists to make this loop tighter. No project management overhead, no ceremony — just
+          flow.
+        </p>
+      </div>
+      <ol class="grid gap-3">
+        {#each steps as step, index}
+          <li class="grid gap-4 rounded-xl border border-slate-800 bg-slate-950 p-5 sm:grid-cols-[56px_1fr]">
+            <div class="flex h-12 w-12 items-center justify-center rounded-lg border border-primary-500/30 bg-slate-900 font-mono text-base font-bold text-primary-300">
+              0{index + 1}
             </div>
-            <span class="rounded-full border border-red-400/30 bg-red-400/10 px-2 py-0.5 text-[10px] font-semibold uppercase text-red-300">
-              {timerActive ? 'Live' : 'Standby'}
-            </span>
+            <div>
+              <h3 class="text-lg font-semibold text-slate-100">{step.title}</h3>
+              <p class="mt-1.5 text-sm leading-6 text-slate-400">{step.description}</p>
+            </div>
+          </li>
+        {/each}
+      </ol>
+    </div>
+  </section>
+
+  <!-- Pro spotlight -->
+  <ProSpotlight />
+
+  <!-- Pricing -->
+  <section id="pricing" class="border-b border-slate-800 bg-slate-950 px-4 py-20 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-6xl">
+      <div class="mx-auto max-w-2xl text-center">
+        <p class="hf-eyebrow">Pricing</p>
+        <h2 class="mt-2 text-3xl font-bold leading-tight text-slate-100 sm:text-4xl">
+          Free forever for the core. Pro when you need sync.
+        </h2>
+        <p class="mt-3 text-base leading-7 text-slate-400">
+          The free plan is genuinely useful day one. Pro unlocks real-time cloud sync, encrypted backups, and a few
+          power-user extras.
+        </p>
+      </div>
+
+      <div class="mt-12 grid gap-5 lg:grid-cols-2">
+        <article class="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-dark-sm">
+          <div class="flex items-baseline justify-between gap-3">
+            <div>
+              <h3 class="text-2xl font-bold text-slate-100">Free</h3>
+              <p class="mt-1 text-sm text-slate-400">Forever. No card, no account.</p>
+            </div>
+            <p class="text-4xl font-bold text-white">$0</p>
           </div>
-          <div class="op-mono space-y-3 py-4 text-xs leading-6">
-            <p class="text-muted-foreground">$ recon target={activeTarget?.scope || activeTarget?.name || 'select-target'}</p>
-            <p class="text-primary">[+] {activeTarget ? `${platformLabels[activeTarget.platform]} scope loaded` : 'add a program to begin'}</p>
-            <p class="text-primary">[+] {targetNotes.length} evidence note{targetNotes.length === 1 ? '' : 's'} attached</p>
-            <p class="text-muted-foreground">@hunter0x · timer {timerActive ? $timerStore.status : 'ready'} · {displayTime}</p>
-            <p class="text-amber-300">POST /report/draft → {reportReady ? 'ready' : 'waiting-for-proof'}</p>
-            <p class="text-primary">[$] paid {formatMoney(paidTotal)} · pending {formatMoney(pendingTotal)}</p>
+
+          <ul class="mt-7 flex-1 space-y-3">
+            {#each planFeatures as item}
+              <li class="flex items-start gap-3 text-sm {item.free ? 'text-slate-200' : 'text-slate-600'}">
+                {#if item.free}
+                  <Check class="mt-0.5 shrink-0 text-primary-400" size={16} aria-hidden="true" />
+                {:else}
+                  <XIcon class="mt-0.5 shrink-0 text-slate-700" size={16} aria-hidden="true" />
+                {/if}
+                <span>{item.label}</span>
+              </li>
+            {/each}
+          </ul>
+
+          <a
+            href="/dashboard"
+            class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
+          >
+            Start hunting free
+          </a>
+        </article>
+
+        <article class="relative flex flex-col rounded-2xl border border-primary-500/40 bg-gradient-to-br from-slate-900 to-slate-900/40 p-6 shadow-dark-md ring-1 ring-primary-500/20">
+          <span class="absolute -top-3 right-6 inline-flex items-center gap-1 rounded-full bg-primary-500 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-950">
+            <Sparkles size={11} aria-hidden="true" />
+            Most loved
+          </span>
+
+          <div class="flex items-baseline justify-between gap-3">
+            <div>
+              <h3 class="text-2xl font-bold text-slate-100">Pro</h3>
+              <p class="mt-1 text-sm text-slate-400">For hunters who work across devices.</p>
+            </div>
+            <div class="text-right">
+              <p class="text-4xl font-bold text-white">$6<span class="text-base font-medium text-slate-400">/mo</span></p>
+              <p class="text-xs text-slate-500">or $60/year</p>
+            </div>
           </div>
-          <div class="flex flex-wrap gap-3 border-t border-border/70 pt-3 text-xs text-muted-foreground">
-            <span class="inline-flex items-center gap-1"><Cloud size={14} aria-hidden="true" /> sync {formatShortDate(lastSyncAt)}</span>
-            <span>{activeTargets.length} active target{activeTargets.length === 1 ? '' : 's'}</span>
-            <span>{formatMinutes($todayMinutesStore)} today</span>
-          </div>
+
+          <ul class="mt-7 flex-1 space-y-3 text-sm text-slate-200">
+            {#each planFeatures as item}
+              <li class="flex items-start gap-3">
+                <Check class="mt-0.5 shrink-0 text-primary-400" size={16} aria-hidden="true" />
+                <span>{item.label}</span>
+              </li>
+            {/each}
+          </ul>
+
+          <a
+            href="/pricing"
+            class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500"
+          >
+            Upgrade to Pro
+            <ArrowRight size={14} aria-hidden="true" />
+          </a>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <FaqSection />
+
+  <!-- Closing CTA -->
+  <section class="border-b border-slate-800 bg-slate-900 px-4 py-20 sm:px-6 lg:px-8">
+    <div class="mx-auto max-w-3xl text-center">
+      <h2 class="text-3xl font-bold leading-tight text-slate-100 sm:text-4xl">Stop juggling tabs. Start a hunt.</h2>
+      <p class="mt-3 text-base leading-7 text-slate-400">
+        Install in one command. No login required to start.
+      </p>
+      <div class="mx-auto mt-6 max-w-xl">
+        <InstallCommand />
+      </div>
+      <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <a
+          href="/dashboard"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500"
+        >
+          Open the app
+        </a>
+        <a
+          href="/sign-up"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-6 py-3 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
+        >
+          Create an account
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-slate-950 px-4 py-12 sm:px-6 lg:px-8">
+    <div class="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-start md:justify-between">
+      <div class="max-w-md">
+        <div class="flex items-center gap-2.5 text-slate-100">
+          <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-primary-600 text-white">
+            <Crosshair size={18} aria-hidden="true" />
+          </span>
+          <span class="font-semibold">HuntFlow</span>
+        </div>
+        <p class="mt-3 text-sm leading-6 text-slate-500">
+          The bug bounty workflow OS. Built by hunters, for hunters. Open core, offline-first.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-2 gap-x-12 gap-y-3 text-sm sm:grid-cols-3">
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Product</p>
+          <a class="mt-3 block text-slate-300 hover:text-slate-100" href="#features">Features</a>
+          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/pricing">Pricing</a>
+          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="#cloud-sync">Cloud sync</a>
+          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/dashboard">Open app</a>
+        </div>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Account</p>
+          <a class="mt-3 block text-slate-300 hover:text-slate-100" href="/sign-in">Sign in</a>
+          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/sign-up">Sign up</a>
+          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="#faq">FAQ</a>
+        </div>
+        <div>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Connect</p>
+          <a
+            class="mt-3 inline-flex items-center gap-2 text-slate-300 hover:text-slate-100"
+            href="https://github.com/xalgord/huntflow"
+            rel="noreferrer"
+          >
+            <Github size={14} aria-hidden="true" />
+            GitHub
+          </a>
+          <a
+            class="mt-2 inline-flex items-center gap-2 text-slate-300 hover:text-slate-100"
+            href="https://x.com/xalgord"
+            rel="noreferrer"
+          >
+            <Twitter size={14} aria-hidden="true" />
+            Twitter
+          </a>
         </div>
       </div>
-    </header>
+    </div>
 
-    <section class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-      <article class="op-panel p-5">
-        <p class="op-kicker">Today</p>
-        <p class="mt-3 text-3xl font-semibold text-foreground">{formatMinutes($todayMinutesStore)}</p>
-        <p class="mt-1 text-sm text-muted-foreground">{todaySessions.length} completed session{todaySessions.length === 1 ? '' : 's'}</p>
-      </article>
-      <article class="op-panel p-5">
-        <p class="op-kicker">Targets</p>
-        <p class="mt-3 text-3xl font-semibold text-foreground">{activeTargets.length}</p>
-        <p class="mt-1 truncate text-sm text-muted-foreground">{activeTarget?.name ?? 'No active target selected'}</p>
-      </article>
-      <article class="op-panel p-5">
-        <p class="op-kicker">Evidence</p>
-        <p class="mt-3 text-3xl font-semibold text-foreground">{targetNotes.length}</p>
-        <p class="mt-1 text-sm text-muted-foreground">{reportReady ? 'Report path has source material' : 'Capture proof before drafting'}</p>
-      </article>
-      <article class="op-panel p-5">
-        <p class="op-kicker">Payouts</p>
-        <p class="mt-3 text-3xl font-semibold text-foreground">{formatMoney(paidTotal)}</p>
-        <p class="mt-1 text-sm text-muted-foreground">{formatMoney(pendingTotal)} pending</p>
-      </article>
-    </section>
-
-    <section class="grid gap-4 xl:grid-cols-[minmax(360px,0.92fr)_minmax(460px,1.08fr)_320px]">
-      <section class="op-panel p-5 sm:p-6">
-        <div class="relative z-10 flex items-start justify-between gap-4">
-          <div>
-            <p class="op-kicker">Live hunt room</p>
-            <h2 class="mt-2 text-2xl font-semibold text-foreground">{activeTarget?.name ?? 'No target selected'}</h2>
-            <p class="mt-1 text-sm text-muted-foreground">{activeTarget ? platformLabels[activeTarget.platform] : 'Add a program to attach sessions and proof.'}</p>
-          </div>
-          <span class="rounded-full border border-amber-300/30 bg-amber-300/10 px-3 py-1 text-xs font-semibold uppercase text-amber-200">
-            {riskLabel(activeTarget)}
-          </span>
-        </div>
-
-        <div class="op-radar mt-6 flex min-h-[280px] items-center justify-center p-6">
-          <div class="relative z-10 w-full">
-            <p class="text-sm font-medium text-muted-foreground">{timerActive ? 'Timer remaining' : 'Time logged today'}</p>
-            <p class="op-mono mt-3 text-5xl font-semibold text-primary sm:text-6xl">{displayTime}</p>
-            <div class="mt-6 grid gap-3 text-sm sm:grid-cols-3">
-              <div>
-                <p class="text-muted-foreground">Scope</p>
-                <p class="mt-1 truncate text-foreground">{activeTarget?.scope || 'Define scope'}</p>
-              </div>
-              <div>
-                <p class="text-muted-foreground">Started</p>
-                <p class="mt-1 text-foreground">{formatTime(activeSession?.startedAt ?? todaySessions[0]?.startedAt)}</p>
-              </div>
-              <div>
-                <p class="text-muted-foreground">Status</p>
-                <p class="mt-1 capitalize text-foreground">{timerActive ? $timerStore.status : 'ready'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="relative z-10 mt-6 border-t border-border/70 pt-5">
-          <p class="op-kicker">Room objective</p>
-          <p class="mt-3 text-sm leading-6 text-muted-foreground">
-            {activeTarget
-              ? `Validate the strongest signal for ${activeTarget.name}, capture proof, and move the report package forward.`
-              : 'Create or select a target, then start a focused hunt room.'}
-          </p>
-        </div>
-      </section>
-
-      <section class="op-panel p-5 sm:p-6">
-        <div class="relative z-10 flex items-start justify-between gap-4">
-          <div>
-            <p class="op-kicker">Evidence workflow</p>
-            <h2 class="mt-2 text-2xl font-semibold text-foreground">Exploit chain status</h2>
-          </div>
-          <a href="/notes/new" class="rounded-[14px] border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20">
-            New note
-          </a>
-        </div>
-
-        <div class="relative z-10 mt-6 divide-y divide-border/70 border-y border-border/70">
-          {#each workflow as step}
-            <button
-              type="button"
-              class="group grid w-full grid-cols-[42px_1fr_auto] items-start gap-3 py-4 text-left transition {stepClass(
-                step.state,
-                selectedWorkflow === step.number
-              )}"
-              on:click={() => (selectedWorkflow = step.number)}
-            >
-              <span class="flex h-8 min-h-[32px] w-8 items-center justify-center rounded-[8px] border border-current/35 bg-background/40 text-sm font-semibold">
-                {step.number}
-              </span>
-              <span class="min-w-0">
-                <span class="block text-sm font-semibold text-foreground">{step.title}</span>
-                <span class="mt-1 block truncate text-sm text-muted-foreground">{step.detail}</span>
-              </span>
-              <span class="hidden rounded-full border border-current/20 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] sm:block">
-                {statusText(step.state)}
-              </span>
-            </button>
-          {/each}
-        </div>
-
-        <div class="relative z-10 mt-6 grid gap-5 border-b border-border/70 pb-5 sm:grid-cols-[1fr_auto]">
-          <div>
-            <p class="op-kicker op-kicker-amber">{selectedStep.meta}</p>
-            <h3 class="mt-2 text-xl font-semibold text-foreground">{selectedStep.title}</h3>
-            <p class="mt-2 text-sm leading-6 text-muted-foreground">{selectedStep.detail}</p>
-          </div>
-          <a href={selectedStep.number >= 4 ? '/notes' : '/timer'} class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] border border-border bg-muted/50 px-4 text-sm text-foreground transition hover:bg-muted">
-            Open
-            <ArrowRight size={16} aria-hidden="true" />
-          </a>
-        </div>
-
-        <div class="relative z-10 mt-5 grid grid-cols-3 gap-3 text-sm">
-          <div>
-            <p class="text-muted-foreground">Evidence</p>
-            <p class="mt-1 text-2xl font-semibold text-primary">{targetNotes.length}</p>
-          </div>
-          <div>
-            <p class="text-muted-foreground">Sessions</p>
-            <p class="mt-1 text-2xl font-semibold text-foreground">{todaySessions.length}</p>
-          </div>
-          <div>
-            <p class="text-muted-foreground">Last capture</p>
-            <p class="mt-2 truncate text-foreground">{formatTime(activeTargetNotes[0]?.updatedAt)}</p>
-          </div>
-        </div>
-      </section>
-
-      <aside class="grid gap-4">
-        <section class="op-panel p-5">
-          <div class="relative z-10 flex items-start justify-between">
-            <div>
-              <p class="op-kicker">Cloud sync</p>
-              <p class="mt-3 text-sm text-muted-foreground">Last sync</p>
-              <p class="mt-1 text-lg font-semibold text-primary">{formatShortDate(lastSyncAt)}</p>
-            </div>
-            <Cloud class="text-primary" size={28} aria-hidden="true" />
-          </div>
-          <a href="/settings" class="relative z-10 mt-5 flex min-h-[44px] items-center justify-between border-t border-border/70 pt-3 text-sm text-foreground transition hover:text-primary">
-            View sync settings
-            <ArrowRight size={16} aria-hidden="true" />
-          </a>
-        </section>
-
-        <section class="op-panel p-5">
-          <div class="relative z-10">
-            <p class="op-kicker">Bounty desk</p>
-            <div class="mt-4 flex items-end justify-between gap-4">
-              <div>
-                <p class="text-sm text-muted-foreground">Paid</p>
-                <p class="mt-1 text-3xl font-semibold text-primary">{formatMoney(paidTotal)}</p>
-              </div>
-              <DollarSign class="text-primary/70" size={28} aria-hidden="true" />
-            </div>
-            <div class="mt-4 grid grid-cols-2 gap-3 border-t border-border/70 pt-3 text-sm">
-              <div>
-                <p class="text-muted-foreground">Pending</p>
-                <p class="text-foreground">{formatMoney(pendingTotal)}</p>
-              </div>
-              <div>
-                <p class="text-muted-foreground">Records</p>
-                <p class="text-foreground">{$payoutStore.length}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="op-panel op-panel-amber p-5">
-          <div class="relative z-10">
-            <p class="op-kicker op-kicker-amber">Next action</p>
-            <h2 class="mt-3 text-xl font-semibold text-foreground">
-              {reportReady ? 'Draft the report package' : activeTarget ? 'Validate current signal' : 'Add a target'}
-            </h2>
-            <p class="mt-2 text-sm leading-6 text-muted-foreground">
-              {reportReady
-                ? 'Turn captured notes into reproduction steps and impact language.'
-                : activeTarget
-                  ? `Continue against ${activeTarget.name} and capture proof.`
-                  : 'Create a target so sessions and evidence have a home.'}
-            </p>
-            <a href={reportReady ? '/notes' : activeTarget ? '/timer' : '/targets'} class="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-[14px] border border-amber-300/30 bg-amber-300/10 px-4 text-sm font-semibold text-amber-100 transition hover:bg-amber-300/15">
-              Open path
-              <ArrowRight size={16} aria-hidden="true" />
-            </a>
-          </div>
-        </section>
-      </aside>
-    </section>
-
-    <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
-      <section class="op-panel p-5 sm:p-6">
-        <div class="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_420px]">
-          <div>
-            <p class="op-kicker">Session timeline</p>
-            <div class="mt-6 pb-2">
-              <div class="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                {#each timelineEvents as event, index}
-                  <div class="relative">
-                    <div class="absolute left-4 right-[-16px] top-4 hidden h-px bg-border sm:block {index === timelineEvents.length - 1 ? 'sm:hidden' : ''}"></div>
-                    <div class="relative flex h-8 w-8 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-primary">
-                      <span class="h-2 w-2 rounded-full bg-primary"></span>
-                    </div>
-                    <p class="op-mono mt-3 text-xs text-muted-foreground">{event.label}</p>
-                    <p class="mt-1 text-sm leading-5 text-foreground">{event.title}</p>
-                  </div>
-                {/each}
-              </div>
-            </div>
-          </div>
-
-          <div class="border-t border-border/70 pt-5 lg:border-l lg:border-t-0 lg:pl-5 lg:pt-0">
-            <div class="flex items-center justify-between gap-3">
-              <p class="op-kicker">Recent captures</p>
-              <a href="/notes" class="text-sm text-muted-foreground transition hover:text-primary">Open vault</a>
-            </div>
-            <div class="mt-4 divide-y divide-border/70 border-y border-border/70">
-              {#each recentNotes as note}
-                <a href={`/notes/${note.id}`} class="flex min-h-[64px] items-center gap-3 py-3 text-sm transition hover:text-primary">
-                  <FileText class="shrink-0 text-primary" size={18} aria-hidden="true" />
-                  <span class="min-w-0">
-                    <span class="block truncate font-medium text-foreground">{note.title}</span>
-                    <span class="mt-1 block text-xs text-muted-foreground">{formatTime(note.updatedAt)}</span>
-                  </span>
-                </a>
-              {:else}
-                <a href="/notes/new" class="flex min-h-[64px] items-center text-sm text-muted-foreground transition hover:text-primary">
-                  Capture the first evidence item
-                </a>
-              {/each}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="op-panel p-5">
-        <div class="relative z-10">
-          <p class="op-kicker">Quick links</p>
-          <div class="mt-4 divide-y divide-border/70 border-y border-border/70">
-            <a href="/notes/new" class="flex min-h-[48px] items-center justify-between text-sm text-foreground transition hover:text-primary">
-              <span class="flex items-center gap-2"><FileText size={16} aria-hidden="true" /> New note</span>
-              <span class="op-mono text-xs text-muted-foreground">N</span>
-            </a>
-            <a href="/timer" class="flex min-h-[48px] items-center justify-between text-sm text-foreground transition hover:text-primary">
-              <span class="flex items-center gap-2"><Timer size={16} aria-hidden="true" /> Start timer</span>
-              <span class="op-mono text-xs text-muted-foreground">Space</span>
-            </a>
-            <a href="/targets" class="flex min-h-[48px] items-center justify-between text-sm text-foreground transition hover:text-primary">
-              <span class="flex items-center gap-2"><TargetIcon size={16} aria-hidden="true" /> Add target</span>
-              <span class="op-mono text-xs text-muted-foreground">T</span>
-            </a>
-            <a href="/income" class="flex min-h-[48px] items-center justify-between text-sm text-foreground transition hover:text-primary">
-              <span class="flex items-center gap-2"><DollarSign size={16} aria-hidden="true" /> Log payout</span>
-              <span class="op-mono text-xs text-muted-foreground">P</span>
-            </a>
-          </div>
-        </div>
-      </section>
-    </section>
-  </div>
+    <div class="mx-auto mt-10 max-w-6xl border-t border-slate-900 pt-6 text-xs text-slate-600">
+      &copy; 2026 HuntFlow. All rights reserved.
+    </div>
+  </footer>
 </main>
+
+<style>
+  :global(html.light) .landing-page:global(.bg-slate-950),
+  :global(html.light) .landing-page :global(section.bg-slate-950),
+  :global(html.light) .landing-page :global(footer.bg-slate-950) {
+    background-color: #020617;
+  }
+  :global(html.light) .landing-page :global(section.bg-slate-900),
+  :global(html.light) .landing-page :global(div.bg-slate-900),
+  :global(html.light) .landing-page :global(article.bg-slate-900) {
+    background-color: #0f172a;
+  }
+  :global(html.light) .landing-page :global(.text-slate-100),
+  :global(html.light) .landing-page :global(.text-slate-200),
+  :global(html.light) .landing-page :global(.text-white) {
+    color: #f1f5f9;
+  }
+  :global(html.light) .landing-page :global(.text-slate-300) {
+    color: #cbd5e1;
+  }
+  :global(html.light) .landing-page :global(.text-slate-400) {
+    color: #94a3b8;
+  }
+  :global(html.light) .landing-page :global(.text-slate-500) {
+    color: #64748b;
+  }
+  :global(html.light) .landing-page :global(.border-slate-800) {
+    border-color: #1e293b;
+  }
+  :global(html.light) .landing-page :global(.border-slate-700) {
+    border-color: #334155;
+  }
+</style>

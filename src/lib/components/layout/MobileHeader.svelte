@@ -12,7 +12,7 @@
   class="fixed inset-x-0 top-0 z-30 border-b border-border/80 bg-background/90 px-4 pb-3 pt-[max(env(safe-area-inset-top),0.75rem)] text-foreground shadow-dark-sm backdrop-blur-xl lg:hidden"
 >
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
-    <a href="/" class="flex min-h-[44px] items-center gap-2 text-sm font-semibold text-foreground">
+    <a href="/dashboard" class="flex min-h-[44px] items-center gap-2 text-sm font-semibold text-foreground">
       <span class="flex h-8 w-8 items-center justify-center rounded-[14px] border border-primary/25 bg-primary/10 text-xs text-primary">HF</span>
       HuntFlow
     </a>

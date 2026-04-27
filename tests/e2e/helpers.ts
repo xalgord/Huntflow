@@ -10,7 +10,10 @@ export const seedIds = {
   asset: '55555555-5555-4555-8555-555555555555'
 };
 
-export const routes = ['/', '/timer', '/targets', '/notes', '/assets', '/stats', '/income', '/settings', '/landing'];
+// Public marketing root (`/`) and the in-app dashboard (`/dashboard`) are
+// both smoke-tested. `/landing` is kept as a redirect for back-compat but
+// not exercised here because Playwright would just chase the 302 to `/`.
+export const routes = ['/', '/dashboard', '/timer', '/targets', '/notes', '/assets', '/stats', '/income', '/settings'];
 
 export interface ConsoleWatcher {
   errors: string[];
@@ -48,7 +51,9 @@ export async function dismissOnboarding(page: Page): Promise<void> {
 export async function seedEmptyApp(page: Page): Promise<void> {
   await openStoragePage(page);
   await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [], evidenceAssets: [], evidenceLinks: [], evidenceCanvasViews: [] });
-  await gotoAppRoute(page, '/');
+  // After seeding, land on the app dashboard rather than the marketing
+  // landing page, so subsequent assertions target the actual workspace.
+  await gotoAppRoute(page, '/dashboard');
 }
 
 export async function seedDemoApp(page: Page): Promise<TestSeed> {
@@ -135,14 +140,16 @@ export async function seedDemoApp(page: Page): Promise<TestSeed> {
     evidenceCanvasViews: []
   });
   await page.evaluate(() => localStorage.setItem('huntflow-cloud-last-sync-at', String(Date.now())));
-  await gotoAppRoute(page, '/');
+  await gotoAppRoute(page, '/dashboard');
   return seed;
 }
 
 export async function seedFirstRunApp(page: Page): Promise<void> {
   await openStoragePage(page);
   await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [], evidenceAssets: [], evidenceLinks: [], evidenceCanvasViews: [] }, false);
-  await gotoAppRoute(page, '/');
+  // First-run flow lives inside the app shell, so land on the dashboard
+  // (the onboarding modal opens there).
+  await gotoAppRoute(page, '/dashboard');
 }
 
 export async function gotoAppRoute(page: Page, route: string): Promise<void> {

@@ -39,7 +39,9 @@ test.describe('first-run onboarding', () => {
   test('does not show onboarding on the public landing page', async ({ page }) => {
     const consoleWatcher = watchConsole(page);
 
-    await gotoAppRoute(page, '/landing');
+    // Marketing landing now lives at the root URL — the onboarding modal
+    // is scoped to the app shell and must not appear on this public surface.
+    await gotoAppRoute(page, '/');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: 'HuntFlow' })).toBeVisible();
     await consoleWatcher.assertClean();

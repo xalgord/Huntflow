@@ -67,8 +67,16 @@
     if (autosaveTimer) clearTimeout(autosaveTimer);
     autosaveTimer = setTimeout(() => {
       const savedAt = Date.now();
-      localStorage.setItem(draftKey(note.id), JSON.stringify({ note, savedAt }));
-      draftSavedAt = savedAt;
+      try {
+        localStorage.setItem(draftKey(note.id), JSON.stringify({ note, savedAt }));
+        draftSavedAt = savedAt;
+      } catch (error) {
+        // Most commonly QuotaExceededError when the note (or other tabs)
+        // overflow the ~5MB origin budget. We swallow it so the editor
+        // stays usable; the explicit `Save` button still writes to
+        // IndexedDB which has gigabytes of headroom.
+        console.warn('[v0] note draft autosave skipped:', error);
+      }
     }, 3000);
   }
 

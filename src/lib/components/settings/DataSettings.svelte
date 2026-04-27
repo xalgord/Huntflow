@@ -3,9 +3,19 @@
   import { exportDataAsJson } from '$lib/db/export';
   import { importData, validateImportData, ImportValidationError } from '$lib/db/import';
   import { getHuntFlowDB, resetMemoryDB } from '$lib/db';
-  import { noteStore, payoutStore, sessionStore, settingsStore, targetStore } from '$lib/stores';
+  import { loadDemoWorkspace } from '$lib/seeds/demoWorkspace';
+  import {
+    checklistInstanceStore,
+    noteStore,
+    payoutStore,
+    reconAssetStore,
+    sessionStore,
+    settingsStore,
+    submissionStore,
+    targetStore
+  } from '$lib/stores';
   import { DEFAULT_SETTINGS } from '$lib/types';
-  import { Download, Trash2, Upload } from 'lucide-svelte';
+  import { Download, RotateCcw, Sparkles, Trash2, Upload } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
   let storageText = 'Calculating...';
@@ -14,6 +24,10 @@
   let importError = '';
   let showClearModal = false;
   let clearConfirm = '';
+  let demoLoading = false;
+  let demoStatus = '';
+  let demoError = '';
+  let tourStatus = '';
 
   function formatBytes(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
@@ -49,15 +63,28 @@
   async function clearStores(): Promise<void> {
     const db = await getHuntFlowDB();
     if (db) {
-      const tx = db.transaction(['sessions', 'notes', 'targets', 'payouts', 'settings'], 'readwrite');
-      await Promise.all([
-        tx.objectStore('sessions').clear(),
-        tx.objectStore('notes').clear(),
-        tx.objectStore('targets').clear(),
-        tx.objectStore('payouts').clear(),
-        tx.objectStore('settings').clear(),
-        tx.done
-      ]);
+      // Clear every user-data object store so a "Clear" wipe is total. We
+      // intentionally leave payloads/bookmarks/checklistTemplates/evidence
+      // untouched — those are seeded built-ins or content-addressed blobs
+      // that the user can re-seed by reload anyway.
+      const stores = [
+        'sessions',
+        'notes',
+        'targets',
+        'payouts',
+        'reconAssets',
+        'submissions',
+        'checklistInstances',
+        'settings'
+      ] as const;
+      const present = stores.filter((name) => db.objectStoreNames.contains(name));
+      if (present.length > 0) {
+        const tx = db.transaction(present, 'readwrite');
+        await Promise.all([
+          ...present.map((name) => tx.objectStore(name).clear()),
+          tx.done
+        ]);
+      }
     }
 
     resetMemoryDB();
@@ -67,6 +94,9 @@
       noteStore.refresh(),
       targetStore.refresh(),
       payoutStore.refresh(),
+      reconAssetStore.refresh(),
+      submissionStore.refresh(),
+      checklistInstanceStore.refresh(),
       settingsStore.refresh()
     ]);
     await updateStorageUsage();
@@ -113,6 +143,43 @@
     importStatus = 'All local data was cleared.';
   }
 
+  async function handleLoadDemo(): Promise<void> {
+    if (demoLoading) return;
+    if (
+      !confirm(
+        'Add a sample workspace (3 targets, sessions, notes, recon assets, and one paid submission) to your existing data?'
+      )
+    )
+      return;
+    demoLoading = true;
+    demoStatus = '';
+    demoError = '';
+    try {
+      const result = await loadDemoWorkspace();
+      // Refresh stats-derived stores so the dashboard reflects the new data.
+      await Promise.all([
+        targetStore.refresh(),
+        sessionStore.refresh(),
+        noteStore.refresh(),
+        reconAssetStore.refresh(),
+        submissionStore.refresh(),
+        payoutStore.refresh(),
+        checklistInstanceStore.refresh()
+      ]);
+      await updateStorageUsage();
+      demoStatus = `Loaded ${result.targets} targets, ${result.sessions} sessions, ${result.notes} notes, ${result.reconAssets} recon assets, ${result.submissions} submissions.`;
+    } catch (error) {
+      demoError = error instanceof Error ? error.message : 'Could not load demo workspace.';
+    } finally {
+      demoLoading = false;
+    }
+  }
+
+  async function relaunchTour(): Promise<void> {
+    await settingsStore.setValue('onboardingCompleted', false);
+    tourStatus = 'Tour will start on the next page load.';
+  }
+
   onMount(() => {
     void updateStorageUsage();
   });
@@ -155,6 +222,48 @@
       Import JSON
       <input class="sr-only" type="file" accept="application/json,.json" on:change={handleImport} />
     </label>
+  </div>
+
+  <div class="mt-4 rounded-lg border border-primary-500/20 bg-primary-500/5 p-4">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-100">
+          <Sparkles size={16} aria-hidden="true" />
+          Sample workspace
+        </h3>
+        <p class="mt-1 text-sm text-slate-400">
+          Adds 3 demo programs, sessions across two weeks, recon assets, notes, and a paid submission so you can explore every screen.
+        </p>
+      </div>
+      <div class="flex flex-col gap-2 sm:flex-row">
+        <button
+          type="button"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary-200 transition hover:bg-primary-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+          on:click={handleLoadDemo}
+          disabled={demoLoading}
+        >
+          <Sparkles size={16} aria-hidden="true" />
+          {demoLoading ? 'Loading…' : 'Load demo data'}
+        </button>
+        <button
+          type="button"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600"
+          on:click={relaunchTour}
+        >
+          <RotateCcw size={16} aria-hidden="true" />
+          Replay tour
+        </button>
+      </div>
+    </div>
+    {#if demoStatus}
+      <p class="mt-3 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-300">{demoStatus}</p>
+    {/if}
+    {#if demoError}
+      <p class="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{demoError}</p>
+    {/if}
+    {#if tourStatus}
+      <p class="mt-3 rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-300">{tourStatus}</p>
+    {/if}
   </div>
 
   <div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4">

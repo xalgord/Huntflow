@@ -1,14 +1,14 @@
 <script lang="ts">
-  import {
-    clerkAuthStore,
-    initClerk,
-    signInWithClerk,
-    signOutFromClerk,
-    signUpWithClerk
-  } from '$lib/cloud/clerk';
+  import { clerkAuthStore, initClerk, signOutFromClerk } from '$lib/cloud/clerk';
   import { cloudConfigured } from '$lib/cloud/convex';
-  import { clearCloudData, getLastCloudSyncAt, syncNow, type CloudSyncResult } from '$lib/cloud/sync';
-  import { Cloud, LogIn, LogOut, RefreshCw, Trash2, UserPlus } from 'lucide-svelte';
+  import {
+    clearCloudData,
+    getLastCloudSyncAt,
+    ProRequiredError,
+    syncNow,
+    type CloudSyncResult
+  } from '$lib/cloud/sync';
+  import { Cloud, Lock, LogIn, LogOut, RefreshCw, Sparkles, Trash2, UserPlus } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
   let syncing = false;
@@ -18,7 +18,12 @@
   let lastSyncAt: number | null = null;
 
   $: configured = $clerkAuthStore.configured && cloudConfigured;
-  $: canSync = configured && $clerkAuthStore.signedIn && !syncing && !clearing;
+  $: canSync =
+    configured &&
+    $clerkAuthStore.signedIn &&
+    $clerkAuthStore.isPro &&
+    !syncing &&
+    !clearing;
 
   function formatDate(timestamp: number | null): string {
     if (!timestamp) return 'Never';
@@ -44,7 +49,13 @@
       lastSyncAt = result.syncedAt;
       status = resultText(result);
     } catch (caught) {
-      error = caught instanceof Error ? caught.message : 'Cloud sync failed.';
+      // Pro gate is shown as a paywall below, not a red error. Suppress the
+      // generic error toast so users don't see a misleading "sync failed" line.
+      if (caught instanceof ProRequiredError) {
+        error = '';
+      } else {
+        error = caught instanceof Error ? caught.message : 'Cloud sync failed.';
+      }
     } finally {
       syncing = false;
     }
@@ -106,30 +117,63 @@
     </div>
   {:else if !$clerkAuthStore.signedIn}
     <div class="mt-4 flex flex-col gap-3 rounded-lg border border-border bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <p class="text-sm text-muted-foreground">Sign in to connect this device to your HuntFlow cloud data.</p>
+      <p class="text-sm text-muted-foreground">Sign in to connect this device to your HuntFlow cloud data. Pro is required for sync.</p>
       <div class="flex flex-col gap-2 sm:flex-row">
-        <button
-          type="button"
+        <a
+          href="/sign-up"
           class="hf-button-secondary"
-          on:click={signUpWithClerk}
         >
           <UserPlus size={18} aria-hidden="true" />
           Sign Up
-        </button>
-        <button
-          type="button"
+        </a>
+        <a
+          href="/sign-in"
           class="hf-button-primary"
-          on:click={signInWithClerk}
         >
           <LogIn size={18} aria-hidden="true" />
           Sign In
-        </button>
+        </a>
+      </div>
+    </div>
+  {:else if !$clerkAuthStore.isPro}
+    <!-- Signed in but not on Pro: show a paywall with upgrade CTA. The
+         non-Pro user keeps their local data — only sync is gated. -->
+    <div class="mt-4 rounded-lg border border-amber-400/30 bg-gradient-to-br from-amber-500/10 to-amber-500/5 p-5">
+      <div class="flex items-start gap-3">
+        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-400/15 text-amber-200">
+          <Lock size={20} aria-hidden="true" />
+        </span>
+        <div class="min-w-0">
+          <p class="text-sm font-semibold text-foreground">Cloud sync is a Pro feature</p>
+          <p class="mt-1 text-sm text-muted-foreground">
+            Real-time, Notion-style sync across every device is available with HuntFlow Pro. Your local data stays
+            fully usable on the free plan.
+          </p>
+
+          <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+            <a
+              href="/pricing"
+              class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
+            >
+              <Sparkles size={14} aria-hidden="true" />
+              Upgrade to Pro
+            </a>
+            <button
+              type="button"
+              class="hf-button-ghost border border-border"
+              on:click={signOutFromClerk}
+            >
+              <LogOut size={16} aria-hidden="true" />
+              Sign out
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   {:else}
     <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
       <div class="rounded-lg border border-border bg-muted/40 p-4 shadow-inner-line">
-        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Signed in</p>
+        <p class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Signed in &middot; Pro</p>
         <p class="mt-1 text-sm font-medium text-foreground">{$clerkAuthStore.userLabel}</p>
         <p class="mt-1 text-xs text-muted-foreground">
           Convex auth: {$clerkAuthStore.convexAuthenticated ? 'ready' : 'waiting for token'}

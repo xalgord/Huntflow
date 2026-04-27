@@ -268,6 +268,19 @@
     @apply inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground shadow-inner-line;
   }
 
+  .hf-chip {
+    @apply inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground shadow-inner-line transition hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
+  }
+
+  .hf-chip-active {
+    @apply border-primary/60 bg-primary/15 text-primary-foreground;
+    color: hsl(var(--primary));
+  }
+
+  .hf-icon-button {
+    @apply inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/40 text-muted-foreground shadow-inner-line transition hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
   .hf-stat-tile {
     @apply rounded-lg border border-border/70 bg-background/40 p-3 shadow-inner-line;
   }
