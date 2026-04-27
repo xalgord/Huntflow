@@ -1,12 +1,24 @@
 <script lang="ts">
+  // Renders a carousel of in-app screen mockups for the marketing page.
+  // We deliberately use HTML/CSS mockups instead of bitmap screenshots so
+  // every panel is pixel-perfect at any viewport, matches the live theme,
+  // and stays in sync with the real product without needing to re-export
+  // PNGs every time the UI evolves.
   import { onDestroy, onMount } from 'svelte';
   import { browser } from '$app/environment';
+  import type { ComponentType } from 'svelte';
+  import DashboardMockup from './mockups/DashboardMockup.svelte';
+  import EvidenceMockup from './mockups/EvidenceMockup.svelte';
+  import NotesMockup from './mockups/NotesMockup.svelte';
+  import StatsMockup from './mockups/StatsMockup.svelte';
+  import TargetsMockup from './mockups/TargetsMockup.svelte';
+  import TimerMockup from './mockups/TimerMockup.svelte';
 
   interface Shot {
     id: string;
     title: string;
     description: string;
-    src: string;
+    component: ComponentType;
     alt: string;
   }
 
@@ -16,23 +28,23 @@
       title: 'Dashboard',
       description:
         'Streak, focused hours, earnings and active programs at a glance. Pick up the timer where you paused yesterday.',
-      src: '/screenshots/dashboard.jpg',
-      alt: 'HuntFlow dashboard showing streak counter, weekly focused hours, earnings and active targets'
+      component: DashboardMockup,
+      alt: 'HuntFlow dashboard with streak counter, weekly focused hours, earnings and active targets'
     },
     {
       id: 'timer',
       title: 'Focus timer',
       description:
-        'Pomodoro-style sessions tied to a target. Capture quick notes and tags before context fades — every minute counts.',
-      src: '/screenshots/timer.jpg',
+        'Pomodoro-style sessions tied to a target. Capture quick notes and tags before context fades.',
+      component: TimerMockup,
       alt: 'HuntFlow focus timer with countdown, target selector and quick note field'
     },
     {
       id: 'targets',
       title: 'Targets',
       description:
-        'Track every program in one grid: scope, priority, last session, $/hour, acceptance rate. Cut underperforming targets quickly.',
-      src: '/screenshots/targets.jpg',
+        'Every program in one grid: scope, priority, last session, $/hour, acceptance rate. Cut underperforming targets quickly.',
+      component: TargetsMockup,
       alt: 'HuntFlow targets grid showing program cards with platform badges and ROI metrics'
     },
     {
@@ -40,7 +52,7 @@
       title: 'Notes',
       description:
         'Vulnerability templates for SSRF, IDOR, XSS, RCE and more. Markdown-first with code fences and tag filtering.',
-      src: '/screenshots/notes.jpg',
+      component: NotesMockup,
       alt: 'HuntFlow markdown note editor with vulnerability template and tags'
     },
     {
@@ -48,7 +60,7 @@
       title: 'Evidence canvas',
       description:
         'A whiteboard for findings: drop screenshots, paste requests, link them visually so reports write themselves.',
-      src: '/screenshots/evidence.jpg',
+      component: EvidenceMockup,
       alt: 'HuntFlow evidence canvas with screenshots and request snippets connected by lines'
     },
     {
@@ -56,7 +68,7 @@
       title: 'Stats',
       description:
         'Year-long activity heatmap, vulnerability mix, best streaks. The data hunters actually want to see.',
-      src: '/screenshots/stats.jpg',
+      component: StatsMockup,
       alt: 'HuntFlow stats page with activity heatmap, vulnerability donut chart and trend bars'
     }
   ];
@@ -95,28 +107,39 @@
   $: activeShot = shots[active];
 </script>
 
-<div class="relative" on:mouseenter={pauseCarousel} on:mouseleave={startCarousel} role="region" aria-roledescription="carousel" aria-label="Product screenshots">
+<div
+  class="relative"
+  on:mouseenter={pauseCarousel}
+  on:mouseleave={startCarousel}
+  role="region"
+  aria-roledescription="carousel"
+  aria-label="Product screenshots"
+>
   <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-dark-xl">
-    <!-- Window chrome to make the screenshot feel like a real app frame -->
+    <!-- Window chrome to make the mockup feel like a real app frame -->
     <div class="flex items-center gap-2 border-b border-slate-800 bg-slate-900/95 px-4 py-3">
-      <span class="h-2.5 w-2.5 rounded-full bg-slate-700" aria-hidden="true"></span>
-      <span class="h-2.5 w-2.5 rounded-full bg-slate-700" aria-hidden="true"></span>
-      <span class="h-2.5 w-2.5 rounded-full bg-slate-700" aria-hidden="true"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-rose-500/70" aria-hidden="true"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-amber-400/70" aria-hidden="true"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-emerald-500/70" aria-hidden="true"></span>
       <div class="ml-3 hidden truncate font-mono text-xs text-slate-500 sm:block">
         huntflow.xalgorix.com/{activeShot.id}
       </div>
     </div>
 
-    <div class="relative aspect-[16/10] bg-slate-950">
+    <!-- 16:10 frame; each mockup fills it edge-to-edge.
+         We render all panels stacked and crossfade between them so the
+         layout never reflows during transitions. -->
+    <div class="relative aspect-[16/10] overflow-hidden bg-slate-950">
       {#each shots as shot, index}
-        <img
-          src={shot.src}
-          alt={shot.alt}
-          loading={index === 0 ? 'eager' : 'lazy'}
-          decoding="async"
-          class="absolute inset-0 h-full w-full object-cover transition-opacity duration-700 {active === index ? 'opacity-100' : 'opacity-0'}"
+        <div
+          class="absolute inset-0 transition-opacity duration-700 {active === index
+            ? 'opacity-100'
+            : 'pointer-events-none opacity-0'}"
           aria-hidden={active !== index}
-        />
+          aria-label={shot.alt}
+        >
+          <svelte:component this={shot.component} />
+        </div>
       {/each}
     </div>
   </div>
@@ -130,7 +153,6 @@
       <p class="mt-1.5 text-sm leading-6 text-slate-400">{activeShot.description}</p>
     </div>
 
-    <!-- Tab list at the bottom doubles as accessible navigation -->
     <div role="tablist" aria-label="Choose screenshot" class="flex flex-wrap gap-1.5">
       {#each shots as shot, index}
         <button
