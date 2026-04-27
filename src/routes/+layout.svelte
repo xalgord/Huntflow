@@ -101,7 +101,18 @@
 
   $: pathname = $page.url.pathname;
   $: canonicalUrl = `${$page.url.origin}${pathname}`;
-  $: isLanding = pathname === '/landing';
+  // Treat marketing/auth/billing pages as "no-chrome": they have their own
+  // headers and footers and don't need the side nav, bottom nav, or
+  // command palette overlays. Keeps the marketing surface decoupled from
+  // the app shell.
+  $: isMarketing =
+    pathname === '/landing' ||
+    pathname === '/sign-in' ||
+    pathname === '/sign-up' ||
+    pathname === '/pricing' ||
+    pathname.startsWith('/sign-in/') ||
+    pathname.startsWith('/sign-up/');
+  $: isLanding = isMarketing;
   $: if (browser && navReady) {
     localStorage.setItem('huntflow-side-nav-collapsed', String(navCollapsed));
   }

@@ -12,6 +12,7 @@ export interface ClerkAuthState {
   userId: string;
   userLabel: string;
   error: string;
+  isPro: boolean;
 }
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
@@ -24,7 +25,8 @@ const initialState: ClerkAuthState = {
   convexAuthenticated: false,
   userId: '',
   userLabel: '',
-  error: ''
+  error: '',
+  isPro: false
 };
 
 export const clerkAuthStore = writable<ClerkAuthState>(initialState);
@@ -76,6 +78,9 @@ export async function initClerk(): Promise<ClerkInstance | null> {
           configureConvexAuth(clerk, (convexAuthenticated) => {
             clerkAuthStore.update((state) => ({ ...state, convexAuthenticated }));
           });
+          // Re-check Pro plan whenever the Clerk session/user changes
+          // (sign-in, sign-out, plan upgrade via PricingTable, etc.)
+          void refreshProEntitlement();
         });
         listenerAttached = true;
       }
@@ -84,6 +89,7 @@ export async function initClerk(): Promise<ClerkInstance | null> {
         clerkAuthStore.update((state) => ({ ...state, convexAuthenticated }));
       });
       updateState(clerk, { configured: true, loading: false, error: '' });
+      void refreshProEntitlement();
       return clerk;
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Clerk failed to initialize.';
@@ -116,4 +122,111 @@ export async function signOutFromClerk(): Promise<void> {
   if (!clerk) return;
   await clerk.signOut({ redirectUrl });
   updateState(clerk, { convexAuthenticated: false });
+}
+
+// Shared dark theme so every embedded Clerk component (sign-in, sign-up,
+// pricing table, user button) blends into HuntFlow's slate-950 chrome
+// without restyling each call site.
+export const huntflowClerkAppearance = {
+  variables: {
+    colorPrimary: '#14b8a6',
+    colorBackground: '#0f172a',
+    colorText: '#f1f5f9',
+    colorTextSecondary: '#94a3b8',
+    colorInputBackground: '#0f172a',
+    colorInputText: '#f1f5f9',
+    colorNeutral: '#94a3b8',
+    borderRadius: '0.5rem',
+    fontFamily: 'inherit'
+  },
+  elements: {
+    rootBox: { width: '100%' },
+    card: {
+      background: 'transparent',
+      boxShadow: 'none',
+      border: 'none',
+      width: '100%'
+    },
+    headerTitle: { color: '#f1f5f9' },
+    headerSubtitle: { color: '#94a3b8' },
+    socialButtonsBlockButton: {
+      background: '#1e293b',
+      border: '1px solid #334155',
+      color: '#f1f5f9'
+    },
+    formFieldLabel: { color: '#cbd5e1' },
+    formFieldInput: {
+      background: '#0f172a',
+      border: '1px solid #334155',
+      color: '#f1f5f9'
+    },
+    formButtonPrimary: {
+      background: '#14b8a6',
+      color: '#020617',
+      fontWeight: 600,
+      '&:hover': { background: '#2dd4bf' }
+    },
+    footer: { background: 'transparent' },
+    footerActionText: { color: '#94a3b8' },
+    footerActionLink: { color: '#5eead4' },
+    dividerLine: { background: '#1e293b' },
+    dividerText: { color: '#64748b' }
+  }
+};
+
+type MountSignInOptions = Parameters<ClerkInstance['mountSignIn']>[1];
+type MountSignUpOptions = Parameters<ClerkInstance['mountSignUp']>[1];
+type MountPricingTableOptions = Parameters<ClerkInstance['mountPricingTable']>[1];
+
+export async function mountClerkSignIn(
+  node: HTMLElement,
+  options: MountSignInOptions = {}
+): Promise<() => void> {
+  const clerk = await initClerk();
+  if (!clerk) return () => {};
+  clerk.mountSignIn(node, { appearance: huntflowClerkAppearance, ...options });
+  return () => clerk.unmountSignIn(node);
+}
+
+export async function mountClerkSignUp(
+  node: HTMLElement,
+  options: MountSignUpOptions = {}
+): Promise<() => void> {
+  const clerk = await initClerk();
+  if (!clerk) return () => {};
+  clerk.mountSignUp(node, { appearance: huntflowClerkAppearance, ...options });
+  return () => clerk.unmountSignUp(node);
+}
+
+export async function mountClerkPricingTable(
+  node: HTMLElement,
+  options: MountPricingTableOptions = {}
+): Promise<() => void> {
+  const clerk = await initClerk();
+  if (!clerk) return () => {};
+  // mountPricingTable is part of Clerk Billing — only available when the
+  // dashboard has the billing addon enabled. Fall back gracefully if not.
+  if (typeof clerk.mountPricingTable !== 'function') return () => {};
+  clerk.mountPricingTable(node, { appearance: huntflowClerkAppearance, ...options });
+  return () => clerk.unmountPricingTable?.(node);
+}
+
+// Pro entitlement helpers. Clerk Billing exposes `user.has({ plan })` to check
+// whether the active user is on a paid plan. We expose a derived boolean on
+// the auth store so any component can react to plan changes without re-querying.
+export async function refreshProEntitlement(): Promise<void> {
+  const clerk = await initClerk();
+  if (!clerk) return;
+  const user = clerk.user;
+  let isPro = false;
+  if (user && typeof (user as unknown as { has?: (q: unknown) => boolean }).has === 'function') {
+    try {
+      isPro = Boolean(
+        (user as unknown as { has: (q: { plan: string }) => boolean }).has({ plan: 'huntflow_pro' })
+      );
+    } catch {
+      isPro = false;
+    }
+  }
+  clerkAuthStore.update((state) => ({ ...state, isPro }));
 }

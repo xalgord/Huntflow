@@ -40,7 +40,18 @@ import type {
   Submission,
   Target
 } from '$lib/types';
+import { get } from 'svelte/store';
+import { clerkAuthStore, refreshProEntitlement } from './clerk';
 import { cloudApi, cloudConfigured, getConvexClient } from './convex';
+
+// Thrown when a signed-in but non-Pro user tries to sync. The settings UI
+// catches this and renders a paywall instead of an error toast.
+export class ProRequiredError extends Error {
+  constructor() {
+    super('HuntFlow Pro is required to enable real-time cloud sync.');
+    this.name = 'ProRequiredError';
+  }
+}
 
 export type SyncCollection =
   | 'sessions'
@@ -310,6 +321,15 @@ export async function syncNow(): Promise<CloudSyncResult> {
 
   const convex = getConvexClient();
   if (!convex) throw new Error('Convex is not available in this browser.');
+
+  // Pro gate: cloud sync is the paid feature. Re-check the live Clerk
+  // entitlement before each sync (rather than trusting the cached store
+  // value) so a just-cancelled subscription stops syncing immediately.
+  await refreshProEntitlement();
+  const auth = get(clerkAuthStore);
+  if (!auth.isPro) {
+    throw new ProRequiredError();
+  }
 
   await uploadPendingEvidenceFiles();
 
