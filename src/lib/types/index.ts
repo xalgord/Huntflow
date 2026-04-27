@@ -177,6 +177,221 @@ export interface NoteTemplate {
 
 export type TemplateCategory = 'web' | 'mobile' | 'api' | 'cloud' | 'network' | 'general';
 
+// =========================================================================
+// Recon Asset Inventory
+// =========================================================================
+
+export type ReconAssetStatus = 'untested' | 'in-progress' | 'tested' | 'vulnerable' | 'safe';
+
+export type ReconAssetSource = 'manual' | 'subfinder' | 'amass' | 'httpx' | 'nuclei' | 'import' | 'other';
+
+export interface ReconAsset {
+  id: string;
+  targetId: string;
+  hostname: string;
+  url?: string;
+  ipAddress?: string;
+  httpStatus?: number;
+  title?: string;
+  technologies: string[];
+  ports?: string;
+  inScope: boolean;
+  status: ReconAssetStatus;
+  notes?: string;
+  source: ReconAssetSource;
+  discoveredAt: number;
+  lastTestedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// =========================================================================
+// Payload Library
+// =========================================================================
+
+export type PayloadCategory =
+  | 'xss'
+  | 'sqli'
+  | 'ssrf'
+  | 'xxe'
+  | 'ssti'
+  | 'lfi'
+  | 'rce'
+  | 'cmd-injection'
+  | 'auth-bypass'
+  | 'idor'
+  | 'open-redirect'
+  | 'csrf'
+  | 'jwt'
+  | 'nosqli'
+  | 'race-condition'
+  | 'crlf'
+  | 'deserialization'
+  | 'prototype-pollution'
+  | 'graphql'
+  | 'oauth'
+  | 'recon';
+
+export interface Payload {
+  id: string;
+  name: string;
+  category: PayloadCategory;
+  payload: string;
+  description?: string;
+  tags: string[];
+  source?: string;
+  isBuiltIn: boolean;
+  isFavorite: boolean;
+  useCount: number;
+  lastUsedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// =========================================================================
+// Methodology Checklists
+// =========================================================================
+
+export type ChecklistKind = 'web' | 'api' | 'mobile' | 'cloud' | 'recon' | 'custom';
+
+export type ChecklistItemStatus = 'todo' | 'in-progress' | 'done' | 'na' | 'found';
+
+export interface ChecklistTemplateItem {
+  id: string;
+  title: string;
+  description?: string;
+  references?: string[];
+}
+
+export interface ChecklistTemplateSection {
+  id: string;
+  title: string;
+  items: ChecklistTemplateItem[];
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  name: string;
+  kind: ChecklistKind;
+  description?: string;
+  sections: ChecklistTemplateSection[];
+  isBuiltIn: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface ChecklistInstanceItemState {
+  status: ChecklistItemStatus;
+  notes?: string;
+  updatedAt: number;
+}
+
+export interface ChecklistInstance {
+  id: string;
+  targetId: string;
+  templateId: string;
+  templateName: string;
+  templateKind: ChecklistKind;
+  itemStates: Record<string, ChecklistInstanceItemState>;
+  startedAt: number;
+  completedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// =========================================================================
+// CVSS 3.1
+// =========================================================================
+
+export type CvssBaseSeverity = 'none' | 'low' | 'medium' | 'high' | 'critical';
+
+export interface CvssVector {
+  version: '3.1';
+  vectorString: string;
+  baseScore: number;
+  baseSeverity: CvssBaseSeverity;
+}
+
+// =========================================================================
+// Submissions Tracker
+// =========================================================================
+
+export type SubmissionStatus =
+  | 'draft'
+  | 'submitted'
+  | 'triaged'
+  | 'duplicate'
+  | 'informative'
+  | 'not-applicable'
+  | 'resolved'
+  | 'paid'
+  | 'closed';
+
+export interface Submission {
+  id: string;
+  title: string;
+  program: string;
+  platform: Platform;
+  targetId?: string;
+  noteId?: string;
+  payoutId?: string;
+  reportUrl?: string;
+  severity: PayoutSeverity;
+  cvss?: CvssVector;
+  status: SubmissionStatus;
+  submittedAt?: number;
+  triagedAt?: number;
+  resolvedAt?: number;
+  paidAt?: number;
+  cwe?: string;
+  vulnerabilityType?: string;
+  notes?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// =========================================================================
+// Reference Library (Bookmarks / CVEs)
+// =========================================================================
+
+export type BookmarkCategory =
+  | 'xss'
+  | 'sqli'
+  | 'ssrf'
+  | 'xxe'
+  | 'ssti'
+  | 'lfi'
+  | 'rce'
+  | 'auth'
+  | 'idor'
+  | 'jwt'
+  | 'oauth'
+  | 'graphql'
+  | 'mobile'
+  | 'recon'
+  | 'tools'
+  | 'cheatsheet'
+  | 'methodology'
+  | 'cve'
+  | 'general';
+
+export interface Bookmark {
+  id: string;
+  title: string;
+  url: string;
+  description?: string;
+  category: BookmarkCategory;
+  tags: string[];
+  isBuiltIn: boolean;
+  isFavorite: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// =========================================================================
+// Settings & Stats
+// =========================================================================
+
 export interface AppSettings {
   key: string;
   value: unknown;
@@ -226,6 +441,10 @@ export interface TimerState {
   endTime?: number;
   progress: number;
 }
+
+// =========================================================================
+// IndexedDB Schema
+// =========================================================================
 
 export interface HuntFlowDB extends DBSchema {
   sessions: {
@@ -314,6 +533,62 @@ export interface HuntFlowDB extends DBSchema {
       'by-category': string;
     };
   };
+  reconAssets: {
+    key: string;
+    value: ReconAsset;
+    indexes: {
+      'by-target': string;
+      'by-status': string;
+      'by-updated': number;
+    };
+  };
+  payloads: {
+    key: string;
+    value: Payload;
+    indexes: {
+      'by-category': string;
+      'by-tags': string;
+      'by-updated': number;
+    };
+  };
+  checklistTemplates: {
+    key: string;
+    value: ChecklistTemplate;
+    indexes: {
+      'by-kind': string;
+      'by-updated': number;
+    };
+  };
+  checklistInstances: {
+    key: string;
+    value: ChecklistInstance;
+    indexes: {
+      'by-target': string;
+      'by-template': string;
+      'by-updated': number;
+    };
+  };
+  submissions: {
+    key: string;
+    value: Submission;
+    indexes: {
+      'by-target': string;
+      'by-status': string;
+      'by-platform': string;
+      'by-severity': string;
+      'by-submittedAt': number;
+      'by-updated': number;
+    };
+  };
+  bookmarks: {
+    key: string;
+    value: Bookmark;
+    indexes: {
+      'by-category': string;
+      'by-tags': string;
+      'by-updated': number;
+    };
+  };
   settings: {
     key: string;
     value: AppSettings;
@@ -334,6 +609,12 @@ export interface HuntFlowExport {
     evidenceAssets?: EvidenceAsset[];
     evidenceLinks?: EvidenceLink[];
     evidenceCanvasViews?: EvidenceCanvasView[];
+    reconAssets?: ReconAsset[];
+    payloads?: Payload[];
+    checklistTemplates?: ChecklistTemplate[];
+    checklistInstances?: ChecklistInstance[];
+    submissions?: Submission[];
+    bookmarks?: Bookmark[];
     settings: Settings;
   };
 }
