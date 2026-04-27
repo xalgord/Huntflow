@@ -1,9 +1,12 @@
 <script lang="ts">
-  // Renders a carousel of in-app screen mockups for the marketing page.
-  // We deliberately use HTML/CSS mockups instead of bitmap screenshots so
-  // every panel is pixel-perfect at any viewport, matches the live theme,
-  // and stays in sync with the real product without needing to re-export
-  // PNGs every time the UI evolves.
+  // Marketing carousel that shows the real product UI.
+  //
+  // Each slide tries to load `/screenshots/<id>.png` first (these are the
+  // PNGs produced by `npm run screenshots`, which captures the live app
+  // with Playwright + sample IndexedDB data). If the PNG is missing - in
+  // a fresh clone, in v0 preview, or before CI has populated the static
+  // dir - we transparently fall back to a hand-built CSS mockup of the
+  // same screen so the page never looks broken.
   import { onDestroy, onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { ComponentType } from 'svelte';
@@ -18,17 +21,19 @@
     id: string;
     title: string;
     description: string;
-    component: ComponentType;
+    fallback: ComponentType;
     alt: string;
   }
 
+  // Filenames must match the ones the capture script writes to
+  // static/screenshots/. Keep them in sync with capture-readme-screenshots.mjs.
   const shots: Shot[] = [
     {
       id: 'dashboard',
       title: 'Dashboard',
       description:
         'Streak, focused hours, earnings and active programs at a glance. Pick up the timer where you paused yesterday.',
-      component: DashboardMockup,
+      fallback: DashboardMockup,
       alt: 'HuntFlow dashboard with streak counter, weekly focused hours, earnings and active targets'
     },
     {
@@ -36,7 +41,7 @@
       title: 'Focus timer',
       description:
         'Pomodoro-style sessions tied to a target. Capture quick notes and tags before context fades.',
-      component: TimerMockup,
+      fallback: TimerMockup,
       alt: 'HuntFlow focus timer with countdown, target selector and quick note field'
     },
     {
@@ -44,7 +49,7 @@
       title: 'Targets',
       description:
         'Every program in one grid: scope, priority, last session, $/hour, acceptance rate. Cut underperforming targets quickly.',
-      component: TargetsMockup,
+      fallback: TargetsMockup,
       alt: 'HuntFlow targets grid showing program cards with platform badges and ROI metrics'
     },
     {
@@ -52,15 +57,15 @@
       title: 'Notes',
       description:
         'Vulnerability templates for SSRF, IDOR, XSS, RCE and more. Markdown-first with code fences and tag filtering.',
-      component: NotesMockup,
+      fallback: NotesMockup,
       alt: 'HuntFlow markdown note editor with vulnerability template and tags'
     },
     {
       id: 'evidence',
-      title: 'Evidence canvas',
+      title: 'Evidence',
       description:
-        'A whiteboard for findings: drop screenshots, paste requests, link them visually so reports write themselves.',
-      component: EvidenceMockup,
+        'A visual workspace for findings: drop screenshots, paste requests, link them so reports write themselves.',
+      fallback: EvidenceMockup,
       alt: 'HuntFlow evidence canvas with screenshots and request snippets connected by lines'
     },
     {
@@ -68,7 +73,7 @@
       title: 'Stats',
       description:
         'Year-long activity heatmap, vulnerability mix, best streaks. The data hunters actually want to see.',
-      component: StatsMockup,
+      fallback: StatsMockup,
       alt: 'HuntFlow stats page with activity heatmap, vulnerability donut chart and trend bars'
     }
   ];
@@ -76,6 +81,11 @@
   let active = 0;
   let timer: ReturnType<typeof setInterval> | null = null;
   let prefersReducedMotion = false;
+
+  // Tracks which slide IDs failed to load a real PNG so we render the
+  // mockup instead. Once a slide has fallen back, it stays that way for
+  // the rest of the visit (no flicker).
+  const fallbackForId: Record<string, boolean> = {};
 
   function step(direction: 1 | -1): void {
     active = (active + direction + shots.length) % shots.length;
@@ -92,6 +102,10 @@
       clearInterval(timer);
       timer = null;
     }
+  }
+
+  function handleImgError(id: string): void {
+    fallbackForId[id] = true;
   }
 
   onMount(() => {
@@ -116,7 +130,7 @@
   aria-label="Product screenshots"
 >
   <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-dark-xl">
-    <!-- Window chrome to make the mockup feel like a real app frame -->
+    <!-- Window chrome makes the slide feel like a real product frame. -->
     <div class="flex items-center gap-2 border-b border-slate-800 bg-slate-900/95 px-4 py-3">
       <span class="h-2.5 w-2.5 rounded-full bg-rose-500/70" aria-hidden="true"></span>
       <span class="h-2.5 w-2.5 rounded-full bg-amber-400/70" aria-hidden="true"></span>
@@ -126,9 +140,8 @@
       </div>
     </div>
 
-    <!-- 16:10 frame; each mockup fills it edge-to-edge.
-         We render all panels stacked and crossfade between them so the
-         layout never reflows during transitions. -->
+    <!-- 16:10 frame; both the PNG and the mockup are sized to fill it
+         exactly so transitions never reflow. -->
     <div class="relative aspect-[16/10] overflow-hidden bg-slate-950">
       {#each shots as shot, index}
         <div
@@ -138,7 +151,18 @@
           aria-hidden={active !== index}
           aria-label={shot.alt}
         >
-          <svelte:component this={shot.component} />
+          {#if fallbackForId[shot.id]}
+            <svelte:component this={shot.fallback} />
+          {:else}
+            <img
+              src="/screenshots/{shot.id}.png"
+              alt={shot.alt}
+              class="h-full w-full object-cover object-top"
+              loading={index === 0 ? 'eager' : 'lazy'}
+              decoding="async"
+              on:error={() => handleImgError(shot.id)}
+            />
+          {/if}
         </div>
       {/each}
     </div>

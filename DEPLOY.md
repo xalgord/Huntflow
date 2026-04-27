@@ -139,7 +139,38 @@ npm login
 npm publish        # uses prepublishOnly to run npm run build
 ```
 
-## 6. Production checklist
+## 6. Marketing screenshots
+
+The landing page carousel uses real Playwright captures of the running app
+with seeded sample data. The screenshots are committed under
+`static/screenshots/` so they ship with the static build — no runtime
+Playwright dependency on Vercel.
+
+To regenerate them locally before a release:
+
+```bash
+npm install                      # ensure devDependencies (incl. @playwright/test)
+npx playwright install chromium  # one-time browser binary download
+npm run screenshots              # captures 6 PNGs into static/screenshots/
+git add static/screenshots/      # commit the refreshed images
+git commit -m "chore: refresh marketing screenshots"
+```
+
+What `npm run screenshots` does:
+
+1. Boots a local Vite dev server on `127.0.0.1:5173` with Clerk disabled.
+2. Seeds IndexedDB with realistic NeonBank / CloudCart / MeshID sample data
+   (sessions, notes, targets, evidence assets, payouts, submissions).
+3. Drives headless Chromium at a 1600×1000 / 16:10 viewport through:
+   `/dashboard`, `/timer`, `/targets`, `/notes/<id>`, `/assets`, `/stats`.
+4. Writes PNGs to both `docs/screenshots/` (for the README) and
+   `static/screenshots/` (for the marketing carousel).
+
+If `static/screenshots/<id>.png` is missing at build time, the carousel
+gracefully renders a CSS mockup of the same screen instead of a broken
+image, so the page never looks empty in dev or fresh clones.
+
+## 7. Production checklist
 
 - [ ] DNS CNAME set on `huntflow.xalgorix.com` → `cname.vercel-dns.com`
 - [ ] All four env vars set on Vercel (Production scope)
