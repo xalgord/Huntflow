@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { page } from '$app/stores';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignUp } from '$lib/cloud/clerk';
   import { onDestroy, onMount } from 'svelte';
@@ -8,12 +9,22 @@
   let unmount: (() => void) | null = null;
   let mounted = false;
 
+  function sanitizeRedirect(raw: string | null): string {
+    if (!raw) return '/dashboard';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
+    return raw;
+  }
+
   onMount(async () => {
     if (!browser || !mountNode) return;
+    const target = sanitizeRedirect($page.url.searchParams.get('redirect'));
+    const signInUrl = target === '/dashboard'
+      ? '/sign-in'
+      : `/sign-in?redirect=${encodeURIComponent(target)}`;
     unmount = await mountClerkSignUp(mountNode, {
-      signInUrl: '/sign-in',
-      forceRedirectUrl: '/dashboard',
-      fallbackRedirectUrl: '/dashboard'
+      signInUrl,
+      forceRedirectUrl: target,
+      fallbackRedirectUrl: target
     });
     mounted = true;
   });

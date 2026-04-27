@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { page } from '$app/stores';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignIn } from '$lib/cloud/clerk';
   import { onDestroy, onMount } from 'svelte';
@@ -8,15 +9,27 @@
   let unmount: (() => void) | null = null;
   let mounted = false;
 
+  // The auth gate in +layout.svelte sends anonymous visitors here with
+  // ?redirect=<originalPath>. Sanitize it (must be a same-origin absolute
+  // path) before handing it to Clerk so we never bounce to an external URL.
+  function sanitizeRedirect(raw: string | null): string {
+    if (!raw) return '/dashboard';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
+    return raw;
+  }
+
   onMount(async () => {
     if (!browser || !mountNode) return;
+    const target = sanitizeRedirect($page.url.searchParams.get('redirect'));
+    // Forward the redirect param across the sign-in <-> sign-up swap so
+    // the user keeps their original destination if they switch flows.
+    const signUpUrl = target === '/dashboard'
+      ? '/sign-up'
+      : `/sign-up?redirect=${encodeURIComponent(target)}`;
     unmount = await mountClerkSignIn(mountNode, {
-      // Stay on /sign-in until the Clerk widget redirects on success. We
-      // send authenticated users straight into the app at /dashboard so
-      // they don't bounce back to the marketing landing page.
-      signUpUrl: '/sign-up',
-      forceRedirectUrl: '/dashboard',
-      fallbackRedirectUrl: '/dashboard'
+      signUpUrl,
+      forceRedirectUrl: target,
+      fallbackRedirectUrl: target
     });
     mounted = true;
   });

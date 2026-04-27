@@ -4,6 +4,7 @@
   // the root /sign-in page so the embedded widget can render whichever
   // step Clerk has navigated to.
   import { browser } from '$app/environment';
+  import { page } from '$app/stores';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignIn } from '$lib/cloud/clerk';
   import { onDestroy, onMount } from 'svelte';
@@ -12,12 +13,22 @@
   let unmount: (() => void) | null = null;
   let mounted = false;
 
+  function sanitizeRedirect(raw: string | null): string {
+    if (!raw) return '/dashboard';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
+    return raw;
+  }
+
   onMount(async () => {
     if (!browser || !mountNode) return;
+    const target = sanitizeRedirect($page.url.searchParams.get('redirect'));
+    const signUpUrl = target === '/dashboard'
+      ? '/sign-up'
+      : `/sign-up?redirect=${encodeURIComponent(target)}`;
     unmount = await mountClerkSignIn(mountNode, {
-      signUpUrl: '/sign-up',
-      forceRedirectUrl: '/dashboard',
-      fallbackRedirectUrl: '/dashboard'
+      signUpUrl,
+      forceRedirectUrl: target,
+      fallbackRedirectUrl: target
     });
     mounted = true;
   });

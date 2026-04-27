@@ -1,6 +1,8 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { clerkAuthStore, initClerk } from '$lib/cloud/clerk';
   import BottomNav from '$lib/components/layout/BottomNav.svelte';
   import CommandPalette from '$lib/components/command/CommandPalette.svelte';
   import KeyboardShortcutsHelp from '$lib/components/KeyboardShortcutsHelp.svelte';
@@ -13,6 +15,7 @@
   import { flushAllStores, settingsStore } from '$lib/stores';
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
   import { installGlobalShortcuts } from '$lib/utils/shortcuts';
+  import { Crosshair } from 'lucide-svelte';
   import { onMount } from 'svelte';
   import '../app.css';
 
@@ -33,6 +36,12 @@
       navCollapsed = localStorage.getItem('huntflow-side-nav-collapsed') === 'true';
       navReady = true;
       document.documentElement.dataset.huntflowReady = 'true';
+
+      // Boot Clerk eagerly so the auth state resolves before the user
+      // can interact with any protected route. Without this, clerk only
+      // initializes when /sign-in or settings mount, which would briefly
+      // expose the dashboard to anonymous visitors.
+      void initClerk();
 
       // Drain debounced store writes (500ms timer) before the tab is unloaded
       // so the latest session state, notes, recon edits, etc. always survive
@@ -117,6 +126,37 @@
     pathname.startsWith('/sign-in/') ||
     pathname.startsWith('/sign-up/');
   $: isLanding = isMarketing;
+
+  // Auth gate. Marketing pages are always public. App routes require a
+  // Clerk session WHEN Clerk is configured. If Clerk isn't configured
+  // (self-hosted/local-only mode with no VITE_CLERK_PUBLISHABLE_KEY),
+  // the app stays open so the offline-first experience still works.
+  $: requiresAuth = !isMarketing;
+  $: clerkConfigured = $clerkAuthStore.configured;
+  $: clerkLoading = $clerkAuthStore.loading;
+  $: clerkSignedIn = $clerkAuthStore.signedIn;
+
+  // Block the app shell from rendering while we're either waiting on Clerk
+  // to load or about to redirect an anonymous visitor to /sign-in. This
+  // prevents the protected dashboard from flashing into view before the
+  // redirect lands.
+  $: authBlocking =
+    browser && requiresAuth && clerkConfigured && (clerkLoading || !clerkSignedIn);
+
+  // Once Clerk has finished loading and we still don't have a session,
+  // bounce to the sign-in page with a return path so the user lands back
+  // here after authenticating.
+  $: if (
+    browser &&
+    requiresAuth &&
+    clerkConfigured &&
+    !clerkLoading &&
+    !clerkSignedIn
+  ) {
+    const target = `${pathname}${$page.url.search}`;
+    void goto(`/sign-in?redirect=${encodeURIComponent(target)}`, { replaceState: true });
+  }
+
   $: if (browser && navReady) {
     localStorage.setItem('huntflow-side-nav-collapsed', String(navCollapsed));
   }
@@ -131,43 +171,68 @@
 
 <OfflineBanner />
 
-<div class="hf-shell">
-  {#if !isLanding}
-    <SideNav {pathname} bind:collapsed={navCollapsed} />
-    <MobileHeader {pathname} />
-  {/if}
-
+{#if authBlocking}
+  <!-- Auth gate: hold the protected app shell back until Clerk resolves.
+       Renders a centered spinner that matches the dark theme rather than
+       any of the app pages. The reactive block above will navigate to
+       /sign-in once Clerk reports !signedIn. -->
   <main
-    class="relative min-h-screen {isLanding
-      ? ''
-      : `pt-[calc(max(env(safe-area-inset-top),0px)+8.5rem)] transition-[padding] duration-200 lg:pt-0 ${
-          navCollapsed ? 'lg:pl-16' : 'lg:pl-56'
-        }`}"
+    class="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-slate-300"
+    aria-busy="true"
+    aria-live="polite"
   >
-    <PageTransition name={pathname}>
-      <slot />
-    </PageTransition>
+    <div class="flex flex-col items-center gap-4 text-center">
+      <span
+        class="flex h-12 w-12 items-center justify-center rounded-xl border border-primary-500/30 bg-primary-500/10 text-primary-400"
+      >
+        <Crosshair size={22} aria-hidden="true" />
+      </span>
+      <p class="text-sm font-medium text-slate-200">Checking your session&hellip;</p>
+      <p class="max-w-xs text-xs text-slate-500">
+        HuntFlow is verifying your account. You&apos;ll be redirected to sign in if you&apos;re not already
+        authenticated.
+      </p>
+    </div>
   </main>
+{:else}
+  <div class="hf-shell">
+    {#if !isLanding}
+      <SideNav {pathname} bind:collapsed={navCollapsed} />
+      <MobileHeader {pathname} />
+    {/if}
+
+    <main
+      class="relative min-h-screen {isLanding
+        ? ''
+        : `pt-[calc(max(env(safe-area-inset-top),0px)+8.5rem)] transition-[padding] duration-200 lg:pt-0 ${
+            navCollapsed ? 'lg:pl-16' : 'lg:pl-56'
+          }`}"
+    >
+      <PageTransition name={pathname}>
+        <slot />
+      </PageTransition>
+    </main>
+
+    {#if !isLanding}
+      <BottomNav {pathname} />
+    {/if}
+  </div>
+
+  <div
+    id="toast-container"
+    class="pointer-events-none fixed inset-x-4 top-4 z-[60] flex flex-col gap-3 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto sm:w-96"
+    aria-live="polite"
+    aria-atomic="true"
+  ></div>
+
+  <InstallPrompt />
+
+  {#if !isLanding && settingsReady && !$settingsStore.onboardingCompleted}
+    <OnboardingModal open />
+  {/if}
 
   {#if !isLanding}
-    <BottomNav {pathname} />
+    <CommandPalette />
+    <KeyboardShortcutsHelp />
   {/if}
-</div>
-
-<div
-  id="toast-container"
-  class="pointer-events-none fixed inset-x-4 top-4 z-[60] flex flex-col gap-3 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto sm:w-96"
-  aria-live="polite"
-  aria-atomic="true"
-></div>
-
-<InstallPrompt />
-
-{#if !isLanding && settingsReady && !$settingsStore.onboardingCompleted}
-  <OnboardingModal open />
-{/if}
-
-{#if !isLanding}
-  <CommandPalette />
-  <KeyboardShortcutsHelp />
 {/if}
