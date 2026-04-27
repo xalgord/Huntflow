@@ -163,12 +163,14 @@
       </div>
     </div>
 
-    <!-- 16:10 frame with `object-cover top` so the real captured PNGs
-         (which are slightly taller than 16:10) fill the frame edge-to-edge
-         and the most important top portion (header + first card row) is
-         always visible. Letterboxed slate-950 fills any leftover space so
-         it blends into the page. -->
-    <div class="relative aspect-[16/10] overflow-hidden bg-slate-950">
+    <!-- The captured PNGs are roughly 1903x854 (~ 20:9). We match that
+         aspect ratio exactly so the screenshots fill the frame edge-to-edge
+         with no clipping and no visible letterboxing. `object-contain`
+         guarantees the entire UI is always visible (Add Target button,
+         right-most cards, etc.) even if a future capture has a slightly
+         different ratio. The CSS-mockup fallbacks use the same frame so
+         layout never jumps when an image fails to load. -->
+    <div class="relative aspect-[1903/854] overflow-hidden bg-slate-950">
       {#each shots as shot, index}
         <div
           class="absolute inset-0 transition-opacity duration-700 {active === index
@@ -183,7 +185,7 @@
             <img
               src="/screenshots/{shot.id}.png"
               alt={shot.alt}
-              class="h-full w-full object-cover object-top"
+              class="h-full w-full object-contain object-top"
               loading={index === 0 ? 'eager' : 'lazy'}
               decoding="async"
               on:error={() => handleImgError(shot.id)}
