@@ -34,6 +34,13 @@
   let completionModalOpen = false;
   let completionSessionId = '';
   let completionRemainingMs = 0;
+  /**
+   * When the user manually stops via `completeSession()`, we capture the
+   * timer's remaining time *before* `timerStore.complete()` zeroes it.
+   * The reactive completion block reads this so it doesn't record the full
+   * planned duration for an early stop. `null` means "natural tick to 0".
+   */
+  let pendingCompletionRemainingMs: number | null = null;
   let soundPlayedForSessionId = '';
   let unsubscribers: Array<() => void> = [];
 
@@ -70,13 +77,17 @@
     completionSessionId !== $timerStore.sessionId
   ) {
     completionSessionId = $timerStore.sessionId;
-    completionRemainingMs = $timerStore.remainingMs;
+    // Prefer the value captured by `completeSession()` BEFORE it zeroed the
+    // timer; fall back to the live store value (which is correct for natural
+    // tick-down completion).
+    completionRemainingMs = pendingCompletionRemainingMs ?? $timerStore.remainingMs;
+    pendingCompletionRemainingMs = null;
     completionModalOpen = true;
     // Persist the session as completed up-front so a tab close before the
     // user fills in the Save modal still records the run. The modal then
     // enriches the row with quickNote + tags rather than being the only
     // path to mark it complete.
-    void persistCompletionEarly($timerStore.sessionId);
+    void persistCompletionEarly($timerStore.sessionId, completionRemainingMs);
     if (soundPlayedForSessionId !== $timerStore.sessionId) {
       soundPlayedForSessionId = $timerStore.sessionId;
       playCompleteSound();
@@ -111,8 +122,23 @@
     return Math.max(1, Math.round(durationMinutes * 60));
   }
 
-  function elapsedSeconds(session: Session): number {
-    return Math.max(0, Math.round((Date.now() - session.startedAt) / 1000));
+  /**
+   * Compute the *focused* time spent on a session — i.e. what the timer has
+   * actually counted down — as opposed to the wall-clock duration since
+   * `startedAt`. This excludes time the user spent paused, which is what
+   * we want stored as `durationActual`.
+   *
+   * Uses the live `endTime` when running (so it's always exact) and the
+   * stored `remainingMs` when paused (which the timer freezes on pause).
+   */
+  function actualSecondsFromTimer(session: Session): number {
+    const state = $timerStore;
+    const remainingMs =
+      state.status === 'running' && state.endTime
+        ? Math.max(state.endTime - Date.now(), 0)
+        : Math.max(state.remainingMs, 0);
+    const elapsed = Math.max(0, session.durationPlanned - Math.ceil(remainingMs / 1000));
+    return Math.min(elapsed, session.durationPlanned);
   }
 
   async function startSession() {
@@ -150,7 +176,9 @@
       await sessionStore.put({
         ...activeSession,
         status: 'paused',
-        durationActual: Math.min(elapsedSeconds(activeSession), activeSession.durationPlanned)
+        // Use timer countdown — wall-clock elapsed includes prior pause
+        // intervals and would over-report focused time on a 2nd pause.
+        durationActual: actualSecondsFromTimer(activeSession)
       });
     }
     timerStore.pause();
@@ -164,19 +192,21 @@
   }
 
   function completeSession() {
-    completionRemainingMs = $timerStore.remainingMs;
+    // Capture the live timer remainder BEFORE `timerStore.complete()` zeroes
+    // it, so a manual early stop records the right `durationActual` instead
+    // of always recording the full planned duration.
+    pendingCompletionRemainingMs = $timerStore.remainingMs;
     timerStore.complete();
   }
 
   // Mark the session as `completed` in IndexedDB the moment the timer rings,
   // before the user interacts with the Save modal. Idempotent: skips if the
   // session is already saved as completed/abandoned. Survives tab close.
-  async function persistCompletionEarly(sessionId: string): Promise<void> {
+  async function persistCompletionEarly(sessionId: string, remainingMs: number): Promise<void> {
     const session = sessionStore.getById(sessionId);
     if (!session) return;
     if (session.status === 'completed' || session.status === 'abandoned') return;
 
-    const remainingMs = $timerStore.remainingMs;
     const actualSeconds =
       remainingMs > 0
         ? Math.max(1, session.durationPlanned - Math.ceil(remainingMs / 1000))
@@ -198,17 +228,18 @@
       return;
     }
 
-    const elapsed = elapsedSeconds(activeSession);
-    if (elapsed > 300 && !confirm('Abandon this session? It will not count toward stats.')) {
+    const focused = actualSecondsFromTimer(activeSession);
+    if (focused > 300 && !confirm('Abandon this session? It will not count toward stats.')) {
       return;
     }
 
     await sessionStore.put({
       ...activeSession,
       status: 'abandoned',
-      durationActual: Math.min(elapsed, activeSession.durationPlanned),
+      durationActual: focused,
       endedAt: Date.now()
     });
+    await sessionStore.persistNow();
     timerStore.reset(durationSeconds() * 1000);
     completionModalOpen = false;
     completionSessionId = '';
@@ -268,6 +299,8 @@
   function resetTimer() {
     completionModalOpen = false;
     completionSessionId = '';
+    completionRemainingMs = 0;
+    pendingCompletionRemainingMs = null;
     timerStore.reset(durationSeconds() * 1000);
   }
 
