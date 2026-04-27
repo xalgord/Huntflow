@@ -1,6 +1,9 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import type {
   AppSettings,
+  Bookmark,
+  ChecklistInstance,
+  ChecklistTemplate,
   EvidenceAsset,
   EvidenceBlob,
   EvidenceCanvasView,
@@ -8,13 +11,16 @@ import type {
   HuntFlowDB,
   Note,
   NoteTemplate,
+  Payload,
   Payout,
+  ReconAsset,
   Session,
+  Submission,
   Target
 } from './schema';
 
 export const DB_NAME = 'huntflow';
-export const DB_VERSION = 3;
+export const DB_VERSION = 4;
 
 interface MemoryHuntFlowDB {
   sessions: Map<string, Session>;
@@ -26,6 +32,12 @@ interface MemoryHuntFlowDB {
   evidenceLinks: Map<string, EvidenceLink>;
   evidenceCanvasViews: Map<string, EvidenceCanvasView>;
   templates: Map<string, NoteTemplate>;
+  reconAssets: Map<string, ReconAsset>;
+  payloads: Map<string, Payload>;
+  checklistTemplates: Map<string, ChecklistTemplate>;
+  checklistInstances: Map<string, ChecklistInstance>;
+  submissions: Map<string, Submission>;
+  bookmarks: Map<string, Bookmark>;
   settings: Map<string, AppSettings>;
 }
 
@@ -39,6 +51,12 @@ const memoryDB: MemoryHuntFlowDB = {
   evidenceLinks: new Map(),
   evidenceCanvasViews: new Map(),
   templates: new Map(),
+  reconAssets: new Map(),
+  payloads: new Map(),
+  checklistTemplates: new Map(),
+  checklistInstances: new Map(),
+  submissions: new Map(),
+  bookmarks: new Map(),
   settings: new Map()
 };
 
@@ -115,6 +133,50 @@ function createStores(db: IDBPDatabase<HuntFlowDB>) {
     store.createIndex('by-category', 'category', { unique: false });
   }
 
+  if (!db.objectStoreNames.contains('reconAssets')) {
+    const store = db.createObjectStore('reconAssets', { keyPath: 'id' });
+    store.createIndex('by-target', 'targetId', { unique: false });
+    store.createIndex('by-status', 'status', { unique: false });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
+  if (!db.objectStoreNames.contains('payloads')) {
+    const store = db.createObjectStore('payloads', { keyPath: 'id' });
+    store.createIndex('by-category', 'category', { unique: false });
+    store.createIndex('by-tags', 'tags', { unique: false, multiEntry: true });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
+  if (!db.objectStoreNames.contains('checklistTemplates')) {
+    const store = db.createObjectStore('checklistTemplates', { keyPath: 'id' });
+    store.createIndex('by-kind', 'kind', { unique: false });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
+  if (!db.objectStoreNames.contains('checklistInstances')) {
+    const store = db.createObjectStore('checklistInstances', { keyPath: 'id' });
+    store.createIndex('by-target', 'targetId', { unique: false });
+    store.createIndex('by-template', 'templateId', { unique: false });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
+  if (!db.objectStoreNames.contains('submissions')) {
+    const store = db.createObjectStore('submissions', { keyPath: 'id' });
+    store.createIndex('by-target', 'targetId', { unique: false });
+    store.createIndex('by-status', 'status', { unique: false });
+    store.createIndex('by-platform', 'platform', { unique: false });
+    store.createIndex('by-severity', 'severity', { unique: false });
+    store.createIndex('by-submittedAt', 'submittedAt', { unique: false });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
+  if (!db.objectStoreNames.contains('bookmarks')) {
+    const store = db.createObjectStore('bookmarks', { keyPath: 'id' });
+    store.createIndex('by-category', 'category', { unique: false });
+    store.createIndex('by-tags', 'tags', { unique: false, multiEntry: true });
+    store.createIndex('by-updated', 'updatedAt', { unique: false });
+  }
+
   if (!db.objectStoreNames.contains('settings')) {
     db.createObjectStore('settings', { keyPath: 'key' });
   }
@@ -187,5 +249,11 @@ export function resetMemoryDB(): void {
   memoryDB.evidenceLinks.clear();
   memoryDB.evidenceCanvasViews.clear();
   memoryDB.templates.clear();
+  memoryDB.reconAssets.clear();
+  memoryDB.payloads.clear();
+  memoryDB.checklistTemplates.clear();
+  memoryDB.checklistInstances.clear();
+  memoryDB.submissions.clear();
+  memoryDB.bookmarks.clear();
   memoryDB.settings.clear();
 }

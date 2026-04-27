@@ -1,27 +1,25 @@
 import type { DBSchema } from 'idb';
 
-export interface Session {
-  id: string;
-  targetId: string;
-  templateId?: string;
-  durationPlanned: number;
-  durationActual: number;
-  startedAt: number;
-  endedAt?: number;
-  status: 'running' | 'paused' | 'completed' | 'abandoned';
-  quickNote?: string;
-  tags: SessionTag[];
-}
+// ─── Core entities ───────────────────────────────────────────────────────────
 
-export type SessionTag =
-  | 'critical'
-  | 'high'
-  | 'medium'
-  | 'low'
-  | 'needs-report'
-  | 'duplicate'
-  | 'informative'
-  | 'wont-fix';
+export type Platform =
+  | 'hackerone'
+  | 'bugcrowd'
+  | 'intigriti'
+  | 'synack'
+  | 'yeswehack'
+  | 'self-hosted'
+  | 'other';
+
+export type Priority = 0 | 1 | 2 | 3;
+
+export type TargetStatus =
+  | 'recon'
+  | 'testing'
+  | 'reported'
+  | 'paid'
+  | 'closed'
+  | 'archived';
 
 export interface Target {
   id: string;
@@ -38,33 +36,27 @@ export interface Target {
   sessionCount: number;
 }
 
-export type Platform =
-  | 'hackerone'
-  | 'bugcrowd'
-  | 'intigriti'
-  | 'synack'
-  | 'yeswehack'
-  | 'self-hosted'
-  | 'other';
+export type SessionTag =
+  | 'critical'
+  | 'high'
+  | 'medium'
+  | 'low'
+  | 'needs-report'
+  | 'duplicate'
+  | 'informative'
+  | 'wont-fix';
 
-export type Priority = 0 | 1 | 2 | 3;
-
-export type TargetStatus = 'recon' | 'testing' | 'reported' | 'paid' | 'closed' | 'archived';
-
-export type PayoutSeverity = 'critical' | 'high' | 'medium' | 'low' | 'informational';
-
-export type PayoutStatus = 'pending' | 'triaged' | 'paid';
-
-export interface Payout {
+export interface Session {
   id: string;
-  program: string;
-  platform: Platform;
-  severity: PayoutSeverity;
-  amount: number;
-  date: number;
-  status: PayoutStatus;
-  createdAt: number;
-  updatedAt: number;
+  targetId: string;
+  templateId?: string;
+  durationPlanned: number;
+  durationActual: number;
+  startedAt: number;
+  endedAt?: number;
+  status: 'running' | 'paused' | 'completed' | 'abandoned';
+  quickNote?: string;
+  tags: SessionTag[];
 }
 
 export interface Note {
@@ -79,11 +71,62 @@ export interface Note {
   updatedAt: number;
 }
 
-export type EvidenceAssetKind = 'image' | 'pdf' | 'text' | 'request' | 'response' | 'archive' | 'binary' | 'url';
+export type TemplateCategory =
+  | 'web'
+  | 'mobile'
+  | 'api'
+  | 'cloud'
+  | 'network'
+  | 'general';
+
+export interface NoteTemplate {
+  id: string;
+  name: string;
+  category: TemplateCategory;
+  content: string;
+  isBuiltIn: boolean;
+  isCustom?: boolean;
+}
+
+export type PayoutSeverity = 'critical' | 'high' | 'medium' | 'low' | 'informational';
+export type PayoutStatus = 'pending' | 'triaged' | 'paid';
+
+export interface Payout {
+  id: string;
+  program: string;
+  platform: Platform;
+  severity: PayoutSeverity;
+  amount: number;
+  date: number;
+  status: PayoutStatus;
+  createdAt: number;
+  updatedAt: number;
+  /** Optional link to the originating submission. */
+  submissionId?: string;
+}
+
+// ─── Evidence vault ──────────────────────────────────────────────────────────
+
+export type EvidenceAssetKind =
+  | 'image'
+  | 'pdf'
+  | 'text'
+  | 'request'
+  | 'response'
+  | 'archive'
+  | 'binary'
+  | 'url';
 
 export type EvidenceAssetSource = 'upload' | 'clipboard' | 'snippet' | 'url';
-
 export type EvidenceSyncState = 'local' | 'pending-upload' | 'synced' | 'remote' | 'error';
+export type EvidenceNodeType = 'target' | 'session' | 'note' | 'asset' | 'url';
+export type EvidenceRelationship =
+  | 'proves'
+  | 'references'
+  | 'derived-from'
+  | 'blocks'
+  | 'duplicates'
+  | 'belongs-to';
 
 export interface EvidenceAsset {
   id: string;
@@ -113,32 +156,19 @@ export interface EvidenceAsset {
 
 export interface EvidenceBlob {
   assetId: string;
-  blob: Blob;
-  mimeType: string;
-  fileName?: string;
-  relativePath?: string;
+  data: Blob;
   size: number;
-  createdAt: number;
+  mimeType: string;
   updatedAt: number;
 }
-
-export type EvidenceNodeType = 'target' | 'session' | 'note' | 'asset' | 'url';
-
-export type EvidenceRelationship =
-  | 'proves'
-  | 'references'
-  | 'derived-from'
-  | 'blocks'
-  | 'duplicates'
-  | 'belongs-to';
 
 export interface EvidenceLink {
   id: string;
   fromType: EvidenceNodeType;
   fromId: string;
-  fromKey: string;
   toType: EvidenceNodeType;
   toId: string;
+  fromKey: string;
   toKey: string;
   relationship: EvidenceRelationship;
   label?: string;
@@ -166,16 +196,264 @@ export interface EvidenceCanvasView {
   updatedAt: number;
 }
 
-export interface NoteTemplate {
+// ─── New: Recon inventory ────────────────────────────────────────────────────
+
+export type ReconAssetStatus =
+  | 'untested'
+  | 'in-progress'
+  | 'tested'
+  | 'vulnerable'
+  | 'out-of-scope'
+  | 'dead';
+
+export type ReconAssetSource =
+  | 'manual'
+  | 'import'
+  | 'httpx'
+  | 'subfinder'
+  | 'amass'
+  | 'crt-sh'
+  | 'wayback'
+  | 'other';
+
+export interface ReconAsset {
   id: string;
-  name: string;
-  category: TemplateCategory;
-  content: string;
-  isBuiltIn: boolean;
-  isCustom?: boolean;
+  targetId: string;
+  /** Primary identifier — host, subdomain, or path-less origin. */
+  hostname: string;
+  /** Optional canonical URL when discovered via httpx/wayback/etc. */
+  url?: string;
+  /** Resolved IPv4/IPv6 address. */
+  ipAddress?: string;
+  status: ReconAssetStatus;
+  inScope: boolean;
+  httpStatus?: number;
+  /** Page title returned during fingerprinting. */
+  title?: string;
+  technologies: string[];
+  ports?: number[];
+  notes?: string;
+  source?: ReconAssetSource;
+  /** When the asset was first seen. */
+  discoveredAt: number;
+  /** When this asset was last manually retested. */
+  lastTestedAt?: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
-export type TemplateCategory = 'web' | 'mobile' | 'api' | 'cloud' | 'network' | 'general';
+// ─── New: Payload library ────────────────────────────────────────────────────
+
+export type PayloadCategory =
+  | 'xss'
+  | 'sqli'
+  | 'nosqli'
+  | 'ssrf'
+  | 'xxe'
+  | 'ssti'
+  | 'lfi'
+  | 'rce'
+  | 'cmd-injection'
+  | 'auth-bypass'
+  | 'open-redirect'
+  | 'idor'
+  | 'csrf'
+  | 'deserialization'
+  | 'graphql'
+  | 'jwt'
+  | 'oauth'
+  | 'crlf'
+  | 'prototype-pollution'
+  | 'header-injection'
+  | 'race-condition'
+  | 'recon'
+  | 'wordlist'
+  | 'other';
+
+export interface Payload {
+  id: string;
+  /** Human-readable name shown in the library. */
+  name: string;
+  category: PayloadCategory;
+  /** The actual payload string the user copies. */
+  payload: string;
+  description?: string;
+  tags: string[];
+  language?: string;
+  context?: string;
+  source?: string;
+  isBuiltIn: boolean;
+  isFavorite: boolean;
+  useCount: number;
+  lastUsedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ─── New: Methodology checklists ─────────────────────────────────────────────
+
+export type ChecklistKind = 'web' | 'api' | 'mobile' | 'cloud' | 'network' | 'recon' | 'custom';
+
+export interface ChecklistTemplateItem {
+  id: string;
+  /** Human-readable test description shown in the checklist UI. */
+  title: string;
+  description?: string;
+  /** Optional links to OWASP/PortSwigger/HackTricks references. */
+  references?: string[];
+  severityHint?: PayoutSeverity;
+}
+
+export interface ChecklistTemplateSection {
+  id: string;
+  title: string;
+  items: ChecklistTemplateItem[];
+}
+
+export interface ChecklistTemplate {
+  id: string;
+  name: string;
+  kind: ChecklistKind;
+  description?: string;
+  sections: ChecklistTemplateSection[];
+  isBuiltIn: boolean;
+  source?: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type ChecklistItemStatus = 'todo' | 'in-progress' | 'done' | 'na' | 'found';
+
+export interface ChecklistInstanceItemState {
+  status: ChecklistItemStatus;
+  /** Free-form notes attached to this checklist item. */
+  notes?: string;
+  /** Optional cross-link to an evidence asset documenting the finding. */
+  evidenceAssetId?: string;
+  /** Optional cross-link to a note for the longer write-up. */
+  noteId?: string;
+  /** Severity recorded when the user marks the item as `found`. */
+  severity?: PayoutSeverity;
+  updatedAt: number;
+}
+
+export interface ChecklistInstance {
+  id: string;
+  templateId: string;
+  targetId: string;
+  /** Snapshot of template name at creation time. */
+  templateName: string;
+  /** Snapshot of template kind at creation time. */
+  templateKind: ChecklistKind;
+  /** Per-item state keyed by ChecklistTemplateItem.id. */
+  itemStates: Record<string, ChecklistInstanceItemState>;
+  notes?: string;
+  /** Set when every item is `done`/`na`/`found`. Cleared when user reopens an item. */
+  completedAt?: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ─── New: Submissions tracker ───────────────────────────────────────────────
+
+export type SubmissionStatus =
+  | 'draft'
+  | 'submitted'
+  | 'triaged'
+  | 'accepted'
+  | 'duplicate'
+  | 'informational'
+  | 'not-applicable'
+  | 'resolved'
+  | 'rewarded'
+  | 'closed';
+
+export interface SubmissionTimelineEntry {
+  id: string;
+  status: SubmissionStatus;
+  at: number;
+  note?: string;
+}
+
+export interface Submission {
+  id: string;
+  title: string;
+  targetId: string;
+  noteId?: string;
+  platform: Platform;
+  vulnerabilityType?: string;
+  severity: PayoutSeverity;
+  cvssScore?: number;
+  cvssVector?: string;
+  reportUrl?: string;
+  reportMarkdown?: string;
+  status: SubmissionStatus;
+  /** When the report was sent to the program. */
+  submittedAt?: number;
+  triagedAt?: number;
+  resolvedAt?: number;
+  rewardedAt?: number;
+  /** Total bounty awarded across one or more linked Payouts. */
+  bountyAmount?: number;
+  payoutIds: string[];
+  duplicateOf?: string;
+  notes?: string;
+  tags: string[];
+  timeline: SubmissionTimelineEntry[];
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ─── New: Bookmarks library ─────────────────────────────────────────────────
+
+export type BookmarkCategory =
+  | 'methodology'
+  | 'cheatsheet'
+  | 'tools'
+  | 'recon'
+  | 'cve'
+  | 'xss'
+  | 'sqli'
+  | 'ssrf'
+  | 'xxe'
+  | 'ssti'
+  | 'lfi'
+  | 'rce'
+  | 'auth'
+  | 'idor'
+  | 'jwt'
+  | 'oauth'
+  | 'graphql'
+  | 'mobile'
+  | 'general';
+
+export interface Bookmark {
+  id: string;
+  title: string;
+  url: string;
+  category: BookmarkCategory;
+  /** Optional cross-link to a payload/vuln category for filtering. */
+  vulnClass?: PayloadCategory;
+  description?: string;
+  tags: string[];
+  isBuiltIn: boolean;
+  isFavorite: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ─── CVSS ────────────────────────────────────────────────────────────────────
+
+export type CvssBaseSeverity = 'none' | 'low' | 'medium' | 'high' | 'critical';
+
+export interface CvssVector {
+  version: '3.0' | '3.1';
+  vectorString: string;
+  baseScore: number;
+  baseSeverity: CvssBaseSeverity;
+}
+
+// ─── Settings & stats ────────────────────────────────────────────────────────
 
 export interface AppSettings {
   key: string;
@@ -197,6 +475,27 @@ export interface Settings {
   lastExportAt?: number;
 }
 
+export const DEFAULT_SETTINGS: Settings = {
+  defaultDuration: 1500,
+  autoStartBreak: true,
+  breakDuration: 300,
+  sessionsBeforeLongBreak: 4,
+  longBreakDuration: 900,
+  soundEnabled: true,
+  vibrationEnabled: true,
+  theme: 'dark',
+  accentColor: 'green',
+  fontSize: 'medium',
+  onboardingCompleted: false
+};
+
+export interface DailyStat {
+  date: string;
+  totalMinutes: number;
+  sessionCount: number;
+  completedCount: number;
+}
+
 export interface UserStats {
   totalTimeSeconds: number;
   totalSessions: number;
@@ -211,13 +510,6 @@ export interface UserStats {
   dailyStats: DailyStat[];
 }
 
-export interface DailyStat {
-  date: string;
-  totalMinutes: number;
-  sessionCount: number;
-  completedCount: number;
-}
-
 export interface TimerState {
   status: 'idle' | 'running' | 'paused' | 'completed';
   remainingMs: number;
@@ -227,15 +519,13 @@ export interface TimerState {
   progress: number;
 }
 
+// ─── IndexedDB schema ────────────────────────────────────────────────────────
+
 export interface HuntFlowDB extends DBSchema {
   sessions: {
     key: string;
     value: Session;
-    indexes: {
-      'by-target': string;
-      'by-started': number;
-      'by-status': string;
-    };
+    indexes: { 'by-target': string; 'by-started': number; 'by-status': string };
   };
   notes: {
     key: string;
@@ -285,9 +575,7 @@ export interface HuntFlowDB extends DBSchema {
   evidenceBlobs: {
     key: string;
     value: EvidenceBlob;
-    indexes: {
-      'by-updated': number;
-    };
+    indexes: { 'by-updated': number };
   };
   evidenceLinks: {
     key: string;
@@ -302,23 +590,57 @@ export interface HuntFlowDB extends DBSchema {
   evidenceCanvasViews: {
     key: string;
     value: EvidenceCanvasView;
-    indexes: {
-      'by-target': string;
-      'by-updated': number;
-    };
+    indexes: { 'by-target': string; 'by-updated': number };
   };
   templates: {
     key: string;
     value: NoteTemplate;
+    indexes: { 'by-category': string };
+  };
+  reconAssets: {
+    key: string;
+    value: ReconAsset;
+    indexes: { 'by-target': string; 'by-status': string; 'by-updated': number };
+  };
+  payloads: {
+    key: string;
+    value: Payload;
+    indexes: { 'by-category': string; 'by-tags': string; 'by-updated': number };
+  };
+  checklistTemplates: {
+    key: string;
+    value: ChecklistTemplate;
+    indexes: { 'by-kind': string; 'by-updated': number };
+  };
+  checklistInstances: {
+    key: string;
+    value: ChecklistInstance;
+    indexes: { 'by-target': string; 'by-template': string; 'by-updated': number };
+  };
+  submissions: {
+    key: string;
+    value: Submission;
     indexes: {
-      'by-category': string;
+      'by-target': string;
+      'by-status': string;
+      'by-platform': string;
+      'by-severity': string;
+      'by-submittedAt': number;
+      'by-updated': number;
     };
+  };
+  bookmarks: {
+    key: string;
+    value: Bookmark;
+    indexes: { 'by-category': string; 'by-tags': string; 'by-updated': number };
   };
   settings: {
     key: string;
     value: AppSettings;
   };
 }
+
+// ─── Export/Import format ────────────────────────────────────────────────────
 
 export interface HuntFlowExport {
   meta: {
@@ -334,23 +656,17 @@ export interface HuntFlowExport {
     evidenceAssets?: EvidenceAsset[];
     evidenceLinks?: EvidenceLink[];
     evidenceCanvasViews?: EvidenceCanvasView[];
+    reconAssets?: ReconAsset[];
+    payloads?: Payload[];
+    checklistTemplates?: ChecklistTemplate[];
+    checklistInstances?: ChecklistInstance[];
+    submissions?: Submission[];
+    bookmarks?: Bookmark[];
     settings: Settings;
   };
 }
 
-export const DEFAULT_SETTINGS: Settings = {
-  defaultDuration: 1500,
-  autoStartBreak: true,
-  breakDuration: 300,
-  sessionsBeforeLongBreak: 4,
-  longBreakDuration: 900,
-  soundEnabled: true,
-  vibrationEnabled: true,
-  theme: 'dark',
-  accentColor: 'green',
-  fontSize: 'medium',
-  onboardingCompleted: false
-};
+// ─── Built-in templates ──────────────────────────────────────────────────────
 
 export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
   {

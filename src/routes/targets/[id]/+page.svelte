@@ -6,7 +6,21 @@
   import TargetStatusBadge from '$lib/components/targets/TargetStatusBadge.svelte';
   import { evidenceAssetStore, sessionStore, targetStore } from '$lib/stores';
   import type { Session, Target, TargetStatus } from '$lib/types';
-  import { Archive, ArrowLeft, ExternalLink, Network, Play, Trash2 } from 'lucide-svelte';
+  import {
+    Archive,
+    ArrowLeft,
+    ExternalLink,
+    ListChecks,
+    Network,
+    Play,
+    Send,
+    Trash2
+  } from 'lucide-svelte';
+  import {
+    checklistInstanceStore,
+    reconAssetStore,
+    submissionStore
+  } from '$lib/stores';
   import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
@@ -23,9 +37,23 @@
   let loaded = false;
 
   onMount(async () => {
-    await Promise.all([targetStore.load(), sessionStore.load(), evidenceAssetStore.load()]);
+    await Promise.all([
+      targetStore.load(),
+      sessionStore.load(),
+      evidenceAssetStore.load(),
+      reconAssetStore.load(),
+      checklistInstanceStore.load(),
+      submissionStore.load()
+    ]);
     loaded = true;
   });
+
+  $: reconCount = $reconAssetStore.filter((a) => a.targetId === targetId).length;
+  $: reconVulnCount = $reconAssetStore.filter(
+    (a) => a.targetId === targetId && a.status === 'vulnerable'
+  ).length;
+  $: checklistCount = $checklistInstanceStore.filter((i) => i.targetId === targetId).length;
+  $: submissionCount = $submissionStore.filter((s) => s.targetId === targetId).length;
 
   $: targetId = $page.params.id;
   $: target = $targetStore.find((candidate) => candidate.id === targetId);
@@ -144,6 +172,54 @@
           </div>
         </div>
       </header>
+
+      <section aria-label="Target workspaces" class="grid gap-3 sm:grid-cols-3">
+        <a
+          href={`/targets/${target.id}/recon`}
+          class="hf-card hf-interactive flex items-center gap-3 p-4"
+        >
+          <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
+            <Network size={18} aria-hidden="true" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Recon</span>
+            <span class="block text-sm font-semibold text-foreground">
+              {reconCount} assets
+              {#if reconVulnCount > 0}
+                <span class="ml-1 text-destructive">· {reconVulnCount} vuln</span>
+              {/if}
+            </span>
+          </span>
+        </a>
+        <a
+          href={`/targets/${target.id}/methodology`}
+          class="hf-card hf-interactive flex items-center gap-3 p-4"
+        >
+          <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
+            <ListChecks size={18} aria-hidden="true" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Methodology</span>
+            <span class="block text-sm font-semibold text-foreground">
+              {checklistCount > 0 ? `${checklistCount} checklist${checklistCount === 1 ? '' : 's'}` : 'Start tracking'}
+            </span>
+          </span>
+        </a>
+        <a
+          href={`/submissions?target=${target.id}`}
+          class="hf-card hf-interactive flex items-center gap-3 p-4"
+        >
+          <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
+            <Send size={18} aria-hidden="true" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Submissions</span>
+            <span class="block text-sm font-semibold text-foreground">
+              {submissionCount > 0 ? `${submissionCount} report${submissionCount === 1 ? '' : 's'}` : 'No reports yet'}
+            </span>
+          </span>
+        </a>
+      </section>
 
       <section class="hf-card p-4">
         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

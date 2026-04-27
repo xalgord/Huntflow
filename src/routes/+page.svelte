@@ -1,6 +1,15 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { noteStore, payoutStore, sessionStore, targetStore, timerStore, todayMinutesStore } from '$lib/stores';
+  import {
+    noteStore,
+    payoutStore,
+    reconAssetStore,
+    sessionStore,
+    submissionStore,
+    targetStore,
+    timerStore,
+    todayMinutesStore
+  } from '$lib/stores';
   import type { Note, Platform, Session, Target } from '$lib/types';
   import {
     ArrowRight,
@@ -127,7 +136,14 @@
   }
 
   onMount(async () => {
-    await Promise.all([sessionStore.load(), targetStore.load(), noteStore.load(), payoutStore.load()]);
+    await Promise.all([
+      sessionStore.load(),
+      targetStore.load(),
+      noteStore.load(),
+      payoutStore.load(),
+      submissionStore.load(),
+      reconAssetStore.load()
+    ]);
     lastSyncAt = getLastSyncAt();
   });
 
@@ -148,6 +164,11 @@
     activeTargets[0] ??
     $targetStore[0];
   $: targetNotes = activeTarget ? $noteStore.filter((note) => note.targetId === activeTarget.id) : $noteStore;
+  $: targetReconAssets = activeTarget
+    ? $reconAssetStore.filter((asset) => asset.targetId === activeTarget.id)
+    : [];
+  $: targetReconCount = targetReconAssets.length;
+  $: targetReconVulnerable = targetReconAssets.filter((asset) => asset.status === 'vulnerable').length;
   $: recentNotes = [...$noteStore].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
   $: activeTargetNotes = [...targetNotes].sort((a, b) => b.updatedAt - a.updatedAt);
   $: needsReport = targetNotes.some((note) => note.tags.includes('needs-report'));
@@ -162,9 +183,19 @@
     {
       number: 1,
       title: 'Recon & discovery',
-      detail: activeTarget ? `${platformLabels[activeTarget.platform]} scope queued` : 'Add a target to start the chain',
-      state: activeTarget ? 'done' : 'active',
-      meta: activeTarget ? 'Target locked' : 'Missing target'
+      detail:
+        activeTarget && targetReconCount > 0
+          ? `${targetReconCount} asset${targetReconCount === 1 ? '' : 's'} mapped${targetReconVulnerable > 0 ? ` · ${targetReconVulnerable} flagged` : ''}`
+          : activeTarget
+            ? `${platformLabels[activeTarget.platform]} scope queued — import recon assets`
+            : 'Add a target to start the chain',
+      state: activeTarget && targetReconCount > 0 ? 'done' : 'active',
+      meta:
+        activeTarget && targetReconCount > 0
+          ? 'Recon mapped'
+          : activeTarget
+            ? 'Recon pending'
+            : 'Missing target'
     },
     {
       number: 2,
@@ -190,9 +221,14 @@
     {
       number: 5,
       title: 'Submit & track',
-      detail: $payoutStore.length > 0 ? `${$payoutStore.length} payout record${$payoutStore.length === 1 ? '' : 's'} logged` : 'Monitor triage and bounty status',
-      state: $payoutStore.length > 0 ? 'done' : 'pending',
-      meta: $payoutStore.length > 0 ? 'Tracked' : 'Pending'
+      detail:
+        $submissionStore.length > 0
+          ? `${$submissionStore.length} report${$submissionStore.length === 1 ? '' : 's'} · ${$submissionStore.filter((s) => ['submitted', 'triaged', 'accepted'].includes(s.status)).length} in triage`
+          : $payoutStore.length > 0
+            ? `${$payoutStore.length} legacy payout record${$payoutStore.length === 1 ? '' : 's'}`
+            : 'Monitor triage, severity, and bounty pipeline',
+      state: ($submissionStore.length > 0 || $payoutStore.length > 0) ? 'done' : 'pending',
+      meta: $submissionStore.length > 0 ? 'Tracked' : 'Pending'
     }
   ];
   $: selectedStep = workflow.find((step) => step.number === selectedWorkflow) ?? workflow[2];

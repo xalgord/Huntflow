@@ -4,9 +4,21 @@
   import TaxExport from '$lib/components/income/TaxExport.svelte';
   import PlatformIcon from '$lib/components/targets/PlatformIcon.svelte';
   import StatCard from '$lib/components/stats/StatCard.svelte';
-  import { payoutStore, targetStore } from '$lib/stores';
+  import { payoutStore, submissionStore, targetStore } from '$lib/stores';
   import type { Payout, PayoutSeverity, PayoutStatus, Platform } from '$lib/types';
-  import { Banknote, CalendarDays, DollarSign, Pencil, Plus, Receipt, Trash2, TrendingUp } from 'lucide-svelte';
+  import { buildSubmissionFromPayout } from '$lib/utils/migrations';
+  import {
+    Banknote,
+    CalendarDays,
+    DollarSign,
+    Pencil,
+    Plus,
+    Receipt,
+    Send,
+    Trash2,
+    TrendingUp
+  } from 'lucide-svelte';
+  import { goto } from '$app/navigation';
   import { onMount } from 'svelte';
 
   type StatusFilter = PayoutStatus | 'all';
@@ -47,8 +59,12 @@
   let yearFilter = 'all';
 
   onMount(async () => {
-    await Promise.all([payoutStore.load(), targetStore.load()]);
+    await Promise.all([payoutStore.load(), targetStore.load(), submissionStore.load()]);
   });
+
+  // Set of submission IDs that actually exist, so we can tell when a payout's
+  // linked submission has been deleted (and offer re-promotion in that case).
+  $: existingSubmissionIds = new Set($submissionStore.map((submission) => submission.id));
 
   $: years = Array.from(new Set($payoutStore.map((payout) => String(new Date(payout.date).getFullYear())))).sort(
     (a, b) => Number(b) - Number(a)
@@ -147,6 +163,27 @@
     if (!status) return;
     await payoutStore.put({ ...payout, status, updatedAt: Date.now() });
     await payoutStore.persistNow();
+  }
+
+  async function promoteToSubmission(payout: Payout): Promise<void> {
+    // If already linked to a still-existing submission, just navigate to it.
+    if (payout.submissionId && existingSubmissionIds.has(payout.submissionId)) {
+      const linked = $submissionStore.find((s) => s.id === payout.submissionId);
+      const targetId = linked?.targetId ?? 'all';
+      await goto(`/submissions?target=${targetId}`);
+      return;
+    }
+    // Otherwise build a fresh submission (covers both unlinked payouts and
+    // payouts whose linked submission was deleted).
+    const { submission, updatedPayout } = buildSubmissionFromPayout(payout, $targetStore);
+    if (!submission.targetId) {
+      alert('Add a target first so the submission can be linked to a program.');
+      return;
+    }
+    await submissionStore.put(submission);
+    await payoutStore.put(updatedPayout);
+    await Promise.all([submissionStore.persistNow(), payoutStore.persistNow()]);
+    await goto(`/submissions?target=${submission.targetId}`);
   }
 
   async function deletePayout(payout: Payout): Promise<void> {
@@ -274,6 +311,8 @@
 
         <div class="divide-y divide-slate-700">
           {#each filteredPayouts as payout (payout.id)}
+            {@const submissionExists =
+              payout.submissionId != null && existingSubmissionIds.has(payout.submissionId)}
             <article class="grid gap-3 p-4 lg:grid-cols-[minmax(180px,1fr)_150px_130px_120px_120px_220px] lg:items-center">
               <div>
                 <h2 class="font-semibold text-slate-100">{payout.program}</h2>
@@ -307,6 +346,18 @@
                     Mark {statusLabel(nextStatus(payout.status) ?? payout.status)}
                   </button>
                 {/if}
+
+                <button
+                  type="button"
+                  class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md transition {submissionExists
+                    ? 'text-primary hover:bg-primary/10'
+                    : 'text-slate-400 hover:bg-primary/10 hover:text-primary'}"
+                  aria-label={submissionExists ? 'View linked submission' : 'Promote to submission'}
+                  title={submissionExists ? 'View linked submission' : 'Promote to submission'}
+                  on:click={() => promoteToSubmission(payout)}
+                >
+                  <Send size={16} aria-hidden="true" />
+                </button>
 
                 <button
                   type="button"

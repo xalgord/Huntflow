@@ -11,7 +11,7 @@
 
 <script lang="ts">
   import { X } from 'lucide-svelte';
-  import { createEventDispatcher, onDestroy, onMount, tick } from 'svelte';
+  import { createEventDispatcher, onMount, tick } from 'svelte';
 
   export let open = false;
   export let title = '';
@@ -36,12 +36,12 @@
     if (closeOnOverlay && event.target === event.currentTarget) close();
   }
 
+  // onMount never runs during SSR, so its returned cleanup is also SSR-safe.
+  // Using onDestroy directly here would crash adapter-static prerendering
+  // because onDestroy DOES fire during SSR cleanup, where `window` is undefined.
   onMount(() => {
     window.addEventListener('keydown', handleKeydown);
-  });
-
-  onDestroy(() => {
-    window.removeEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
   });
 
   $: if (open) void tick().then(() => dialog?.focus());

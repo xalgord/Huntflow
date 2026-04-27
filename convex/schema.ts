@@ -8,7 +8,13 @@ const syncCollection = v.union(
   v.literal('payouts'),
   v.literal('evidenceAssets'),
   v.literal('evidenceLinks'),
-  v.literal('evidenceCanvasViews')
+  v.literal('evidenceCanvasViews'),
+  v.literal('reconAssets'),
+  v.literal('payloads'),
+  v.literal('checklistTemplates'),
+  v.literal('checklistInstances'),
+  v.literal('submissions'),
+  v.literal('bookmarks')
 );
 
 export default defineSchema({

@@ -89,49 +89,55 @@
   {/if}
 
   {#if creating}
-    <div class="grid gap-3 rounded-lg border border-border/70 bg-background/50 p-3 shadow-inner-line sm:grid-cols-[1fr_160px_96px_auto]">
-      <label class="block">
+    <!--
+      The selector lives inside a 360px aside on lg+, so a horizontal 4-column
+      grid overflows the card and clips the Save button. Use a vertical flex
+      column with explicit w-full controls — bulletproof against any parent
+      grid-template propagation.
+    -->
+    <div class="flex flex-col gap-3 rounded-lg border border-border/70 bg-background/50 p-3 shadow-inner-line">
+      <label class="flex w-full flex-col gap-1">
         <span class="text-xs font-medium text-muted-foreground">Name</span>
         <input
           bind:value={name}
-          class="hf-input mt-1"
+          class="hf-input w-full"
           placeholder="Example Corp"
         />
       </label>
-      <label class="block">
-        <span class="text-xs font-medium text-muted-foreground">Platform</span>
-        <select
-          bind:value={platform}
-          class="hf-select mt-1"
-        >
-          {#each platforms as item}
-            <option value={item.value}>{item.label}</option>
-          {/each}
-        </select>
-      </label>
-      <label class="block">
-        <span class="text-xs font-medium text-muted-foreground">Priority</span>
-        <select
-          bind:value={priority}
-          class="hf-select mt-1"
-        >
-          <option value={0}>P0</option>
-          <option value={1}>P1</option>
-          <option value={2}>P2</option>
-          <option value={3}>P3</option>
-        </select>
-      </label>
-      <div class="flex items-end">
-        <button
-          type="button"
-          class="hf-button-primary"
-          on:click={createTarget}
-        >
-          Save
-        </button>
+      <div class="flex w-full gap-3">
+        <label class="flex min-w-0 flex-1 flex-col gap-1">
+          <span class="text-xs font-medium text-muted-foreground">Platform</span>
+          <select
+            bind:value={platform}
+            class="hf-select w-full"
+          >
+            {#each platforms as item}
+              <option value={item.value}>{item.label}</option>
+            {/each}
+          </select>
+        </label>
+        <label class="flex min-w-0 flex-1 flex-col gap-1">
+          <span class="text-xs font-medium text-muted-foreground">Priority</span>
+          <select
+            bind:value={priority}
+            class="hf-select w-full"
+          >
+            <option value={0}>P0</option>
+            <option value={1}>P1</option>
+            <option value={2}>P2</option>
+            <option value={3}>P3</option>
+          </select>
+        </label>
       </div>
+      <button
+        type="button"
+        class="hf-button-primary w-full justify-center"
+        on:click={createTarget}
+      >
+        Save
+      </button>
       {#if error}
-        <p class="text-xs text-red-300 sm:col-span-4">{error}</p>
+        <p class="text-xs text-red-300">{error}</p>
       {/if}
     </div>
   {/if}

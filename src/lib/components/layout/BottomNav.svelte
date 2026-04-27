@@ -1,6 +1,6 @@
 <script lang="ts">
   import NavItem from './NavItem.svelte';
-  import { navItems } from './navItems';
+  import { primaryNavItems } from './navItems';
 
   export let pathname = '/';
 </script>
@@ -10,7 +10,7 @@
   aria-label="Primary"
 >
   <div class="mx-auto flex h-14 max-w-xl items-center gap-1">
-    {#each navItems as item}
+    {#each primaryNavItems as item}
       <NavItem
         href={item.href}
         label={item.label}

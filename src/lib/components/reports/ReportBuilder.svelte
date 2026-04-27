@@ -18,7 +18,14 @@
   } from '$lib/utils/reports';
   import { AlertCircle, Clipboard, Download, Printer, RefreshCw } from 'lucide-svelte';
   import { createEventDispatcher, onDestroy } from 'svelte';
+  import CvssCalculator from '$lib/components/cvss/CvssCalculator.svelte';
+  import HttpRequestEditor from '$lib/components/http/HttpRequestEditor.svelte';
+  import { severityToReportSeverity } from '$lib/utils/cvss';
+  import type { CvssBaseSeverity } from '$lib/types';
   import ReportPreview from './ReportPreview.svelte';
+
+  let cvssOpen = false;
+  let httpOpen = false;
 
   export let note: Note | null = null;
   export let notes: Note[] = [];
@@ -144,6 +151,35 @@
     if (!severitySuggestion) return;
     fields = { ...fields, severity: severitySuggestion };
     emitChange();
+  }
+
+  function handleCvssChange(
+    event: CustomEvent<{ vector: string; score: number; severity: CvssBaseSeverity }>
+  ): void {
+    const { vector, score, severity } = event.detail;
+    // Only auto-promote severity when the calculator reports a real score (>0).
+    // Score 0 means the user hasn't filled in impact metrics yet — leave severity as-is.
+    const nextSeverity: ReportSeverity =
+      score > 0 ? severityToReportSeverity(severity) : fields.severity;
+    fields = {
+      ...fields,
+      cvssVector: vector,
+      cvssScore: score,
+      severity: nextSeverity
+    };
+    emitChange();
+  }
+
+  function appendToProofOfConcept(text: string): void {
+    const current = fields.proofOfConcept?.trim() ?? '';
+    const next = current ? `${current}\n\n${text}` : text;
+    fields = { ...fields, proofOfConcept: next };
+    emitChange();
+  }
+
+  function handleHttpInsert(event: CustomEvent<{ markdown: string }>): void {
+    appendToProofOfConcept(event.detail.markdown);
+    httpOpen = false;
   }
 
   function exportMarkdown(): void {
@@ -331,6 +367,36 @@
           </label>
         </div>
 
+        <div class="rounded-lg border border-slate-700 bg-slate-850/60">
+          <button
+            type="button"
+            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-100 transition hover:bg-slate-700/40"
+            on:click={() => (cvssOpen = !cvssOpen)}
+            aria-expanded={cvssOpen}
+          >
+            <span class="flex items-center gap-3">
+              <span>CVSS 3.1</span>
+              {#if fields.cvssScore != null}
+                <span class="rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-xs font-mono text-primary">
+                  {fields.cvssScore.toFixed(1)}
+                </span>
+              {:else}
+                <span class="text-xs font-normal text-muted-foreground">Optional · adds vector & score to report</span>
+              {/if}
+            </span>
+            <span class="text-xs text-muted-foreground">{cvssOpen ? 'Hide' : 'Open'}</span>
+          </button>
+          {#if cvssOpen}
+            <div class="border-t border-slate-700 p-4">
+              <CvssCalculator
+                vector={fields.cvssVector ?? ''}
+                compact
+                on:change={handleCvssChange}
+              />
+            </div>
+          {/if}
+        </div>
+
         <label class="block">
           <span class="hf-label">Vulnerability Type</span>
           <input
@@ -386,6 +452,26 @@
             on:input={handleFieldInput}
           ></textarea>
         </label>
+
+        <div class="rounded-lg border border-slate-700 bg-slate-850/60">
+          <button
+            type="button"
+            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-100 transition hover:bg-slate-700/40"
+            on:click={() => (httpOpen = !httpOpen)}
+            aria-expanded={httpOpen}
+          >
+            <span class="flex items-center gap-3">
+              <span>HTTP Request Capture</span>
+              <span class="text-xs font-normal text-muted-foreground">Paste raw req/res or cURL · inserts into PoC</span>
+            </span>
+            <span class="text-xs text-muted-foreground">{httpOpen ? 'Hide' : 'Open'}</span>
+          </button>
+          {#if httpOpen}
+            <div class="border-t border-slate-700 p-4">
+              <HttpRequestEditor allowInsert on:insert={handleHttpInsert} />
+            </div>
+          {/if}
+        </div>
 
         <label class="block">
           <span class="hf-label">Remediation</span>

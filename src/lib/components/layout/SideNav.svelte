@@ -1,10 +1,24 @@
 <script lang="ts">
   import { Crosshair, PanelLeftClose, PanelLeftOpen, UserRound } from 'lucide-svelte';
+  import { clerkAuthStore } from '$lib/cloud/clerk';
+  import { cloudConfigured } from '$lib/cloud/convex';
   import NavItem from './NavItem.svelte';
   import { navItems } from './navItems';
 
   export let pathname = '/';
   export let collapsed = false;
+
+  // "Pro workspace" only when the user is actually signed in AND cloud sync is
+  // configured. Otherwise show "Local workspace" — honest about the offline-first
+  // free tier instead of misleading every visitor with a Pro badge.
+  $: isPro = cloudConfigured && $clerkAuthStore.signedIn && $clerkAuthStore.convexAuthenticated;
+  $: workspaceLabel = isPro ? 'Pro workspace' : 'Local workspace';
+  $: displayName = $clerkAuthStore.displayName?.trim() || 'Local hunter';
+  $: userSubtitle = isPro
+    ? 'Synced'
+    : cloudConfigured
+      ? 'Local · sign in to sync'
+      : 'Local-only mode';
 </script>
 
 <aside
@@ -22,7 +36,13 @@
           </span>
           <span>
             <span class="block text-base font-semibold leading-5">HuntFlow</span>
-            <span class="mt-1 block text-[10px] font-semibold uppercase tracking-[0.18em] text-primary">Pro workspace</span>
+            <span
+              class="mt-1 block text-[10px] font-semibold uppercase tracking-[0.18em] {isPro
+                ? 'text-primary'
+                : 'text-muted-foreground'}"
+            >
+              {workspaceLabel}
+            </span>
           </span>
         </a>
       {:else}
@@ -58,18 +78,31 @@
     </nav>
 
     {#if !collapsed}
-      <div class="m-3 border-t border-border/70 pt-4">
+      <a
+        href="/settings"
+        class="m-3 block border-t border-border/70 pt-4 transition hover:opacity-90"
+        aria-label="Open account settings"
+      >
         <div class="flex items-center gap-3">
-          <span class="flex h-10 w-10 items-center justify-center rounded-[14px] border border-primary/30 bg-primary/10 text-primary">
+          <span
+            class="flex h-10 w-10 items-center justify-center rounded-[14px] border {isPro
+              ? 'border-primary/30 bg-primary/10 text-primary'
+              : 'border-border bg-muted text-muted-foreground'}"
+          >
             <UserRound size={20} aria-hidden="true" />
           </span>
           <span class="min-w-0">
-            <span class="block truncate text-sm font-medium text-foreground">hunter0x</span>
-            <span class="block text-[11px] text-muted-foreground">Operator</span>
+            <span class="block truncate text-sm font-medium text-foreground">{displayName}</span>
+            <span class="block truncate text-[11px] text-muted-foreground">{userSubtitle}</span>
           </span>
-          <span class="ml-auto h-2 w-2 rounded-full bg-primary shadow-[0_0_14px_hsl(var(--primary))]"></span>
+          {#if isPro}
+            <span
+              class="ml-auto h-2 w-2 rounded-full bg-primary shadow-[0_0_14px_hsl(var(--primary))]"
+              aria-label="Cloud sync active"
+            ></span>
+          {/if}
         </div>
-      </div>
+      </a>
     {/if}
   </div>
 </aside>
