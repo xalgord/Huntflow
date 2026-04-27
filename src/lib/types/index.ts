@@ -198,7 +198,6 @@ export interface EvidenceCanvasView {
 
 // ─── New: Recon inventory ────────────────────────────────────────────────────
 
-export type ReconAssetKind = 'subdomain' | 'host' | 'url' | 'endpoint' | 'ip' | 'mobile-app' | 'api';
 export type ReconAssetStatus =
   | 'untested'
   | 'in-progress'
@@ -207,21 +206,38 @@ export type ReconAssetStatus =
   | 'out-of-scope'
   | 'dead';
 
+export type ReconAssetSource =
+  | 'manual'
+  | 'import'
+  | 'httpx'
+  | 'subfinder'
+  | 'amass'
+  | 'crt-sh'
+  | 'wayback'
+  | 'other';
+
 export interface ReconAsset {
   id: string;
   targetId: string;
-  value: string;
-  kind: ReconAssetKind;
+  /** Primary identifier — host, subdomain, or path-less origin. */
+  hostname: string;
+  /** Optional canonical URL when discovered via httpx/wayback/etc. */
+  url?: string;
+  /** Resolved IPv4/IPv6 address. */
+  ipAddress?: string;
   status: ReconAssetStatus;
   inScope: boolean;
   httpStatus?: number;
+  /** Page title returned during fingerprinting. */
   title?: string;
   technologies: string[];
   ports?: number[];
   notes?: string;
-  tags: string[];
-  source?: string;
-  lastCheckedAt?: number;
+  source?: ReconAssetSource;
+  /** When the asset was first seen. */
+  discoveredAt: number;
+  /** When this asset was last manually retested. */
+  lastTestedAt?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -231,6 +247,7 @@ export interface ReconAsset {
 export type PayloadCategory =
   | 'xss'
   | 'sqli'
+  | 'nosqli'
   | 'ssrf'
   | 'xxe'
   | 'ssti'
@@ -244,6 +261,9 @@ export type PayloadCategory =
   | 'deserialization'
   | 'graphql'
   | 'jwt'
+  | 'oauth'
+  | 'crlf'
+  | 'prototype-pollution'
   | 'header-injection'
   | 'race-condition'
   | 'recon'
@@ -252,15 +272,18 @@ export type PayloadCategory =
 
 export interface Payload {
   id: string;
-  title: string;
+  /** Human-readable name shown in the library. */
+  name: string;
   category: PayloadCategory;
-  content: string;
+  /** The actual payload string the user copies. */
+  payload: string;
   description?: string;
   tags: string[];
   language?: string;
   context?: string;
   source?: string;
   isBuiltIn: boolean;
+  isFavorite: boolean;
   useCount: number;
   lastUsedAt?: number;
   createdAt: number;
@@ -271,17 +294,20 @@ export interface Payload {
 
 export type ChecklistKind = 'web' | 'api' | 'mobile' | 'cloud' | 'network' | 'recon' | 'custom';
 
-export interface ChecklistSectionTemplate {
+export interface ChecklistTemplateItem {
   id: string;
+  /** Human-readable test description shown in the checklist UI. */
   title: string;
-  items: ChecklistItemTemplate[];
+  description?: string;
+  /** Optional links to OWASP/PortSwigger/HackTricks references. */
+  references?: string[];
+  severityHint?: PayoutSeverity;
 }
 
-export interface ChecklistItemTemplate {
+export interface ChecklistTemplateSection {
   id: string;
-  text: string;
-  reference?: string;
-  severityHint?: PayoutSeverity;
+  title: string;
+  items: ChecklistTemplateItem[];
 }
 
 export interface ChecklistTemplate {
@@ -289,21 +315,25 @@ export interface ChecklistTemplate {
   name: string;
   kind: ChecklistKind;
   description?: string;
-  sections: ChecklistSectionTemplate[];
+  sections: ChecklistTemplateSection[];
   isBuiltIn: boolean;
   source?: string;
   createdAt: number;
   updatedAt: number;
 }
 
-export type ChecklistItemState = 'todo' | 'pass' | 'fail' | 'skip' | 'na';
+export type ChecklistItemStatus = 'todo' | 'in-progress' | 'done' | 'na' | 'found';
 
-export interface ChecklistItemProgress {
-  itemId: string;
-  state: ChecklistItemState;
-  note?: string;
+export interface ChecklistInstanceItemState {
+  status: ChecklistItemStatus;
+  /** Free-form notes attached to this checklist item. */
+  notes?: string;
+  /** Optional cross-link to an evidence asset documenting the finding. */
   evidenceAssetId?: string;
+  /** Optional cross-link to a note for the longer write-up. */
   noteId?: string;
+  /** Severity recorded when the user marks the item as `found`. */
+  severity?: PayoutSeverity;
   updatedAt: number;
 }
 
@@ -311,11 +341,15 @@ export interface ChecklistInstance {
   id: string;
   templateId: string;
   targetId: string;
-  /** snapshot of template name when created */
-  name: string;
-  kind: ChecklistKind;
-  progress: Record<string, ChecklistItemProgress>;
+  /** Snapshot of template name at creation time. */
+  templateName: string;
+  /** Snapshot of template kind at creation time. */
+  templateKind: ChecklistKind;
+  /** Per-item state keyed by ChecklistTemplateItem.id. */
+  itemStates: Record<string, ChecklistInstanceItemState>;
   notes?: string;
+  /** Set when every item is `done`/`na`/`found`. Cleared when user reopens an item. */
+  completedAt?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -373,25 +407,37 @@ export interface Submission {
 // ─── New: Bookmarks library ─────────────────────────────────────────────────
 
 export type BookmarkCategory =
-  | 'writeup'
-  | 'cve'
-  | 'tool'
-  | 'docs'
+  | 'methodology'
   | 'cheatsheet'
-  | 'video'
-  | 'paper'
-  | 'blog'
-  | 'other';
+  | 'tools'
+  | 'recon'
+  | 'cve'
+  | 'xss'
+  | 'sqli'
+  | 'ssrf'
+  | 'xxe'
+  | 'ssti'
+  | 'lfi'
+  | 'rce'
+  | 'auth'
+  | 'idor'
+  | 'jwt'
+  | 'oauth'
+  | 'graphql'
+  | 'mobile'
+  | 'general';
 
 export interface Bookmark {
   id: string;
   title: string;
   url: string;
   category: BookmarkCategory;
+  /** Optional cross-link to a payload/vuln category for filtering. */
   vulnClass?: PayloadCategory;
   description?: string;
   tags: string[];
   isBuiltIn: boolean;
+  isFavorite: boolean;
   createdAt: number;
   updatedAt: number;
 }

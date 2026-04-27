@@ -320,6 +320,7 @@ export const CHECKLIST_KIND_LABELS: Record<ChecklistKind, string> = {
   api: 'API',
   mobile: 'Mobile',
   cloud: 'Cloud',
+  network: 'Network',
   recon: 'Recon',
   custom: 'Custom'
 };
