@@ -4,9 +4,13 @@ import { mkdir } from 'node:fs/promises';
 import path from 'node:path';
 
 const baseURL = process.env.HUNTFLOW_SCREENSHOT_URL ?? 'http://127.0.0.1:5173';
-const outputDir = path.resolve('docs/screenshots');
+// We write into both `docs/screenshots/` (kept for the README)
+// and `static/screenshots/` so SvelteKit serves the files at
+// `/screenshots/<id>.png` on the live marketing site.
+const docsOutputDir = path.resolve('docs/screenshots');
+const landingOutputDir = path.resolve('static/screenshots');
 const DB_NAME = 'huntflow';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 
 const ids = {
   neonBank: '11111111-1111-4111-8111-111111111111',
@@ -16,28 +20,47 @@ const ids = {
 };
 
 async function main() {
-  await mkdir(outputDir, { recursive: true });
+  await Promise.all([mkdir(docsOutputDir, { recursive: true }), mkdir(landingOutputDir, { recursive: true })]);
 
   const server = await ensureServer();
   const browser = await chromium.launch();
 
   try {
+    // 16:10 viewport (1600x1000) keeps the captured pixels lined up with
+    // the marketing carousel's `aspect-[16/10]` frame so the screenshots
+    // never letterbox or crop.
     const context = await browser.newContext({
-      viewport: { width: 1440, height: 1100 },
-      deviceScaleFactor: 1,
-      colorScheme: 'dark'
+      viewport: { width: 1600, height: 1000 },
+      deviceScaleFactor: 2,
+      colorScheme: 'dark',
+      reducedMotion: 'reduce'
     });
     const page = await context.newPage();
 
     await seedApp(page);
 
-    await capture(page, '/', 'dashboard.png');
-    await capture(page, `/targets/${ids.neonBank}`, 'target-detail.png');
-    await capture(page, `/notes/${ids.note}`, 'notes-preview.png', async () => {
-      await page.getByRole('button', { name: 'preview' }).click();
+    // Original README captures - kept so existing docs links still resolve.
+    await captureBoth(page, '/dashboard', 'dashboard.png');
+    await captureBoth(page, `/targets/${ids.neonBank}`, 'target-detail.png', { docsOnly: true });
+    await captureBoth(page, `/notes/${ids.note}`, 'notes-preview.png', {
+      docsOnly: true,
+      setup: async () => {
+        // The note detail toolbar exposes a Preview toggle for markdown.
+        const previewButton = page.getByRole('button', { name: /^preview$/i });
+        if (await previewButton.count()) {
+          await previewButton.first().click();
+        }
+      }
     });
-    await capture(page, '/stats', 'stats.png');
-    await capture(page, '/income', 'income.png');
+    await captureBoth(page, '/income', 'income.png', { docsOnly: true });
+
+    // Landing-page carousel captures. Filenames must match the `id`
+    // values in `src/lib/components/landing/ScreenshotShowcase.svelte`.
+    await captureBoth(page, '/timer', 'timer.png');
+    await captureBoth(page, '/targets', 'targets.png');
+    await captureBoth(page, `/notes/${ids.note}`, 'notes.png');
+    await captureBoth(page, '/assets', 'evidence.png');
+    await captureBoth(page, '/stats', 'stats.png');
 
     await context.close();
   } finally {
@@ -49,8 +72,18 @@ async function main() {
 async function ensureServer() {
   if (await isServerReady()) return null;
 
+  // Start a dedicated dev server bound to 127.0.0.1 so the script can run
+  // unattended in CI. `--strictPort` ensures we fail fast if 5173 is busy
+  // rather than silently grabbing a different port.
   const server = spawn('npm', ['run', 'dev', '--', '--host', '127.0.0.1', '--strictPort'], {
-    env: { ...process.env, FORCE_COLOR: '0' },
+    env: {
+      ...process.env,
+      FORCE_COLOR: '0',
+      // Force-disable Clerk so the layout's auth gate doesn't redirect
+      // anonymous Playwright sessions to /sign-in. The screenshots only
+      // need to render the local-first workspace.
+      VITE_CLERK_PUBLISHABLE_KEY: ''
+    },
     stdio: ['ignore', 'pipe', 'pipe']
   });
 
@@ -85,16 +118,34 @@ async function waitForServer(getLogs) {
   throw new Error(`Timed out waiting for ${baseURL}\n${getLogs()}`);
 }
 
-async function capture(page, route, filename, setup) {
+async function captureBoth(page, route, filename, options = {}) {
+  const { setup, docsOnly = false } = options;
   await page.goto(`${baseURL}${route}`, { waitUntil: 'load' });
   await waitForAppReady(page);
   await setup?.();
-  await page.waitForTimeout(650);
-  await page.screenshot({
-    path: path.join(outputDir, filename),
+  // Give animations / charts / canvas layouts one more frame to settle.
+  await page.waitForTimeout(750);
+
+  const screenshotOptions = {
     fullPage: false,
-    animations: 'disabled'
+    animations: 'disabled',
+    type: 'png'
+  };
+
+  // Always write to docs (existing README contract).
+  await page.screenshot({
+    ...screenshotOptions,
+    path: path.join(docsOutputDir, filename)
   });
+
+  // Mirror to static/screenshots so SvelteKit serves the same image at
+  // /screenshots/<filename> for the marketing carousel.
+  if (!docsOnly) {
+    await page.screenshot({
+      ...screenshotOptions,
+      path: path.join(landingOutputDir, filename)
+    });
+  }
 }
 
 async function seedApp(page) {
@@ -158,9 +209,8 @@ async function seedApp(page) {
             }
 
             if (!db.objectStoreNames.contains('evidenceBlobs')) {
-              db.createObjectStore('evidenceBlobs', { keyPath: 'assetId' }).createIndex('by-updated', 'updatedAt', {
-                unique: false
-              });
+              const store = db.createObjectStore('evidenceBlobs', { keyPath: 'assetId' });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
             }
 
             if (!db.objectStoreNames.contains('evidenceLinks')) {
@@ -178,9 +228,55 @@ async function seedApp(page) {
             }
 
             if (!db.objectStoreNames.contains('templates')) {
-              db.createObjectStore('templates', { keyPath: 'id' }).createIndex('by-category', 'category', {
-                unique: false
-              });
+              const store = db.createObjectStore('templates', { keyPath: 'id' });
+              store.createIndex('by-category', 'category', { unique: false });
+            }
+
+            // The remaining stores (reconAssets, payloads, checklist*, submissions,
+            // bookmarks) were added at DB v4. We declare them so the app's openDB
+            // call doesn't have to upgrade after seeding.
+            if (!db.objectStoreNames.contains('reconAssets')) {
+              const store = db.createObjectStore('reconAssets', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-status', 'status', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+
+            if (!db.objectStoreNames.contains('payloads')) {
+              const store = db.createObjectStore('payloads', { keyPath: 'id' });
+              store.createIndex('by-category', 'category', { unique: false });
+              store.createIndex('by-tags', 'tags', { unique: false, multiEntry: true });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+
+            if (!db.objectStoreNames.contains('checklistTemplates')) {
+              const store = db.createObjectStore('checklistTemplates', { keyPath: 'id' });
+              store.createIndex('by-kind', 'kind', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+
+            if (!db.objectStoreNames.contains('checklistInstances')) {
+              const store = db.createObjectStore('checklistInstances', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-template', 'templateId', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+
+            if (!db.objectStoreNames.contains('submissions')) {
+              const store = db.createObjectStore('submissions', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-status', 'status', { unique: false });
+              store.createIndex('by-platform', 'platform', { unique: false });
+              store.createIndex('by-severity', 'severity', { unique: false });
+              store.createIndex('by-submittedAt', 'submittedAt', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+
+            if (!db.objectStoreNames.contains('bookmarks')) {
+              const store = db.createObjectStore('bookmarks', { keyPath: 'id' });
+              store.createIndex('by-category', 'category', { unique: false });
+              store.createIndex('by-tags', 'tags', { unique: false, multiEntry: true });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
             }
 
             if (!db.objectStoreNames.contains('settings')) {
@@ -205,6 +301,12 @@ async function seedApp(page) {
           'evidenceLinks',
           'evidenceCanvasViews',
           'templates',
+          'reconAssets',
+          'payloads',
+          'checklistTemplates',
+          'checklistInstances',
+          'submissions',
+          'bookmarks',
           'settings'
         ];
         const tx = db.transaction(stores, 'readwrite');
@@ -220,6 +322,7 @@ async function seedApp(page) {
         for (const item of seed.evidenceAssets) tx.objectStore('evidenceAssets').put(item);
         for (const item of seed.evidenceLinks) tx.objectStore('evidenceLinks').put(item);
         for (const item of seed.evidenceCanvasViews) tx.objectStore('evidenceCanvasViews').put(item);
+        for (const item of seed.submissions ?? []) tx.objectStore('submissions').put(item);
         for (const [key, value] of Object.entries(seed.settings)) tx.objectStore('settings').put({ key, value });
 
         tx.oncomplete = () => resolve();
@@ -350,9 +453,38 @@ function createScreenshotSeed() {
   ];
 
   const evidenceAssets = [
-    evidenceAsset('e-001', 'OAuth replay screenshot', 'image', ids.neonBank, 's-002', ids.note, ['critical', 'needs-report'], 96_000),
+    evidenceAsset(
+      'e-001',
+      'OAuth replay screenshot',
+      'image',
+      ids.neonBank,
+      's-002',
+      ids.note,
+      ['critical', 'needs-report'],
+      96_000
+    ),
     evidenceAsset('e-002', 'Invoice export request', 'request', ids.neonBank, 's-001', ids.note, ['critical'], 1_240),
-    evidenceAsset('e-003', 'Avatar metadata URL', 'url', ids.meshId, 's-004', 'note-meshid-ssrf', ['high', 'paid'], 0)
+    evidenceAsset('e-003', 'Avatar metadata URL', 'url', ids.meshId, 's-004', 'note-meshid-ssrf', ['high', 'paid'], 0),
+    evidenceAsset(
+      'e-004',
+      'Stored XSS payload preview',
+      'image',
+      ids.cloudCart,
+      's-003',
+      'note-cloudcart-xss',
+      ['medium', 'stored-xss'],
+      62_400
+    ),
+    evidenceAsset(
+      'e-005',
+      'IDOR account-link burp log',
+      'request',
+      ids.neonBank,
+      's-008',
+      ids.note,
+      ['critical'],
+      2_180
+    )
   ];
 
   const evidenceLinks = [
@@ -371,6 +503,50 @@ function createScreenshotSeed() {
     }
   ];
 
+  // A small handful of submissions so the dashboard's "Bounty desk" panel
+  // and any submissions chips show real-looking activity.
+  const submissions = [
+    {
+      id: 'sub-001',
+      title: 'OAuth callback state reuse',
+      targetId: ids.neonBank,
+      platform: 'hackerone',
+      severity: 'critical',
+      status: 'triaged',
+      bounty: 12500,
+      submittedAt: atHour(1, 11),
+      lastStatusAt: atHour(0, 9),
+      createdAt: atHour(1, 11),
+      updatedAt: now - 12 * 60_000
+    },
+    {
+      id: 'sub-002',
+      title: 'SSRF through avatar fetcher',
+      targetId: ids.meshId,
+      platform: 'intigriti',
+      severity: 'high',
+      status: 'paid',
+      bounty: 7200,
+      submittedAt: atHour(12, 14),
+      lastStatusAt: atHour(8, 10),
+      createdAt: atHour(12, 14),
+      updatedAt: now - 6 * 60 * 60 * 1000
+    },
+    {
+      id: 'sub-003',
+      title: 'Stored XSS in seller receipt template',
+      targetId: ids.cloudCart,
+      platform: 'bugcrowd',
+      severity: 'medium',
+      status: 'submitted',
+      bounty: 1800,
+      submittedAt: atHour(2, 16),
+      lastStatusAt: atHour(2, 16),
+      createdAt: atHour(2, 16),
+      updatedAt: now - 30 * 60 * 1000
+    }
+  ];
+
   return {
     targets,
     sessions,
@@ -379,6 +555,7 @@ function createScreenshotSeed() {
     evidenceAssets,
     evidenceLinks,
     evidenceCanvasViews: [],
+    submissions,
     settings: {
       defaultDuration: 1500,
       autoStartBreak: true,
