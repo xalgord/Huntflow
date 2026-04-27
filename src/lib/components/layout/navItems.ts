@@ -7,7 +7,8 @@ import {
   Network,
   Send,
   Settings,
-  Sword
+  Sword,
+  Wrench
 } from 'lucide-svelte';
 import type { ComponentType } from 'svelte';
 
@@ -75,6 +76,13 @@ export const navItems: NavItemConfig[] = [
     label: 'References',
     icon: BookMarked,
     match: (pathname) => pathname.startsWith('/bookmarks'),
+    primary: false
+  },
+  {
+    href: '/tools',
+    label: 'Toolkit',
+    icon: Wrench,
+    match: (pathname) => pathname.startsWith('/tools'),
     primary: false
   },
   {
