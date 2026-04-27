@@ -222,15 +222,21 @@
 
         <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
-            href="/dashboard"
+            href="/demo"
             class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
           >
             <LayoutDashboard size={16} aria-hidden="true" />
-            Open the app
+            Try the live demo
+          </a>
+          <a
+            href="/dashboard"
+            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-6 py-3 text-sm font-medium text-slate-100 transition hover:bg-slate-800"
+          >
+            Open empty workspace
           </a>
           <button
             type="button"
-            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-6 py-3 text-sm font-medium text-slate-100 transition hover:bg-slate-800"
+            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-800 bg-slate-950 px-6 py-3 text-sm font-medium text-slate-300 transition hover:border-slate-700 hover:text-slate-100"
             on:click={installApp}
           >
             Install as PWA

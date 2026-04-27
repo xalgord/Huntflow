@@ -123,6 +123,7 @@
     pathname === '/sign-in' ||
     pathname === '/sign-up' ||
     pathname === '/pricing' ||
+    pathname === '/demo' ||
     pathname.startsWith('/sign-in/') ||
     pathname.startsWith('/sign-up/');
   $: isLanding = isMarketing;
