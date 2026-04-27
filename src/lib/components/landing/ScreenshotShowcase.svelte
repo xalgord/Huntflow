@@ -1,21 +1,18 @@
 <script lang="ts">
   // Marketing carousel that shows the real product UI.
   //
-  // Each slide tries to load `/screenshots/<id>.png` first (these are the
-  // PNGs produced by `npm run screenshots`, which captures the live app
-  // with Playwright + sample IndexedDB data). If the PNG is missing - in
-  // a fresh clone, in v0 preview, or before CI has populated the static
-  // dir - we transparently fall back to a hand-built CSS mockup of the
-  // same screen so the page never looks broken.
+  // Each slide loads a Playwright-captured PNG from /screenshots/<id>.png
+  // (the same files the README links to from docs/screenshots/, copied
+  // into static/screenshots/ at build time so SvelteKit serves them).
+  // If a PNG ever fails to load we fall back to the matching CSS mockup
+  // so the page never looks broken in dev or fresh clones.
   import { onDestroy, onMount } from 'svelte';
   import { browser } from '$app/environment';
   import type { ComponentType } from 'svelte';
   import DashboardMockup from './mockups/DashboardMockup.svelte';
-  import EvidenceMockup from './mockups/EvidenceMockup.svelte';
   import NotesMockup from './mockups/NotesMockup.svelte';
   import StatsMockup from './mockups/StatsMockup.svelte';
   import TargetsMockup from './mockups/TargetsMockup.svelte';
-  import TimerMockup from './mockups/TimerMockup.svelte';
 
   interface Shot {
     id: string;
@@ -25,56 +22,50 @@
     alt: string;
   }
 
-  // Filenames must match the ones the capture script writes to
-  // static/screenshots/. Keep them in sync with capture-readme-screenshots.mjs.
+  // Each `id` matches a real PNG in static/screenshots/ that was captured
+  // from the running app with seeded sample bounty data. Order is the
+  // hunting flow: pick a target, write evidence, ship reports, get paid.
   const shots: Shot[] = [
     {
       id: 'dashboard',
       title: 'Dashboard',
       description:
-        'Streak, focused hours, earnings and active programs at a glance. Pick up the timer where you paused yesterday.',
+        'Streak, focused hours, earnings, and active programs at a glance. Pick up the timer where you paused yesterday.',
       fallback: DashboardMockup,
-      alt: 'HuntFlow dashboard with streak counter, weekly focused hours, earnings and active targets'
-    },
-    {
-      id: 'timer',
-      title: 'Focus timer',
-      description:
-        'Pomodoro-style sessions tied to a target. Capture quick notes and tags before context fades.',
-      fallback: TimerMockup,
-      alt: 'HuntFlow focus timer with countdown, target selector and quick note field'
+      alt: 'HuntFlow dashboard with sample targets, evidence, payouts, and sync status'
     },
     {
       id: 'targets',
-      title: 'Targets',
+      title: 'Target detail',
       description:
-        'Every program in one grid: scope, priority, last session, $/hour, acceptance rate. Cut underperforming targets quickly.',
+        'Status pipeline, scope, session history, and per-target ROI. Cut underperforming programs quickly.',
       fallback: TargetsMockup,
-      alt: 'HuntFlow targets grid showing program cards with platform badges and ROI metrics'
+      alt: 'Target detail screen showing status pipeline, scope, and session history'
     },
     {
       id: 'notes',
-      title: 'Notes',
+      title: 'Notes preview',
       description:
-        'Vulnerability templates for SSRF, IDOR, XSS, RCE and more. Markdown-first with code fences and tag filtering.',
+        'Markdown templates for SSRF, IDOR, XSS, RCE and more. Reproduction steps, impact, and remediation in one view.',
       fallback: NotesMockup,
-      alt: 'HuntFlow markdown note editor with vulnerability template and tags'
-    },
-    {
-      id: 'evidence',
-      title: 'Evidence',
-      description:
-        'A visual workspace for findings: drop screenshots, paste requests, link them so reports write themselves.',
-      fallback: EvidenceMockup,
-      alt: 'HuntFlow evidence canvas with screenshots and request snippets connected by lines'
+      alt: 'Markdown note preview showing reproduction steps, impact, and remediation'
     },
     {
       id: 'stats',
-      title: 'Stats',
+      title: 'Stats dashboard',
       description:
-        'Year-long activity heatmap, vulnerability mix, best streaks. The data hunters actually want to see.',
+        'Hunting time, streaks, weekly activity, and vulnerability mix derived from real session data.',
       fallback: StatsMockup,
-      alt: 'HuntFlow stats page with activity heatmap, vulnerability donut chart and trend bars'
+      alt: 'Stats dashboard with hunting time, streak, weekly activity, and vulnerability charts'
+    },
+    {
+      id: 'income',
+      title: 'Income tracker',
+      description:
+        'Payout totals, earnings chart, tax CSV export, and per-payout rows. The data hunters actually want to see.',
+      // Income view is close enough to the stats look for a graceful fallback.
+      fallback: StatsMockup,
+      alt: 'Income tracker with payout totals, earnings chart, tax export, and payout rows'
     }
   ];
 
@@ -82,7 +73,7 @@
   let timer: ReturnType<typeof setInterval> | null = null;
   let prefersReducedMotion = false;
 
-  // Tracks which slide IDs failed to load a real PNG so we render the
+  // Track which slide IDs failed to load a real PNG so we render the
   // mockup instead. Once a slide has fallen back, it stays that way for
   // the rest of the visit (no flicker).
   const fallbackForId: Record<string, boolean> = {};
@@ -140,8 +131,10 @@
       </div>
     </div>
 
-    <!-- 16:10 frame; both the PNG and the mockup are sized to fill it
-         exactly so transitions never reflow. -->
+    <!-- 16:10 frame with `object-contain` so the real captured PNGs
+         render at their full aspect ratio without cropping. The dark
+         slate-950 background fills any letterbox space so it blends
+         with the page. -->
     <div class="relative aspect-[16/10] overflow-hidden bg-slate-950">
       {#each shots as shot, index}
         <div
@@ -157,7 +150,7 @@
             <img
               src="/screenshots/{shot.id}.png"
               alt={shot.alt}
-              class="h-full w-full object-cover object-top"
+              class="h-full w-full object-contain"
               loading={index === 0 ? 'eager' : 'lazy'}
               decoding="async"
               on:error={() => handleImgError(shot.id)}

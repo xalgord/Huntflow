@@ -11,6 +11,12 @@
     { "source": "/register", "destination": "/sign-up", "permanent": false },
     { "source": "/billing", "destination": "/pricing", "permanent": false }
   ],
+  "rewrites": [
+    {
+      "source": "/((?!_app/|screenshots/|icons/|api/|.*\\.(?:js|css|png|jpg|jpeg|svg|ico|webp|avif|woff|woff2|ttf|map|json|xml|txt|webmanifest|gltf|glb|mp3)$).*)",
+      "destination": "/index.html"
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
