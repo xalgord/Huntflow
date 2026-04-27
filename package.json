@@ -1,9 +1,35 @@
 {
   "name": "huntflow",
   "version": "1.0.0",
-  "private": true,
+  "description": "Bug bounty hunting companion - track targets, sessions, notes, evidence, and submissions. Offline-first PWA with local IndexedDB storage.",
   "license": "MIT",
   "type": "module",
+  "bin": {
+    "huntflow": "./bin/huntflow.mjs"
+  },
+  "files": [
+    "bin",
+    "build"
+  ],
+  "keywords": [
+    "bug-bounty",
+    "security",
+    "hunting",
+    "pentest",
+    "vulnerability",
+    "tracker",
+    "offline",
+    "pwa"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xalgord/huntflow.git"
+  },
+  "homepage": "https://huntflow.app",
+  "author": "xalgord",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "vite dev",
     "convex:dev": "convex dev",
@@ -14,7 +40,8 @@
     "test": "vitest",
     "test:e2e": "playwright test",
     "lint": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "prepublishOnly": "npm run build"
   },
   "dependencies": {
     "@clerk/clerk-js": "^6.7.7",

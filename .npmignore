@@ -1,0 +1,37 @@
+# Source code (not needed for CLI distribution)
+src/
+static/
+scripts/
+convex/
+tests/
+e2e/
+
+# Config files
+*.config.js
+*.config.ts
+svelte.config.js
+postcss.config.js
+tailwind.config.js
+tsconfig.json
+.svelte-kit/
+
+# Dev files
+.env*
+.git/
+.github/
+.vscode/
+*.md
+!README.md
+CHANGELOG*
+LICENSE*
+
+# Test files
+*.test.*
+*.spec.*
+playwright.config.*
+vitest.config.*
+
+# Other
+node_modules/
+.DS_Store
+*.log
