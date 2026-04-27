@@ -41,7 +41,8 @@
     "test:e2e": "playwright test",
     "lint": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepare": "node bin/prepare.mjs"
   },
   "dependencies": {
     "@clerk/clerk-js": "^6.7.7",
