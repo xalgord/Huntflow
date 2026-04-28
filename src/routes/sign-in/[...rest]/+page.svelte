@@ -13,19 +13,18 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
-  let target = '/dashboard';
-  let redirected = false;
+  let target = '/account';
 
   function sanitizeRedirect(raw: string | null): string {
-    if (!raw) return '/dashboard';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
+    if (!raw) return '/account';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/account';
     return raw;
   }
 
   onMount(async () => {
     if (!browser || !mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
-    const signUpUrl = target === '/dashboard'
+    const signUpUrl = target === '/account'
       ? '/sign-up'
       : `/sign-up?redirect=${encodeURIComponent(target)}`;
     // path: '/sign-in' tells Clerk this widget owns the /sign-in

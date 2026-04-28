@@ -9,19 +9,18 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
-  let target = '/dashboard';
-  let redirected = false;
+  let target = '/account';
 
   function sanitizeRedirect(raw: string | null): string {
-    if (!raw) return '/dashboard';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
+    if (!raw) return '/account';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/account';
     return raw;
   }
 
   onMount(async () => {
     if (!browser || !mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
-    const signInUrl = target === '/dashboard'
+    const signInUrl = target === '/account'
       ? '/sign-in'
       : `/sign-in?redirect=${encodeURIComponent(target)}`;
     // Append ?welcome=new to the post-signup destination so +layout.svelte

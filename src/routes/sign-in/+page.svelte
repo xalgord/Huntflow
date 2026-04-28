@@ -9,15 +9,14 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
-  let target = '/dashboard';
-  let redirected = false;
+  let target = '/account';
 
   // The auth gate in +layout.svelte sends anonymous visitors here with
   // ?redirect=<originalPath>. Sanitize it (must be a same-origin absolute
   // path) before handing it to Clerk so we never bounce to an external URL.
   function sanitizeRedirect(raw: string | null): string {
-    if (!raw) return '/dashboard';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
+    if (!raw) return '/account';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/account';
     return raw;
   }
 
@@ -26,7 +25,7 @@
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     // Forward the redirect param across the sign-in <-> sign-up swap so
     // the user keeps their original destination if they switch flows.
-    const signUpUrl = target === '/dashboard'
+    const signUpUrl = target === '/account'
       ? '/sign-up'
       : `/sign-up?redirect=${encodeURIComponent(target)}`;
     // Path-based routing: Clerk's multi-step flow (factor-one,

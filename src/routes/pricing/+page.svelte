@@ -99,7 +99,7 @@
       <div class="flex items-center gap-2">
         {#if $clerkAuthStore.signedIn}
           <a
-            href="/dashboard"
+            href="/account"
             class="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500"
           >
             Open app
@@ -173,7 +173,7 @@
               {openingSubscriptions ? 'Opening billing…' : 'Manage subscription'}
             </button>
             <a
-              href="/dashboard"
+              href="/account"
               class="inline-flex min-h-[44px] items-center gap-2 rounded-md border border-slate-700 bg-slate-800/80 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-700"
             >
               Back to the app
@@ -217,7 +217,7 @@
             {/each}
           </ul>
           <a
-            href="/dashboard"
+            href="/account"
             class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
           >
             Open the app

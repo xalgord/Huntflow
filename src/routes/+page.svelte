@@ -139,23 +139,23 @@
   }
 
   /**
-   * Redirect to /dashboard once. Use SvelteKit's `goto` first (keeps
-   * the SPA history clean) and fall back to `window.location.replace`
-   * if `goto` fails or hasn't navigated within a few hundred ms. The
-   * fallback exists because we've seen rare cases where SvelteKit's
-   * router silently no-ops when the URL has lingering Clerk handshake
-   * params; a hard replace is a guaranteed escape hatch.
+   * Redirect signed-in visitors away from the marketing landing once.
+   * Dashboard is disabled, so we send everyone to /account which is
+   * the primary authenticated surface. Use SvelteKit's `goto` first
+   * (keeps the SPA history clean) and fall back to
+   * `window.location.replace` if `goto` fails or hasn't navigated,
+   * which can happen when lingering Clerk handshake params are present.
    */
-  async function redirectToDashboard(): Promise<void> {
+  async function redirectToApp(): Promise<void> {
     if (redirecting) return;
     redirecting = true;
     try {
-      await goto('/dashboard', { replaceState: true });
+      await goto('/account', { replaceState: true });
     } catch {
       /* fall through to window.location below */
     }
     if (browser && window.location.pathname === '/') {
-      window.location.replace('/dashboard');
+      window.location.replace('/account');
     }
   }
 
@@ -171,7 +171,7 @@
     // Send them straight to the workspace; the layout's auth gate will
     // bounce to /sign-in if they're not authenticated.
     if (isStandalone) {
-      void redirectToDashboard();
+      void redirectToApp();
       return;
     }
 
@@ -201,7 +201,7 @@
     !$clerkAuthStore.loading &&
     $clerkAuthStore.signedIn
   ) {
-    void redirectToDashboard();
+    void redirectToApp();
   }
 
   onDestroy(() => {
@@ -340,7 +340,7 @@
             the landing is intentionally re-displayed.
           -->
           <a
-            href="/dashboard"
+            href="/account"
             class="hidden min-h-[36px] items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500 sm:inline-flex"
           >
             Open app
@@ -412,10 +412,10 @@
             Try the live demo
           </a>
           <a
-            href="/dashboard"
+            href="/account"
             class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-6 py-3 text-sm font-medium text-slate-100 transition hover:bg-slate-800"
           >
-            Open empty workspace
+            Open workspace
           </a>
           <button
             type="button"
@@ -508,7 +508,7 @@
           </ul>
 
           <a
-            href="/dashboard"
+            href="/account"
             class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
           >
             Start hunting free
@@ -571,7 +571,7 @@
       </div>
       <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <a
-          href="/dashboard"
+          href="/account"
           class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500"
         >
           Open the app
@@ -613,7 +613,7 @@
           <a class="mt-3 block text-slate-300 hover:text-slate-100" href="#features">Features</a>
           <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/pricing">Pricing</a>
           <a class="mt-2 block text-slate-300 hover:text-slate-100" href="#cloud-sync">Cloud sync</a>
-          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/dashboard">Open app</a>
+          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/account">Open app</a>
         </div>
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Account</p>
