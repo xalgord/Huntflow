@@ -27,6 +27,18 @@
     : cloudConfigured
       ? 'Local · sign in to sync'
       : 'Local-only mode';
+
+  // Two-letter avatar fallback for the SideNav user pill — renders
+  // when Clerk has resolved a user but not yet returned an image URL
+  // (fresh signup, slow CDN). Mirrors the avatarInitials() helper on
+  // the /account page so both surfaces show the same letters.
+  $: initials = (() => {
+    const name = displayName.trim();
+    if (!name || name === 'Local hunter') return '';
+    const parts = name.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  })();
 </script>
 
 <aside
@@ -130,19 +142,48 @@
     </div>
 
     {#if !collapsed}
+      <!--
+        User pill in the SideNav footer. Links to /account (identity +
+        subscription), NOT /settings (app preferences). Renders the
+        Clerk avatar when available, two-letter initials fallback
+        otherwise so the pill never shows a generic icon for a
+        signed-in user.
+      -->
       <a
-        href="/settings"
+        href="/account"
         class="m-3 block border-t border-border/70 pt-4 transition hover:opacity-90"
-        aria-label="Open account settings"
+        aria-label="Open account"
       >
         <div class="flex items-center gap-3">
-          <span
-            class="flex h-10 w-10 items-center justify-center rounded-[14px] border {isPro
-              ? 'border-primary/30 bg-primary/10 text-primary'
-              : 'border-border bg-muted text-muted-foreground'}"
-          >
-            <UserRound size={20} aria-hidden="true" />
-          </span>
+          {#if $clerkAuthStore.signedIn && $clerkAuthStore.imageUrl}
+            <img
+              src={$clerkAuthStore.imageUrl}
+              alt=""
+              width="40"
+              height="40"
+              class="h-10 w-10 shrink-0 rounded-[14px] border border-border/70 object-cover"
+              referrerpolicy="no-referrer"
+              loading="lazy"
+              decoding="async"
+            />
+          {:else if $clerkAuthStore.signedIn && initials}
+            <span
+              class="flex h-10 w-10 items-center justify-center rounded-[14px] border {isPro
+                ? 'border-primary/30 bg-primary/10 text-primary'
+                : 'border-border bg-muted text-foreground'} text-sm font-semibold"
+              aria-hidden="true"
+            >
+              {initials}
+            </span>
+          {:else}
+            <span
+              class="flex h-10 w-10 items-center justify-center rounded-[14px] border {isPro
+                ? 'border-primary/30 bg-primary/10 text-primary'
+                : 'border-border bg-muted text-muted-foreground'}"
+            >
+              <UserRound size={20} aria-hidden="true" />
+            </span>
+          {/if}
           <span class="min-w-0">
             <span class="block truncate text-sm font-medium text-foreground">{displayName}</span>
             <span class="block truncate text-[11px] text-muted-foreground">{userSubtitle}</span>

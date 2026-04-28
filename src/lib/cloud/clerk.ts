@@ -23,7 +23,27 @@ export interface ClerkAuthState {
   signedIn: boolean;
   convexAuthenticated: boolean;
   userId: string;
+  /**
+   * Email-or-username fallback used in dense places (Cloud Sync card,
+   * subtitles). Always populated when signed in.
+   */
   userLabel: string;
+  /**
+   * Best human display name — full name first, then username, then
+   * email's local part. Used for the SideNav user pill, account hero,
+   * and any "Hello {name}" surfaces.
+   */
+  displayName: string;
+  /**
+   * Primary email address. Empty for users who signed up with a
+   * username-only flow.
+   */
+  email: string;
+  /**
+   * Avatar image URL Clerk hosts for the user (Gravatar, Google, or
+   * uploaded). Empty if Clerk hasn't resolved an image yet.
+   */
+  imageUrl: string;
   error: string;
   isPro: boolean;
 }
@@ -39,6 +59,9 @@ const initialState: ClerkAuthState = {
   convexAuthenticated: false,
   userId: '',
   userLabel: '',
+  displayName: '',
+  email: '',
+  imageUrl: '',
   error: '',
   isPro: false
 };
@@ -58,12 +81,37 @@ function labelFor(clerk: ClerkInstance): string {
   );
 }
 
+/**
+ * Pick the friendliest human-facing name we can show. Order:
+ *   1. Clerk fullName (first + last)
+ *   2. firstName alone
+ *   3. username
+ *   4. email local-part (anything before '@')
+ *   5. user id (last-resort, never empty)
+ */
+function displayNameFor(clerk: ClerkInstance): string {
+  const user = clerk.user;
+  if (!user) return '';
+  const full = user.fullName?.trim();
+  if (full) return full;
+  const first = user.firstName?.trim();
+  if (first) return first;
+  const username = user.username?.trim();
+  if (username) return username;
+  const email = user.primaryEmailAddress?.emailAddress ?? '';
+  if (email.includes('@')) return email.split('@')[0];
+  return email || user.id;
+}
+
 function updateState(clerk: ClerkInstance | null, patch: Partial<ClerkAuthState> = {}): void {
   clerkAuthStore.update((state) => ({
     ...state,
     signedIn: Boolean(clerk?.isSignedIn),
     userId: clerk?.user?.id ?? '',
     userLabel: clerk ? labelFor(clerk) : '',
+    displayName: clerk ? displayNameFor(clerk) : '',
+    email: clerk?.user?.primaryEmailAddress?.emailAddress ?? '',
+    imageUrl: clerk?.user?.imageUrl ?? '',
     ...patch
   }));
 }
@@ -231,10 +279,20 @@ export async function signUpWithClerk(): Promise<void> {
   await clerk.redirectToSignUp({ redirectUrl, signInFallbackRedirectUrl: redirectUrl });
 }
 
-export async function signOutFromClerk(): Promise<void> {
+/**
+ * Sign the user out of Clerk and bounce them to the public marketing
+ * landing. Defaulting to `/` (instead of `redirectUrl`, which is the
+ * stale URL captured at module import time) avoids the bad UX of
+ * landing the just-signed-out user back on a protected page that the
+ * auth gate would immediately redirect to /sign-in.
+ *
+ * Callers can override the destination (e.g. to send them to /pricing
+ * after a downgrade) by passing `redirectUrl`.
+ */
+export async function signOutFromClerk(opts: { redirectUrl?: string } = {}): Promise<void> {
   const clerk = await initClerk();
   if (!clerk) return;
-  await clerk.signOut({ redirectUrl });
+  await clerk.signOut({ redirectUrl: opts.redirectUrl ?? '/' });
   updateState(clerk, { convexAuthenticated: false });
 }
 
@@ -292,6 +350,7 @@ type MountSignInOptions = Parameters<ClerkInstance['mountSignIn']>[1];
 type MountSignUpOptions = Parameters<ClerkInstance['mountSignUp']>[1];
 type MountPricingTableOptions = Parameters<ClerkInstance['mountPricingTable']>[1];
 type MountUserButtonOptions = Parameters<ClerkInstance['mountUserButton']>[1];
+type MountUserProfileOptions = Parameters<ClerkInstance['mountUserProfile']>[1];
 
 // Wrap every `clerk.mount*` call so mount-time exceptions (e.g. UI components
 // chunk failed to load, instance paused, plan misconfigured) surface as a
@@ -355,6 +414,69 @@ export async function mountClerkUserButton(
     reportMountError('user button', error);
     return () => {};
   }
+}
+
+/**
+ * Embed Clerk's full `<UserProfile />` widget into a host node. This is
+ * the canonical surface for end-users to manage their account: edit
+ * profile, change password, view active sessions, manage connected
+ * accounts (Google, GitHub, …), enable 2FA, and — when Clerk Billing
+ * is enabled — view and manage their subscription. Mounted on the
+ * dedicated `/account` page in HuntFlow.
+ */
+export async function mountClerkUserProfile(
+  node: HTMLElement,
+  options: MountUserProfileOptions = {}
+): Promise<() => void> {
+  const clerk = await initClerk();
+  if (!clerk) return () => {};
+  try {
+    clerk.mountUserProfile(node, { appearance: huntflowClerkAppearance, ...options });
+    return () => clerk.unmountUserProfile(node);
+  } catch (error) {
+    reportMountError('user profile', error);
+    return () => {};
+  }
+}
+
+/**
+ * Open Clerk's billing/subscription manager. Available when Clerk
+ * Billing is enabled on the instance — it pops a modal where the user
+ * can change plan, update payment method, and download invoices. We
+ * call `__experimental_openSubscriptions` first (current Clerk Billing
+ * API) and fall back to the User Profile's "Billing" tab when not
+ * available, so the button always lands somewhere useful.
+ */
+export async function openClerkSubscriptions(): Promise<boolean> {
+  const clerk = await initClerk();
+  if (!clerk) return false;
+  type BillingClerk = ClerkInstance & {
+    __experimental_openSubscriptions?: () => void;
+    openSubscriptions?: () => void;
+  };
+  const billingClerk = clerk as BillingClerk;
+  const opener = billingClerk.openSubscriptions ?? billingClerk.__experimental_openSubscriptions;
+  if (typeof opener === 'function') {
+    try {
+      opener.call(billingClerk);
+      return true;
+    } catch (error) {
+      reportMountError('subscriptions modal', error);
+      return false;
+    }
+  }
+  // Fallback: open the User Profile modal so the user can navigate to
+  // the Billing tab manually. Better than a no-op button.
+  if (typeof clerk.openUserProfile === 'function') {
+    try {
+      clerk.openUserProfile();
+      return true;
+    } catch (error) {
+      reportMountError('user profile modal', error);
+      return false;
+    }
+  }
+  return false;
 }
 
 export async function mountClerkPricingTable(
