@@ -308,7 +308,28 @@
       </nav>
 
       <div class="flex items-center gap-2">
-        {#if $clerkAuthStore.signedIn}
+        {#if $clerkAuthStore.configured && $clerkAuthStore.loading}
+          <!--
+            Clerk-is-still-loading skeleton. Without this branch we'd
+            render Sign-in / Get-started for the 0.5–2s window between
+            page hydration and Clerk reporting a session, so a user who
+            JUST signed up and was redirected back to `/` would see
+            "Sign in / Get started" buttons even though they're
+            already authenticated. Reserving the slot with a quiet
+            placeholder keeps the header stable and prevents that
+            wrong-state flash.
+          -->
+          <span
+            class="inline-flex min-h-[36px] items-center gap-2 rounded-md px-3 py-1.5 text-sm text-slate-500"
+            aria-live="polite"
+          >
+            <span
+              class="h-2 w-2 animate-pulse rounded-full bg-primary-500"
+              aria-hidden="true"
+            ></span>
+            Checking session&hellip;
+          </span>
+        {:else if $clerkAuthStore.signedIn}
           <!--
             Signed-in visitors get a "Open app" shortcut + the Clerk
             profile menu instead of marketing CTAs they no longer need.

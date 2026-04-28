@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignUp } from '$lib/cloud/clerk';
@@ -8,6 +9,8 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
+  let target = '/dashboard';
+  let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
     if (!raw) return '/dashboard';
@@ -17,14 +20,23 @@
 
   onMount(async () => {
     if (!browser || !mountNode) return;
-    const target = sanitizeRedirect($page.url.searchParams.get('redirect'));
+    target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     const signInUrl = target === '/dashboard'
       ? '/sign-in'
       : `/sign-in?redirect=${encodeURIComponent(target)}`;
+    // path: '/sign-up' tells Clerk this widget is in path-routing mode
+    // anchored at /sign-up, so it can resume an in-flight OAuth callback
+    // landed on /sign-up/sso-callback. Without this, the catch-all mount
+    // doesn't recognize the URL state and Clerk falls back to its hosted
+    // "after sign-up URL" — typically the marketing landing.
     unmount = await mountClerkSignUp(mountNode, {
       signInUrl,
+      routing: 'path',
+      path: '/sign-up',
       forceRedirectUrl: target,
-      fallbackRedirectUrl: target
+      fallbackRedirectUrl: target,
+      afterSignUpUrl: target,
+      afterSignInUrl: target
     });
     mounted = true;
   });
@@ -32,6 +44,26 @@
   onDestroy(() => {
     unmount?.();
   });
+
+  // Mirror of the safety-net on /sign-up. Catch-all routes mount a fresh
+  // SignUp widget for sub-paths like /sign-up/verify-email-address — and
+  // when verification finishes, sometimes Clerk doesn't honor the
+  // `forceRedirectUrl` because the original redirect param was lost
+  // across the email-link round-trip. Watching the auth store guarantees
+  // we navigate the moment the session resolves.
+  $: if (browser && !redirected && $clerkAuthStore.signedIn) {
+    redirected = true;
+    void (async () => {
+      try {
+        await goto(target, { replaceState: true });
+      } catch {
+        /* fall through to hard replace */
+      }
+      if (browser && window.location.pathname.startsWith('/sign-up')) {
+        window.location.replace(target);
+      }
+    })();
+  }
 </script>
 
 <svelte:head>
