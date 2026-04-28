@@ -24,10 +24,26 @@
     const signInUrl = target === '/dashboard'
       ? '/sign-in'
       : `/sign-in?redirect=${encodeURIComponent(target)}`;
+    // Use path-based routing so Clerk's multi-step flow (verify-email,
+    // sso-callback, factor-one) navigates to real URLs that hit our
+    // catch-all `/sign-up/[...rest]/+page.svelte` route — instead of
+    // falling back to virtual routing where post-OAuth callbacks have
+    // no place to land and Clerk silently redirects to its hosted
+    // "after sign-up URL" (which defaults to `/`, the marketing page).
+    //
+    // `forceRedirectUrl` and `fallbackRedirectUrl` cover the modern
+    // Clerk Billing API; `afterSignUpUrl` is the legacy alias that some
+    // OAuth round-trips still honor — passing both gives us defense
+    // in depth so the post-signup destination is always `/dashboard`
+    // (or the path the user was originally trying to reach).
     unmount = await mountClerkSignUp(mountNode, {
       signInUrl,
+      routing: 'path',
+      path: '/sign-up',
       forceRedirectUrl: target,
-      fallbackRedirectUrl: target
+      fallbackRedirectUrl: target,
+      afterSignUpUrl: target,
+      afterSignInUrl: target
     });
     mounted = true;
   });

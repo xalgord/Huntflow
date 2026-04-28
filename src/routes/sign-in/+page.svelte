@@ -29,10 +29,22 @@
     const signUpUrl = target === '/dashboard'
       ? '/sign-up'
       : `/sign-up?redirect=${encodeURIComponent(target)}`;
+    // Path-based routing: Clerk's multi-step flow (factor-one,
+    // sso-callback, verify-email) navigates to real URLs that hit our
+    // catch-all `/sign-in/[...rest]/+page.svelte` route. Virtual mode
+    // (the previous default here) leaves OAuth callbacks stranded on
+    // `/sign-in/sso-callback` with no widget to resume them, so Clerk
+    // falls back to its hosted "after sign-in URL" — typically `/`,
+    // the marketing landing. Path routing keeps the flow inside our
+    // chrome and honors `forceRedirectUrl: target`.
     unmount = await mountClerkSignIn(mountNode, {
       signUpUrl,
+      routing: 'path',
+      path: '/sign-in',
       forceRedirectUrl: target,
-      fallbackRedirectUrl: target
+      fallbackRedirectUrl: target,
+      afterSignInUrl: target,
+      afterSignUpUrl: target
     });
     mounted = true;
   });

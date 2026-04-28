@@ -4,6 +4,7 @@
   // the root /sign-in page so the embedded widget can render whichever
   // step Clerk has navigated to.
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignIn } from '$lib/cloud/clerk';
@@ -12,6 +13,8 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
+  let target = '/dashboard';
+  let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
     if (!raw) return '/dashboard';
@@ -21,14 +24,23 @@
 
   onMount(async () => {
     if (!browser || !mountNode) return;
-    const target = sanitizeRedirect($page.url.searchParams.get('redirect'));
+    target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     const signUpUrl = target === '/dashboard'
       ? '/sign-up'
       : `/sign-up?redirect=${encodeURIComponent(target)}`;
+    // path: '/sign-in' tells Clerk this widget owns the /sign-in
+    // path subtree, so it knows how to resume an in-flight OAuth
+    // callback that landed on /sign-in/sso-callback. Without this,
+    // the catch-all mount can't recognize the URL state and Clerk
+    // falls back to its hosted "after sign-in URL" (typically `/`).
     unmount = await mountClerkSignIn(mountNode, {
       signUpUrl,
+      routing: 'path',
+      path: '/sign-in',
       forceRedirectUrl: target,
-      fallbackRedirectUrl: target
+      fallbackRedirectUrl: target,
+      afterSignInUrl: target,
+      afterSignUpUrl: target
     });
     mounted = true;
   });
@@ -36,6 +48,22 @@
   onDestroy(() => {
     unmount?.();
   });
+
+  // Safety-net redirect: navigate the moment Clerk reports a session,
+  // independent of which step inside the catch-all flow finalized it.
+  $: if (browser && !redirected && $clerkAuthStore.signedIn) {
+    redirected = true;
+    void (async () => {
+      try {
+        await goto(target, { replaceState: true });
+      } catch {
+        /* fall through to hard replace */
+      }
+      if (browser && window.location.pathname.startsWith('/sign-in')) {
+        window.location.replace(target);
+      }
+    })();
+  }
 </script>
 
 <svelte:head>
