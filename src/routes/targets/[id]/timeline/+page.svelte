@@ -16,6 +16,21 @@
     Submission
   } from '$lib/types';
   import { severityColorClass } from '$lib/utils/cvss';
+  import {
+    ArrowLeft,
+    BookOpen,
+    Camera,
+    FileText,
+    Filter,
+    History,
+    Image as ImageIcon,
+    Link as LinkIcon,
+    Network,
+    Send,
+    ShieldAlert,
+    Timer as TimerIcon
+  } from 'lucide-svelte';
+  import { onMount } from 'svelte';
 
   // Notes use PayoutSeverity (which adds `informational`). The shared
   // severity color helper is typed for CVSS severity, so we map across
@@ -26,21 +41,6 @@
     const cvss: CvssBaseSeverity = value === 'informational' ? 'none' : (value as CvssBaseSeverity);
     return severityColorClass(cvss);
   }
-  import {
-    ArrowLeft,
-    Camera,
-    FileText,
-    Filter,
-    History,
-    Image as ImageIcon,
-    Link as LinkIcon,
-    Network,
-    NotebookPen,
-    Send,
-    ShieldAlert,
-    Timer as TimerIcon
-  } from 'lucide-svelte';
-  import { onMount } from 'svelte';
 
   /**
    * Per-target Session Timeline.
@@ -390,7 +390,7 @@
                       {#if entry.kind === 'session'}
                         <TimerIcon size={11} />
                       {:else if entry.kind === 'note'}
-                        <NotebookPen size={11} />
+                        <BookOpen size={11} />
                       {:else if entry.kind === 'evidence'}
                         {#if entry.asset.kind === 'image'}
                           <Camera size={11} />
@@ -521,7 +521,7 @@
                         {#if entry.kind === 'session'}
                           <TimerIcon size={11} />
                         {:else if entry.kind === 'note'}
-                          <NotebookPen size={11} />
+                          <BookOpen size={11} />
                         {:else if entry.kind === 'evidence'}
                           <svelte:component this={evidenceIcon(entry.asset)} size={11} />
                         {:else}

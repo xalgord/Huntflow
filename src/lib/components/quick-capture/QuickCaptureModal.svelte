@@ -26,7 +26,7 @@
     FileText as FileTextIcon,
     Image as ImageIcon,
     Network,
-    NotebookPen,
+    BookOpen,
     ShieldAlert,
     Sparkles,
     UploadCloud,
@@ -406,7 +406,7 @@
     jwt: ShieldAlert,
     url: Sparkles,
     base64: FileTextIcon,
-    note: NotebookPen
+    note: BookOpen
   };
 </script>
 
