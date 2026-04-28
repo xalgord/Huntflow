@@ -23,6 +23,9 @@
   }
 
   export let open = false;
+  /** Pass true when the user has just completed a Pro subscription so the
+   *  first onboarding step acknowledges their plan is active. */
+  export let isPro = false;
 
   let stepIndex = 0;
   let touchStartX = 0;
@@ -30,7 +33,7 @@
   let loadingDemo = false;
   let demoError = '';
 
-  const steps: OnboardingStep[] = [
+  const baseSteps: OnboardingStep[] = [
     {
       title: 'Welcome to HuntFlow',
       description: 'Hunt smarter. Stay consistent. Get paid.',
@@ -69,6 +72,18 @@
     }
   ];
 
+  // Pro subscribers get an extra welcome step prepended that confirms cloud
+  // sync is active — this surfaces the value of their plan immediately so
+  // they know the subscription worked before stepping through the rest.
+  const proStep: OnboardingStep = {
+    title: 'Your Pro plan is active',
+    description:
+      'Cloud sync is on. Your workspace stays in sync across every signed-in device, and all your data is end-to-end encrypted.',
+    icon: Sparkles,
+    accent: 'text-primary-400 bg-primary-500/10 border-primary-500/30'
+  };
+
+  $: steps = isPro ? [proStep, ...baseSteps] : baseSteps;
   $: currentStep = steps[stepIndex];
   $: isLastStep = stepIndex === steps.length - 1;
 
