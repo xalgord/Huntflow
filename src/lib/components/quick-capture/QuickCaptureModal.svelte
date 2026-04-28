@@ -541,7 +541,16 @@
             {/if}
           </div>
         {:else}
+          <!--
+            Drop zone for files dragged from the OS / Burp / etc.
+            `role="region"` + `aria-label` satisfy svelte-a11y's requirement
+            that an interactive element with drag handlers must announce
+            itself to assistive tech, without making it focusable as a
+            button (we don't want screen-reader users to "click" a div).
+          -->
           <div
+            role="region"
+            aria-label="Drop a file to capture"
             class="rounded-xl border-2 border-dashed border-border/60 bg-background/40 p-6 text-center transition {dragActive
               ? 'border-primary/60 bg-primary/5'
               : ''}"

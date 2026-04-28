@@ -61,6 +61,16 @@
     dispatch('severity', { severity, cvssVector, cvssScore });
   }
 
+  // The severity color helper is typed for the CVSS vocabulary
+  // (none/low/medium/high/critical) while a Note carries a
+  // PayoutSeverity (which adds `informational`). We compute the
+  // mapped class once in the script block — Svelte's template parser
+  // chokes on TypeScript `as` casts inside `{...}` expressions, so
+  // doing the cast here keeps the template free of TS syntax.
+  $: severityClass = severity
+    ? severityColorClass(severity === 'informational' ? 'none' : (severity as CvssBaseSeverity))
+    : '';
+
   function severityFromBase(base: CvssBaseSeverity): PayoutSeverity | undefined {
     if (base === 'critical') return 'critical';
     if (base === 'high') return 'high';
@@ -306,9 +316,7 @@
 {#if severity && cvssVector}
   <div class="border-b border-slate-700 bg-slate-900/40 px-3 py-1.5 text-[11px]">
     <span class="op-mono inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2 py-0.5 text-muted-foreground">
-      <span class="font-semibold uppercase tracking-[0.08em] {severityColorClass(
-        severity === 'informational' ? 'none' : (severity as CvssBaseSeverity)
-      )} rounded px-1.5 py-0.5"
+  <span class="font-semibold uppercase tracking-[0.08em] {severityClass} rounded px-1.5 py-0.5"
         >{severity}</span
       >
       {cvssVector}
