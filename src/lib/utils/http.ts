@@ -237,3 +237,120 @@ export function summarizeHttpRequest(request: HttpRequest): string {
     return `${request.method.toUpperCase()} ${request.url}`;
   }
 }
+
+// ─── Response & full-exchange parsing ────────────────────────────────────
+
+const STATUS_LINE_PATTERN = /^HTTP\/\d(?:\.\d)?\s+(\d{3})\s*(.*)$/i;
+
+export interface HttpResponse {
+  httpVersion: string;
+  statusCode: number;
+  statusText: string;
+  headers: Array<{ name: string; value: string }>;
+  body?: string;
+}
+
+/**
+ * Parse a raw HTTP response (status line + headers + optional body).
+ * Tolerant of CRLF/LF and missing body. Returns null on garbage input
+ * so callers can fall back to "raw text only" rendering.
+ */
+export function parseRawHttpResponse(raw: string): HttpResponse | null {
+  if (!raw || !raw.trim()) return null;
+  const normalized = raw.replace(/\r\n/g, '\n');
+  const lines = normalized.split('\n');
+  if (lines.length === 0) return null;
+
+  const statusLine = lines[0].trim();
+  const statusMatch = STATUS_LINE_PATTERN.exec(statusLine);
+  if (!statusMatch) return null;
+
+  const httpVersion = statusLine.split(/\s+/)[0] ?? 'HTTP/1.1';
+  const statusCode = Number.parseInt(statusMatch[1], 10);
+  const statusText = statusMatch[2].trim();
+
+  const headers: Array<{ name: string; value: string }> = [];
+  let cursor = 1;
+  for (; cursor < lines.length; cursor += 1) {
+    const line = lines[cursor];
+    if (line === '' || line.trim() === '') {
+      cursor += 1;
+      break;
+    }
+    const colon = line.indexOf(':');
+    if (colon === -1) continue;
+    const name = line.slice(0, colon).trim();
+    const value = line.slice(colon + 1).trim();
+    if (!name) continue;
+    headers.push({ name, value });
+  }
+
+  const body = lines.slice(cursor).join('\n').replace(/\n+$/, '') || undefined;
+
+  return { httpVersion, statusCode, statusText, headers, body };
+}
+
+export interface HttpExchange {
+  request: HttpRequest;
+  response?: HttpResponse;
+  /** Original raw text the user pasted, preserved for byte-perfect copy/download. */
+  raw: string;
+  /** The split point (end-of-request) inside `raw`, or -1 if response-less. */
+  responseOffset: number;
+}
+
+/**
+ * Parse a request+response blob (the format you get when you "Copy all"
+ * in Burp's repeater or Caido) into structured pieces. The split is
+ * detected on the first line that matches an HTTP status line preceded
+ * by a blank line — that's the canonical boundary in any tool's output.
+ */
+export function parseHttpExchange(raw: string): HttpExchange | null {
+  if (!raw || !raw.trim()) return null;
+  const normalized = raw.replace(/\r\n/g, '\n');
+  const lines = normalized.split('\n');
+
+  // Find the boundary: blank line whose next line is an HTTP/x status.
+  let splitLine = -1;
+  for (let index = 1; index < lines.length - 1; index += 1) {
+    if (lines[index] !== '') continue;
+    if (STATUS_LINE_PATTERN.test(lines[index + 1] ?? '')) {
+      splitLine = index;
+      break;
+    }
+  }
+
+  if (splitLine === -1) {
+    const request = parseRawHttpRequest(raw);
+    if (!request) return null;
+    return { request, raw, responseOffset: -1 };
+  }
+
+  const requestRaw = lines.slice(0, splitLine).join('\n');
+  const responseRaw = lines.slice(splitLine + 1).join('\n');
+  const request = parseRawHttpRequest(requestRaw);
+  if (!request) return null;
+  const response = parseRawHttpResponse(responseRaw) ?? undefined;
+
+  // Compute byte offset of the response inside the raw blob so the UI
+  // can highlight it without re-splitting later.
+  const responseOffset = lines.slice(0, splitLine + 1).join('\n').length;
+
+  return { request, response, raw, responseOffset };
+}
+
+export function summarizeHttpExchange(exchange: HttpExchange): string {
+  const requestLine = summarizeHttpRequest(exchange.request);
+  if (!exchange.response) return requestLine;
+  return `${requestLine} → ${exchange.response.statusCode}`;
+}
+
+/** Extract just the host out of a request URL, falling back to the Host header. */
+export function hostOfRequest(request: HttpRequest): string | undefined {
+  try {
+    return new URL(request.url).host;
+  } catch {
+    const hostHeader = request.headers.find((header) => header.name.toLowerCase() === 'host');
+    return hostHeader?.value;
+  }
+}

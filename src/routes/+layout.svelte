@@ -9,11 +9,13 @@
   import MobileHeader from '$lib/components/layout/MobileHeader.svelte';
   import OnboardingModal from '$lib/components/onboarding/OnboardingModal.svelte';
   import PageTransition from '$lib/components/layout/PageTransition.svelte';
+  import QuickCaptureModal from '$lib/components/quick-capture/QuickCaptureModal.svelte';
   import SideNav from '$lib/components/layout/SideNav.svelte';
   import InstallPrompt from '$lib/components/pwa/InstallPrompt.svelte';
   import OfflineBanner from '$lib/components/pwa/OfflineBanner.svelte';
   import { flushAllStores, settingsStore } from '$lib/stores';
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
+  import { quickCaptureStore } from '$lib/stores/quickCaptureStore';
   import { installGlobalShortcuts } from '$lib/utils/shortcuts';
   import { Crosshair } from 'lucide-svelte';
   import { onMount } from 'svelte';
@@ -62,16 +64,35 @@
       // Global Cmd/Ctrl+K opens the Command Palette from anywhere except
       // when the user is typing inside an input/textarea/contenteditable
       // (those should still get their normal Ctrl+K behavior).
+      // Cmd/Ctrl+Shift+K is the dedicated Quick Capture hotkey — the
+      // single most-used shortcut for live hunting, mirroring how
+      // Raycast / Notion / Linear treat their primary "create" key.
       const handleKeyShortcut = (event: KeyboardEvent) => {
-        const isCmdK = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k';
-        if (!isCmdK) return;
+        const isCmd = event.metaKey || event.ctrlKey;
+        if (!isCmd) return;
+        const key = event.key.toLowerCase();
+        if (key !== 'k') return;
+
         const target = event.target as HTMLElement | null;
         const tag = target?.tagName;
         const editable = target?.isContentEditable;
         const inField = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || editable;
-        // Allow the shortcut even from inputs — that's what users expect
-        // from Linear/Notion/Raycast — but don't block native shortcuts on
-        // selects.
+
+        // Cmd/Ctrl+Shift+K → Quick Capture (works from inside fields too —
+        // that's the whole point of "capture from anywhere"). We pre-seed
+        // the modal with whatever the user already had typed when they
+        // hit the hotkey from inside an input/textarea so nothing gets
+        // discarded.
+        if (event.shiftKey) {
+          event.preventDefault();
+          let seed = '';
+          if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
+            seed = target.value ?? '';
+          }
+          quickCaptureStore.open(seed ? { initialText: seed } : {});
+          return;
+        }
+
         if (tag === 'SELECT') return;
         event.preventDefault();
         if (inField && target instanceof HTMLInputElement && target.value) {
@@ -253,6 +274,7 @@
 
   {#if !isLanding}
     <CommandPalette />
+    <QuickCaptureModal />
     <KeyboardShortcutsHelp />
   {/if}
 {/if}

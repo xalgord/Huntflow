@@ -67,6 +67,15 @@ export interface Note {
   sessionId?: string;
   templateId?: string;
   tags: string[];
+  /**
+   * Hunter-mode metadata. Severity lets you tag a finding while it's
+   * fresh; CVSS vector/score is calculated inline via the same calculator
+   * used by submissions, so promote-to-submission can carry it across
+   * without re-typing.
+   */
+  severity?: PayoutSeverity;
+  cvssVector?: string;
+  cvssScore?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -113,9 +122,33 @@ export type EvidenceAssetKind =
   | 'text'
   | 'request'
   | 'response'
+  /**
+   * A complete HTTP exchange (request + optional response) captured as
+   * one inseparable artifact. This is the format real bug hunters paste
+   * out of Burp/Caido/curl — keeping it single-rowed avoids the awkward
+   * "two assets manually linked with derived-from" pattern.
+   */
+  | 'http-exchange'
   | 'archive'
   | 'binary'
   | 'url';
+
+/**
+ * Structured metadata for an `http-exchange` evidence asset. Both raw
+ * blobs are kept verbatim so the "copy as curl"/"download as .http"
+ * actions stay byte-identical to what the hunter saw on the wire.
+ */
+export interface HttpExchangeMeta {
+  method: string;
+  url: string;
+  host?: string;
+  httpVersion?: string;
+  statusCode?: number;
+  statusText?: string;
+  durationMs?: number;
+  requestRaw?: string;
+  responseRaw?: string;
+}
 
 export type EvidenceAssetSource = 'upload' | 'clipboard' | 'snippet' | 'url';
 export type EvidenceSyncState = 'local' | 'pending-upload' | 'synced' | 'remote' | 'error';
@@ -147,6 +180,8 @@ export interface EvidenceAsset {
   sessionId?: string;
   noteId?: string;
   tags: string[];
+  /** Parsed HTTP fields when `kind === 'http-exchange'`. */
+  httpExchange?: HttpExchangeMeta;
   syncState: EvidenceSyncState;
   syncError?: string;
   capturedAt: number;
@@ -668,7 +703,213 @@ export interface HuntFlowExport {
 
 // ─── Built-in templates ──────────────────────────────────────────────────────
 
+/**
+ * Two flavours of templates ship by default:
+ *
+ * 1. **Probe logs** — what a hunter wants while actively testing. These
+ *    are matrix/checklist-shaped: "did I try X with encoding Y in
+ *    context Z?" They're cheap to fill in real-time and become the
+ *    bones of the report later.
+ * 2. **Reports** — write-up skeletons (Impact / Remediation / Proof)
+ *    used when the bug is confirmed and you're packaging it up for
+ *    submission.
+ *
+ * Templates are seeded once on first DB init and `put` is upsert-safe,
+ * so adding entries here automatically propagates to existing users.
+ */
 export const BUILT_IN_TEMPLATES: NoteTemplate[] = [
+  // ─── Probe-log templates (live hunting) ──────────────────────────────
+  {
+    id: 'probe-xss-matrix',
+    name: 'Probe — XSS matrix',
+    category: 'web',
+    content: `## XSS Probe Matrix
+
+### Endpoint
+- URL:
+- Method:
+- Parameter(s):
+
+### Reflection context
+- [ ] HTML body
+- [ ] HTML attribute (which: \`\`)
+- [ ] JS string / template
+- [ ] URL / href / src
+- [ ] CSS context
+
+### Payloads tried
+| Payload | Encoding | Reflected? | Fired? | Notes |
+|---|---|---|---|---|
+| \`<svg/onload=alert(1)>\` | none |  |  |  |
+| \`"><img src=x onerror=alert(1)>\` | none |  |  |  |
+| \`javascript:alert(1)\` | none |  |  |  |
+| \`'-alert(1)-'\` | js-string |  |  |  |
+
+### Filters / WAF observed
+
+### Working PoC
+
+### CSP / cookie flags`,
+    isBuiltIn: true
+  },
+  {
+    id: 'probe-idor-sweep',
+    name: 'Probe — IDOR endpoint sweep',
+    category: 'web',
+    content: `## IDOR Endpoint Sweep
+
+### Account A (low-priv)
+- User ID:
+- Session token / cookie:
+
+### Account B (low-priv, separate tenant if applicable)
+- User ID:
+- Session token / cookie:
+
+### Endpoints tested
+| Method | Endpoint | Param | A→B works? | Anon→A works? | Notes |
+|---|---|---|---|---|---|
+|  |  |  |  |  |  |
+
+### Privilege classes tried
+- [ ] Anonymous → User
+- [ ] User A → User B (same tenant)
+- [ ] User → Admin
+- [ ] Tenant A → Tenant B
+
+### Findings`,
+    isBuiltIn: true
+  },
+  {
+    id: 'probe-ssrf-ladder',
+    name: 'Probe — SSRF target ladder',
+    category: 'web',
+    content: `## SSRF Probe
+
+### Vulnerable parameter
+- Endpoint:
+- Parameter:
+- Original value:
+
+### Ladder
+- [ ] Custom collaborator domain (\`http://xxxxx.oastify.com\`)
+- [ ] localhost (\`http://127.0.0.1\`, \`[::1]\`, \`0.0.0.0\`)
+- [ ] localhost via redirect / DNS rebind
+- [ ] Cloud metadata IPv4 (\`http://169.254.169.254/latest/meta-data/\`)
+- [ ] IMDSv2 token endpoint
+- [ ] Internal hostnames (\`kubernetes.default.svc\`, \`metadata.google.internal\`)
+- [ ] \`file://\` scheme
+- [ ] \`gopher://\` (unauth Redis / Memcached / SMTP)
+- [ ] \`dict://\` / \`ftp://\`
+
+### Response observations
+| Probe | Status | Body length | Hint |
+|---|---|---|---|
+|  |  |  |  |
+
+### Out-of-band hits
+
+### Working chain`,
+    isBuiltIn: true
+  },
+  {
+    id: 'probe-auth-flow',
+    name: 'Probe — Auth flow trace',
+    category: 'web',
+    content: `## Auth Flow Trace
+
+### Flow type
+- [ ] Login
+- [ ] Signup
+- [ ] Password reset
+- [ ] OAuth (provider: )
+- [ ] SSO / SAML
+- [ ] MFA enrol / step-up
+
+### Steps captured
+1. Initial request:
+2. Server response:
+3. Token / cookie issued:
+4. Subsequent request:
+
+### Weakness checks
+- [ ] Predictable / sequential token
+- [ ] Token leaked in URL / Referer
+- [ ] No rate limit on submit
+- [ ] Account enumeration via timing or distinct error
+- [ ] Token reuse after logout
+- [ ] Mass assignment on signup payload
+- [ ] OAuth state missing / replayable
+- [ ] Open redirect in callback
+- [ ] MFA bypass (skip step, downgrade method)
+
+### Notes`,
+    isBuiltIn: true
+  },
+  {
+    id: 'probe-graphql',
+    name: 'Probe — GraphQL introspection log',
+    category: 'api',
+    content: `## GraphQL Probe
+
+### Endpoint
+- URL:
+- Auth required:
+
+### Introspection
+- [ ] Enabled in production
+- [ ] Disabled but bypassable via field suggestions / aliasing
+- [ ] Schema dumped to file (path: )
+
+### Operations of interest
+| Operation | Args | Auth required? | Returns sensitive data? |
+|---|---|---|---|
+|  |  |  |  |
+
+### Techniques tried
+- [ ] Batched query DoS
+- [ ] Aliased rate-limit bypass
+- [ ] Field duplication amplification
+- [ ] Deeply nested / cyclic query
+- [ ] CSRF on POST without preflight
+- [ ] Mutation callable via GET
+- [ ] Sensitive data leaked in errors
+- [ ] Object/relay ID enumeration
+
+### Findings`,
+    isBuiltIn: true
+  },
+  {
+    id: 'probe-race',
+    name: 'Probe — Race condition repro',
+    category: 'web',
+    content: `## Race Condition Repro
+
+### Endpoint
+- Method / URL:
+- Action it performs:
+
+### Setup
+- Account state before:
+- Resource being raced:
+
+### Tooling
+- [ ] Burp Repeater group (parallel, last-byte sync)
+- [ ] Turbo Intruder script
+- [ ] HTTP/2 single-packet attack
+
+### Attempts
+| Concurrency | Successes | Notes |
+|---|---|---|
+|  |  |  |
+
+### Outcome
+- State that changed beyond intended count:
+- Money / data / privilege impact:`,
+    isBuiltIn: true
+  },
+
+  // ─── Report templates (write-up time) ────────────────────────────────
   {
     id: 'subdomain-takeover',
     name: 'Subdomain Takeover',
