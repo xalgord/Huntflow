@@ -7,8 +7,25 @@
     submissionStore,
     targetStore
   } from '$lib/stores';
-  import type { EvidenceAsset, Note, Session, Submission } from '$lib/types';
+  import type {
+    CvssBaseSeverity,
+    EvidenceAsset,
+    Note,
+    PayoutSeverity,
+    Session,
+    Submission
+  } from '$lib/types';
   import { severityColorClass } from '$lib/utils/cvss';
+
+  // Notes use PayoutSeverity (which adds `informational`). The shared
+  // severity color helper is typed for CVSS severity, so we map across
+  // before passing it in. `informational` lands on the same neutral
+  // slate styling as the CVSS `none` bucket.
+  function severityClassFor(value: PayoutSeverity | undefined): string {
+    if (!value) return '';
+    const cvss: CvssBaseSeverity = value === 'informational' ? 'none' : (value as CvssBaseSeverity);
+    return severityColorClass(cvss);
+  }
   import {
     ArrowLeft,
     Camera,
@@ -414,7 +431,7 @@
                           <span class="text-xs font-mono text-slate-500">{formatTime(entry.at)}</span>
                           <span class="font-medium text-slate-100">{entry.note.title || 'Untitled note'}</span>
                           {#if entry.note.severity}
-                            <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium {severityColorClass(entry.note.severity)}">
+                            <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium {severityClassFor(entry.note.severity)}">
                               <ShieldAlert size={11} aria-hidden="true" />
                               <span class="capitalize">{entry.note.severity}</span>
                               {#if typeof entry.note.cvssScore === 'number'}
@@ -445,7 +462,7 @@
                         <div class="flex flex-wrap items-center gap-2 text-sm">
                           <span class="text-xs font-mono text-slate-500">{formatTime(entry.at)}</span>
                           <span class="font-medium text-slate-100">{entry.submission.title}</span>
-                          <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium {severityColorClass(entry.submission.severity)}">
+                          <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium {severityClassFor(entry.submission.severity)}">
                             <span class="capitalize">{entry.submission.severity}</span>
                             {#if typeof entry.submission.cvssScore === 'number'}
                               <span class="font-mono opacity-80">· {entry.submission.cvssScore.toFixed(1)}</span>
@@ -519,13 +536,13 @@
                           {entry.note.title || 'Untitled note'}
                         </a>
                         {#if entry.note.severity}
-                          <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium {severityColorClass(entry.note.severity)}">
+                          <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium {severityClassFor(entry.note.severity)}">
                             <span class="capitalize">{entry.note.severity}</span>
                           </span>
                         {/if}
                       {:else if entry.kind === 'evidence'}
                         <a href={`/assets?asset=${entry.asset.id}`} class="truncate font-medium text-slate-100 hover:text-primary-300">
-                          {entry.asset.name}
+                          {entry.asset.title}
                         </a>
                         <span class="text-[11px] uppercase tracking-wide text-slate-500">{entry.asset.kind.replace('-', ' ')}</span>
                       {:else}

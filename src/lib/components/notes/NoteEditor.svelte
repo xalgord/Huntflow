@@ -5,6 +5,7 @@
   import { evidenceAssetStore, putEvidenceBlob } from '$lib/stores';
   import { generateId } from '$lib/utils/id';
   import { severityColorClass } from '$lib/utils/cvss';
+  import type { CvssBaseSeverity } from '$lib/types';
   import HunterActionsBar from './HunterActionsBar.svelte';
   import MarkdownPreview from './MarkdownPreview.svelte';
   import NoteToolbar, { type ToolbarAction } from './NoteToolbar.svelte';
@@ -27,7 +28,16 @@
   $: targetSessions = sessions.filter((session) => session.targetId === note.targetId);
   $: charCount = note.content.length;
   $: canSave = note.title.trim().length > 0 && note.targetId.trim().length > 0;
-  $: severityClass = note.severity ? severityColorClass(note.severity) : '';
+  // `severityColorClass` is typed for the CVSS severity vocabulary (none /
+  // low / medium / high / critical) while a Note carries a PayoutSeverity
+  // (which adds `informational`). Map across cleanly so we don't get a
+  // type error and so "informational" gets the same neutral slate
+  // styling as "none".
+  $: severityClass = note.severity ? severityColorClass(toCvssSeverity(note.severity)) : '';
+
+  function toCvssSeverity(value: PayoutSeverity): CvssBaseSeverity {
+    return value === 'informational' ? 'none' : (value as CvssBaseSeverity);
+  }
 
   function emitChange(): void {
     dispatch('change', { ...note, tags: [...note.tags] });

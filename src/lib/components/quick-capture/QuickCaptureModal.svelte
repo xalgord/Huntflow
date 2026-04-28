@@ -205,7 +205,15 @@
       createdAt: now,
       updatedAt: now
     };
-    await putEvidenceBlob({ assetId: id, data: file, size: file.size, mimeType: asset.mimeType, updatedAt: now });
+    await putEvidenceBlob({
+      assetId: id,
+      blob: file,
+      size: file.size,
+      mimeType: asset.mimeType,
+      fileName: asset.fileName,
+      createdAt: now,
+      updatedAt: now
+    });
     await evidenceAssetStore.put(asset);
     await evidenceAssetStore.persistNow();
     return asset;

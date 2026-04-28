@@ -15,6 +15,14 @@
   function handleChange() {
     dispatch('select', templates.find((template) => template.id === selectedTemplateId) ?? null);
   }
+
+  // Probe-log templates have IDs prefixed with `probe-`. Group them
+  // separately so live-hunting templates are clearly distinguished from
+  // write-up scaffolds in the dropdown — that way a hunter mid-session
+  // doesn't have to scroll past 8 report skeletons to find the IDOR
+  // sweep checklist.
+  $: probeTemplates = templates.filter((template) => template.id.startsWith('probe-'));
+  $: reportTemplates = templates.filter((template) => !template.id.startsWith('probe-'));
 </script>
 
 <label class="block">
@@ -25,8 +33,19 @@
     on:change={handleChange}
   >
     <option value="">Blank note</option>
-    {#each templates as template}
-      <option value={template.id}>{template.name}</option>
-    {/each}
+    {#if probeTemplates.length > 0}
+      <optgroup label="Probe logs (live hunting)">
+        {#each probeTemplates as template}
+          <option value={template.id}>{template.name.replace(/^Probe\s*[—-]\s*/i, '')}</option>
+        {/each}
+      </optgroup>
+    {/if}
+    {#if reportTemplates.length > 0}
+      <optgroup label="Reports (write-up)">
+        {#each reportTemplates as template}
+          <option value={template.id}>{template.name}</option>
+        {/each}
+      </optgroup>
+    {/if}
   </select>
 </label>
