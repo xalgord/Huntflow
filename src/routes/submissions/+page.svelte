@@ -5,12 +5,14 @@
   import PlatformIcon from '$lib/components/targets/PlatformIcon.svelte';
   import StatCard from '$lib/components/stats/StatCard.svelte';
   import {
+    noteStore,
     payoutStore,
     sessionStore,
     submissionStore,
     targetStore
   } from '$lib/stores';
   import type {
+    Note,
     PayoutSeverity,
     Submission,
     SubmissionStatus
@@ -56,6 +58,7 @@
 
   let showForm = false;
   let editing: Submission | null = null;
+  let fromNoteId = '';
   let query = '';
   let statusFilter: StatusFilter = 'all';
   let severityFilter: SeverityFilter = 'all';
@@ -67,13 +70,55 @@
       targetStore.load(),
       payoutStore.load(),
       // Sessions are needed for the WeeklyRecap focus-time aggregation.
-      sessionStore.load()
+      sessionStore.load(),
+      // Notes are loaded so we can hydrate the draft when arriving via
+      // the "Promote to submission" flow with `?fromNote=<id>`.
+      noteStore.load()
     ]);
     const target = $page.url.searchParams.get('target');
     if (target) targetFilter = target;
     const action = $page.url.searchParams.get('new');
     if (action === '1') showForm = true;
+
+    const noteId = $page.url.searchParams.get('fromNote');
+    if (noteId) {
+      const note = noteStore.getById(noteId) ?? $noteStore.find((entry) => entry.id === noteId);
+      if (note) {
+        editing = buildDraftFromNote(note);
+        fromNoteId = note.id;
+        showForm = true;
+      }
+    }
   });
+
+  /**
+   * Convert a hunter note into a half-completed Submission so the form
+   * lands pre-filled. The note's content becomes `reportMarkdown` (the
+   * canonical write-up field) AND `notes` (working scratchpad) — both
+   * are usually the same draft text right at promotion time, but the
+   * hunter can diverge them as they polish the report.
+   */
+  function buildDraftFromNote(note: Note): Submission {
+    const now = Date.now();
+    return {
+      id: '',
+      title: note.title,
+      targetId: note.targetId,
+      noteId: note.id,
+      platform: 'hackerone',
+      severity: note.severity ?? 'medium',
+      cvssScore: note.cvssScore,
+      cvssVector: note.cvssVector,
+      status: 'draft',
+      reportMarkdown: note.content,
+      notes: note.content,
+      payoutIds: [],
+      tags: [...note.tags],
+      timeline: [],
+      createdAt: now,
+      updatedAt: now
+    };
+  }
 
   $: targetMap = new Map($targetStore.map((t) => [t.id, t]));
 
@@ -161,11 +206,13 @@
 
   function startCreate(): void {
     editing = null;
+    fromNoteId = '';
     showForm = true;
   }
 
   function startEdit(submission: Submission): void {
     editing = submission;
+    fromNoteId = '';
     showForm = true;
   }
 
@@ -174,6 +221,7 @@
     await submissionStore.persistNow();
     showForm = false;
     editing = null;
+    fromNoteId = '';
   }
 
   async function deleteSubmission(submission: Submission): Promise<void> {
@@ -221,15 +269,31 @@
 
     {#if showForm}
       <section class="hf-card p-4">
-        <h2 class="mb-4 text-lg font-semibold text-slate-100">{editing ? 'Edit Submission' : 'New Submission'}</h2>
+        <div class="mb-4 flex flex-wrap items-center gap-2">
+          <h2 class="text-lg font-semibold text-slate-100">
+            {#if fromNoteId}
+              New Submission
+            {:else if editing}
+              Edit Submission
+            {:else}
+              New Submission
+            {/if}
+          </h2>
+          {#if fromNoteId}
+            <span class="inline-flex items-center gap-1.5 rounded-md border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-xs font-medium text-primary-200">
+              Promoted from note
+            </span>
+          {/if}
+        </div>
         <SubmissionForm
           submission={editing}
           targets={$targetStore}
-          submitLabel={editing ? 'Save Changes' : 'Create Submission'}
+          submitLabel={editing && !fromNoteId ? 'Save Changes' : 'Create Submission'}
           on:submit={saveSubmission}
           on:cancel={() => {
             showForm = false;
             editing = null;
+            fromNoteId = '';
           }}
         />
       </section>

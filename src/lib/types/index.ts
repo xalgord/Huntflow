@@ -189,12 +189,26 @@ export interface EvidenceAsset {
   updatedAt: number;
 }
 
+/**
+ * Binary payload for an EvidenceAsset.
+ *
+ * The runtime convention used across the rest of the codebase (assets
+ * page, cloud sync, asset preview/download) is `blob:` plus optional
+ * `fileName` / `relativePath` / `createdAt`. The earlier `data:` field
+ * was kept only for backward compatibility with the very first export
+ * format and is now resolved at the call site that needs it.
+ */
 export interface EvidenceBlob {
   assetId: string;
-  data: Blob;
+  blob: Blob;
   size: number;
   mimeType: string;
+  fileName?: string;
+  relativePath?: string;
+  createdAt?: number;
   updatedAt: number;
+  /** @deprecated legacy field — newer code uses `blob`. */
+  data?: Blob;
 }
 
 export interface EvidenceLink {

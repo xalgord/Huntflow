@@ -10,6 +10,7 @@
     Archive,
     ArrowLeft,
     ExternalLink,
+    History,
     ListChecks,
     Network,
     Play,
@@ -192,7 +193,21 @@
         </div>
       </header>
 
-      <section aria-label="Target workspaces" class="grid gap-3 sm:grid-cols-3">
+      <section aria-label="Target workspaces" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <a
+          href={`/targets/${target.id}/timeline`}
+          class="hf-card hf-interactive flex items-center gap-3 p-4"
+        >
+          <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
+            <History size={18} aria-hidden="true" />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-semibold uppercase tracking-[0.12em] text-muted-foreground">Timeline</span>
+            <span class="block text-sm font-semibold text-foreground">
+              Sessions · notes · evidence
+            </span>
+          </span>
+        </a>
         <a
           href={`/targets/${target.id}/recon`}
           class="hf-card hf-interactive flex items-center gap-3 p-4"

@@ -1,5 +1,15 @@
 <script lang="ts">
+  import { evidenceAssetStore } from '$lib/stores';
+  import EvidenceReferenceTile from './EvidenceReferenceTile.svelte';
+
   export let content = '';
+
+  /**
+   * Per-render counter for code blocks so each preview gets stable
+   * `data-code-id` attributes the post-render handler can use to wire
+   * up "copy" buttons on click.
+   */
+  let codeBlockSeq = 0;
 
   function escapeHtml(value: string): string {
     return value
@@ -10,12 +20,19 @@
       .replace(/'/g, '&#039;');
   }
 
+  /**
+   * Inline tokens. Order matters: handle code spans first (so their
+   * contents aren't further parsed), then emphasis, then references.
+   * `[[evidence:id]]` is a placeholder we replace with a typed marker
+   * the Svelte template can swap for the EvidenceReferenceTile component.
+   */
   function renderInline(value: string): string {
     return escapeHtml(value)
       .replace(/`([^`]+)`/g, '<code>$1</code>')
       .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
       .replace(/\*([^*]+)\*/g, '<em>$1</em>')
-      .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>')
+      .replace(/\[\[evidence:([a-zA-Z0-9_-]+)\]\]/g, '<span data-evidence-ref="$1"></span>');
   }
 
   function flushParagraph(lines: string[], html: string[]): void {
@@ -31,25 +48,48 @@
     items.length = 0;
   }
 
+  /**
+   * Render a fenced code block with a header showing the language and
+   * a copy button. The HTML carries `data-code-id` so the post-render
+   * effect can attach a click handler that copies the raw source.
+   */
+  function renderCodeBlock(language: string, source: string): string {
+    codeBlockSeq += 1;
+    const id = String(codeBlockSeq);
+    const langLabel = language.trim() || 'text';
+    return `<div class="code-block" data-code-id="${id}">
+      <div class="code-block__header">
+        <span class="code-block__lang">${escapeHtml(langLabel)}</span>
+        <button type="button" class="code-block__copy" data-copy-for="${id}" aria-label="Copy code to clipboard">Copy</button>
+      </div>
+      <pre><code data-code-source="${id}">${escapeHtml(source)}</code></pre>
+    </div>`;
+  }
+
   function renderMarkdown(markdown: string): string {
+    codeBlockSeq = 0;
     const html: string[] = [];
     const paragraph: string[] = [];
     const listItems: string[] = [];
     let orderedList = false;
     let inCodeBlock = false;
+    let codeLanguage = '';
     let codeLines: string[] = [];
 
     for (const line of markdown.split('\n')) {
-      if (line.trim().startsWith('```')) {
+      const fence = /^```(.*)$/.exec(line.trim());
+      if (fence) {
         flushParagraph(paragraph, html);
         flushList(listItems, html, orderedList);
 
         if (inCodeBlock) {
-          html.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+          html.push(renderCodeBlock(codeLanguage, codeLines.join('\n')));
           codeLines = [];
+          codeLanguage = '';
           inCodeBlock = false;
         } else {
           inCodeBlock = true;
+          codeLanguage = fence[1] ?? '';
         }
         continue;
       }
@@ -101,15 +141,94 @@
 
     flushParagraph(paragraph, html);
     flushList(listItems, html, orderedList);
-    if (inCodeBlock) html.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+    if (inCodeBlock) html.push(renderCodeBlock(codeLanguage, codeLines.join('\n')));
 
     return html.join('\n');
   }
 
   $: rendered = renderMarkdown(content);
+
+  /**
+   * After the HTML is mounted, find every `[[evidence:id]]` placeholder
+   * and replace it with a hydrated tile referencing the live evidence
+   * asset. Re-runs whenever the rendered content or store changes so
+   * deletions / new captures stay in sync.
+   */
+  let host: HTMLDivElement | undefined;
+
+  type ResolvedRef = {
+    target: HTMLSpanElement;
+    id: string;
+  };
+
+  $: resolved = (() => {
+    if (!host) return [] as ResolvedRef[];
+    const placeholders = host.querySelectorAll<HTMLSpanElement>('[data-evidence-ref]');
+    return Array.from(placeholders).map((target) => ({
+      target,
+      id: target.dataset.evidenceRef ?? ''
+    }));
+  })();
+
+  $: assetMap = new Map($evidenceAssetStore.map((asset) => [asset.id, asset]));
+
+  // Mount tile components imperatively. We do this rather than use a
+  // Svelte each-block because the tiles need to land at arbitrary
+  // positions inside the rendered HTML string. The post-render hook
+  // hydrates each placeholder with a real component and tears down on
+  // change so we don't leak component instances.
+  let mounted: Array<{ destroy: () => void }> = [];
+
+  $: if (host) {
+    for (const m of mounted) m.destroy();
+    mounted = [];
+    void rendered;
+    queueMicrotask(() => {
+      if (!host) return;
+      const placeholders = host.querySelectorAll<HTMLSpanElement>('[data-evidence-ref]');
+      placeholders.forEach((node) => {
+        const id = node.dataset.evidenceRef ?? '';
+        const asset = assetMap.get(id);
+        const wrapper = document.createElement('span');
+        wrapper.className = 'evidence-ref-mount';
+        node.replaceWith(wrapper);
+        const instance = new EvidenceReferenceTile({
+          target: wrapper,
+          props: { evidenceId: id, asset }
+        });
+        mounted.push(instance);
+      });
+
+      // Wire copy-to-clipboard on every code-block "Copy" button.
+      const buttons = host.querySelectorAll<HTMLButtonElement>('.code-block__copy');
+      buttons.forEach((button) => {
+        const codeId = button.dataset.copyFor ?? '';
+        const codeNode = host?.querySelector<HTMLElement>(`[data-code-source="${codeId}"]`);
+        button.onclick = async () => {
+          if (!codeNode) return;
+          const original = button.textContent;
+          try {
+            await navigator.clipboard.writeText(codeNode.textContent ?? '');
+            button.textContent = 'Copied';
+          } catch {
+            button.textContent = 'Failed';
+          }
+          setTimeout(() => {
+            if (button.textContent !== original) button.textContent = original;
+          }, 1400);
+        };
+      });
+    });
+  }
+
+  import { onDestroy } from 'svelte';
+  onDestroy(() => {
+    for (const m of mounted) m.destroy();
+    mounted = [];
+  });
 </script>
 
-<div class="markdown-preview min-h-[28rem] rounded-b-lg bg-slate-850 p-4 text-slate-100">
+<div bind:this={host} class="markdown-preview min-h-[28rem] rounded-b-lg bg-slate-850 p-4 text-slate-100">
   {#if content.trim()}
     {@html rendered}
   {:else}
@@ -159,17 +278,60 @@
     color: #86efac;
   }
 
-  :global(.markdown-preview pre) {
-    overflow-x: auto;
-    border: 1px solid #1e293b;
+  :global(.markdown-preview .code-block) {
+    margin: 1rem 0;
+    overflow: hidden;
     border-radius: 0.5rem;
+    border: 1px solid #1e293b;
     background: #020617;
+  }
+
+  :global(.markdown-preview .code-block__header) {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #1e293b;
+    padding: 0.375rem 0.75rem;
+    background: #0b1224;
+    font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace;
+    font-size: 0.75rem;
+    text-transform: lowercase;
+    color: #94a3b8;
+  }
+
+  :global(.markdown-preview .code-block__lang) {
+    letter-spacing: 0.04em;
+  }
+
+  :global(.markdown-preview .code-block__copy) {
+    cursor: pointer;
+    border-radius: 0.25rem;
+    border: 1px solid transparent;
+    background: transparent;
+    padding: 0.125rem 0.5rem;
+    font: inherit;
+    color: #cbd5e1;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  :global(.markdown-preview .code-block__copy:hover) {
+    border-color: #334155;
+    background: #0f172a;
+    color: #f1f5f9;
+  }
+
+  :global(.markdown-preview .code-block pre) {
+    margin: 0;
+    overflow-x: auto;
+    border-radius: 0;
+    border: none;
+    background: transparent;
     padding: 1rem;
     font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', monospace;
     font-size: 0.875rem;
   }
 
-  :global(.markdown-preview pre code) {
+  :global(.markdown-preview .code-block pre code) {
     background: transparent;
     padding: 0;
     color: #86efac;
@@ -199,5 +361,10 @@
     padding-left: 1rem;
     color: #94a3b8;
     font-style: italic;
+  }
+
+  :global(.markdown-preview .evidence-ref-mount) {
+    display: inline-block;
+    vertical-align: middle;
   }
 </style>
