@@ -1,7 +1,7 @@
 {
   "name": "huntflow",
-  "version": "1.0.1",
-  "description": "Bug bounty hunting companion - track targets, sessions, notes, evidence, and submissions. Offline-first PWA with local IndexedDB storage.",
+  "version": "1.0.2",
+  "description": "Bug bounty hunting companion — track targets, sessions, notes, evidence, and payouts. Offline-first, zero telemetry.",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "bin": {
@@ -23,10 +23,7 @@
     "offline",
     "pwa"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/xalgord/huntflow.git"
-  },
+
   "homepage": "https://huntflow.xalgorix.com",
   "author": "xalgord",
   "engines": {
