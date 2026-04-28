@@ -1,8 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
-  <title>HuntFlow</title>
-  <rect width="512" height="512" rx="112" fill="#0f172a" />
-  <circle cx="256" cy="256" r="150" fill="none" stroke="#16a34a" stroke-width="32" />
-  <circle cx="256" cy="256" r="72" fill="none" stroke="#4ade80" stroke-width="28" />
-  <path d="M256 64v92M256 356v92M64 256h92M356 256h92" stroke="#f8fafc" stroke-width="28" stroke-linecap="round" />
-  <circle cx="256" cy="256" r="22" fill="#22c55e" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="HuntFlow">
+  <!--
+    Maskable PWA icon. Full-bleed brand-green background (no rounded
+    corners — the OS will crop to its preferred shape: circle on iOS,
+    squircle on Android, square on desktop). Mark stays inside the
+    inner ~80% safe zone so no part is clipped under any mask.
+
+    Geometry mirrors the in-app `BrandMark` component, scaled 16x from
+    its 32-unit grid (so 1 unit = 16px). All coordinates were rounded
+    to integers where possible to keep the SVG file compact.
+  -->
+  <rect width="512" height="512" fill="#16a34a"/>
+  <g fill="#ffffff">
+    <!-- Left H leg: x=7..10, y=6.5..25.5 -->
+    <rect x="112" y="104" width="48" height="304" rx="22"/>
+    <!-- Right H leg: x=14..17 -->
+    <rect x="224" y="104" width="48" height="304" rx="22"/>
+    <!-- Crossbar that pierces through the right leg, becoming the
+         shaft of the forward arrow -->
+    <rect x="160" y="232" width="176" height="48" rx="10"/>
+    <!-- Arrow head: scaled from M19.75 11 L25.5 16 L19.75 21 -->
+    <path d="M316 176 L408 256 L316 336 Z"/>
+  </g>
 </svg>

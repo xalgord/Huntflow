@@ -1,5 +1,6 @@
 <script lang="ts">
   import { BarChart3 } from 'lucide-svelte';
+  import BrandMark from '$lib/components/brand/BrandMark.svelte';
   import { navItems } from './navItems';
 
   export let pathname = '/';
@@ -13,7 +14,9 @@
 >
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
     <a href="/dashboard" class="flex min-h-[44px] items-center gap-2 text-sm font-semibold text-foreground">
-      <span class="flex h-8 w-8 items-center justify-center rounded-[14px] border border-primary/25 bg-primary/10 text-xs text-primary">HF</span>
+      <span class="flex h-8 w-8 items-center justify-center rounded-[14px] border border-primary/25 bg-primary/10 text-primary">
+        <BrandMark size={22} filled={false} />
+      </span>
       HuntFlow
     </a>
     <h1 class="truncate text-sm font-medium text-muted-foreground">{title}</h1>

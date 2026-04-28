@@ -1,9 +1,10 @@
 <script lang="ts">
-  import { Crosshair, Keyboard, PanelLeftClose, PanelLeftOpen, Search, UserRound } from 'lucide-svelte';
+  import { Keyboard, PanelLeftClose, PanelLeftOpen, Search, UserRound } from 'lucide-svelte';
   import { clerkAuthStore } from '$lib/cloud/clerk';
   import { cloudConfigured } from '$lib/cloud/convex';
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
   import { shortcutsHelpStore } from '$lib/utils/shortcuts';
+  import BrandMark from '$lib/components/brand/BrandMark.svelte';
   import NavItem from './NavItem.svelte';
   import { navItems } from './navItems';
 
@@ -38,7 +39,7 @@
       {#if !collapsed}
         <a href="/dashboard" class="group flex min-h-[44px] items-center gap-3 rounded-[14px] px-1 text-foreground">
           <span class="relative flex h-11 w-11 items-center justify-center rounded-[14px] border border-primary/30 bg-primary/10 text-primary shadow-inner-line">
-            <Crosshair size={22} aria-hidden="true" />
+            <BrandMark size={28} filled={false} />
             <span class="absolute -right-1 -top-1 h-2.5 w-2.5 rounded-full bg-primary"></span>
           </span>
           <span>
@@ -54,7 +55,7 @@
         </a>
       {:else}
         <a href="/dashboard" class="mx-auto flex h-10 min-h-[40px] w-10 items-center justify-center rounded-[14px] border border-primary/30 bg-primary/10 text-primary" aria-label="HuntFlow">
-          <Crosshair size={22} aria-hidden="true" />
+          <BrandMark size={26} filled={false} />
         </a>
       {/if}
       <button
