@@ -3,7 +3,6 @@ import {
   Crosshair,
   FileText,
   Flag,
-  LayoutDashboard,
   Network,
   Send,
   Settings,
@@ -22,13 +21,9 @@ export interface NavItemConfig {
 }
 
 export const navItems: NavItemConfig[] = [
-  {
-    href: '/dashboard',
-    label: 'Dashboard',
-    icon: LayoutDashboard,
-    match: (pathname) => pathname === '/dashboard' || pathname.startsWith('/dashboard/'),
-    primary: true
-  },
+  // Dashboard is intentionally omitted: the /dashboard route is disabled
+  // and the user pill in SideNav / avatar in MobileHeader already link to
+  // /account, which is the authenticated home for this app.
   {
     href: '/timer',
     label: 'Timer',

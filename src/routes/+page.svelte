@@ -105,10 +105,9 @@
    * email, Clerk's hosted Frontend API processes the verification and
    * redirects to the application origin (`/`) with a handshake query
    * param like `__clerk_handshake=...`. The embedded mount's
-   * `forceRedirectUrl: '/dashboard'` does NOT apply to that hosted
-   * flow — only to in-app OTP verification — so without explicit
-   * handling here the user lands on the marketing landing while
-   * already signed in.
+   * `forceRedirectUrl` does NOT apply to that hosted flow — only to
+   * in-app OTP verification — so without explicit handling here the
+   * user lands on the marketing landing while already signed in.
    *
    * We treat any of these as "Clerk is finishing an auth flow":
    *   - `__clerk_handshake`         → email-link verification
@@ -117,7 +116,7 @@
    *   - `__clerk_ticket` / `__clerk_invitation_token` → invitation flows
    *
    * When any are present, we render a redirect-pending screen instead
-   * of the marketing chrome and bounce to /dashboard the moment Clerk
+   * of the marketing chrome and bounce to /account the moment Clerk
    * reports a session.
    */
   let redirecting = false;
@@ -176,14 +175,14 @@
     }
 
     // Detect a Clerk auth handshake in the URL. If present, we're going
-    // to redirect to /dashboard regardless — render a placeholder
-    // instead of the marketing hero so users coming back from email
-    // verification see "Signing you in…" rather than a flash of the
-    // pricing pitch they already converted on.
+    // to redirect to /account regardless — render a placeholder instead
+    // of the marketing hero so users coming back from email verification
+    // see "Signing you in…" rather than a flash of the pricing pitch
+    // they already converted on.
     pendingHandshake = hasClerkHandshakeParam($page.url);
 
     // Kick off Clerk so `clerkAuthStore` resolves; the reactive block
-    // below will redirect signed-in visitors to /dashboard once it
+    // below will redirect signed-in visitors to /account once it
     // reports a session. Without this call the landing page never
     // initializes Clerk, leaving signed-in users stuck on marketing.
     void initClerk();
@@ -254,7 +253,7 @@
     coming back from the email link, (b) actively redirecting an
     already-signed-in visitor, or (c) about to redirect because Clerk
     just resolved a session. Showing this for the brief moment between
-    "Clerk reports session" and "router lands on /dashboard" prevents
+    "Clerk reports session" and "router lands on /account" prevents
     the marketing pitch from flashing in front of users who already
     converted.
   -->
@@ -334,7 +333,7 @@
             Signed-in visitors get a "Open app" shortcut + the Clerk
             profile menu instead of marketing CTAs they no longer need.
             This block is rarely seen for long because the reactive
-            redirect above sends them to /dashboard, but it stays in
+            redirect above sends them to /account, but it stays in
             place during the brief window between Clerk resolving and
             navigation completing — and during demo-mode visits where
             the landing is intentionally re-displayed.

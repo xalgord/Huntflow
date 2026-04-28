@@ -10,17 +10,18 @@
   // The /demo route hydrates IndexedDB with realistic NeonBank / CloudCart /
   // MeshID sample data via loadDemoWorkspace(), marks onboarding complete so
   // the modal doesn't appear, then navigates to whichever app screen the
-  // visitor wanted (defaulting to /dashboard). It's the public entry point
-  // recommended for taking marketing screenshots, demos, or first-touch UX.
+  // visitor wanted (defaulting to /timer — the primary in-app surface, since
+  // /dashboard is disabled). It's the public entry point recommended for
+  // taking marketing screenshots, demos, or first-touch UX.
 
   let status: 'loading' | 'redirecting' | 'error' = 'loading';
   let errorMessage = '';
 
   function sanitizeTarget(raw: string | null): string {
-    if (!raw) return '/dashboard';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
+    if (!raw) return '/timer';
+    if (!raw.startsWith('/') || raw.startsWith('//')) return '/timer';
     // Never bounce back into /demo — that would loop forever.
-    if (raw === '/demo' || raw.startsWith('/demo/')) return '/dashboard';
+    if (raw === '/demo' || raw.startsWith('/demo/')) return '/timer';
     return raw;
   }
 

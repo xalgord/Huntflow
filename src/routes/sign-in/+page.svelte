@@ -10,6 +10,12 @@
   let unmount: (() => void) | null = null;
   let mounted = false;
   let target = '/account';
+  // Guard for the safety-net redirect below — without this declaration
+  // Svelte's strict-mode reactive block would throw `redirected is not
+  // defined`, leaving the user stuck on /sign-in after Clerk reports a
+  // session and triggering the loop where the landing page bounces back
+  // here.
+  let redirected = false;
 
   // The auth gate in +layout.svelte sends anonymous visitors here with
   // ?redirect=<originalPath>. Sanitize it (must be a same-origin absolute

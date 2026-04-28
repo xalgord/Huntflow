@@ -22,7 +22,6 @@
     Crosshair,
     FileText,
     Flag,
-    LayoutDashboard,
     ListChecks,
     Network,
     Plus,
@@ -201,8 +200,10 @@
 
   // ─── Navigation ───────────────────────────────────────────────────────────
   function buildNavigation(): CommandItem[] {
+    // Dashboard is omitted: the /dashboard route is disabled and is no
+    // longer part of the navItems list, so an icon mapping for it would
+    // never be looked up.
     const iconForHref = new Map<string, IconComponent>([
-      ['/dashboard', LayoutDashboard],
       ['/timer', Crosshair],
       ['/targets', Flag],
       ['/payloads', Sword],

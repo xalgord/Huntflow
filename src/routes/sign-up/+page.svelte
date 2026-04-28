@@ -10,6 +10,15 @@
   let unmount: (() => void) | null = null;
   let mounted = false;
   let target = '/account';
+  // Welcome target with ?welcome=new injected, used by both the embedded
+  // Clerk widget and the safety-net redirect below so onboarding fires
+  // for new accounts regardless of which path completes the sign-up.
+  let welcomeTarget = '/account?welcome=new';
+  // Guard for the safety-net redirect below — without this declaration
+  // Svelte's strict-mode reactive block would throw `redirected is not
+  // defined`, leaving the user stuck on /sign-up after a successful
+  // sign-up.
+  let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
     if (!raw) return '/account';
@@ -29,7 +38,7 @@
     // device. We only inject the flag on afterSignUpUrl (new accounts) and
     // leave afterSignInUrl pointing at the bare target so existing users
     // returning to /sign-up don't get re-onboarded.
-    const welcomeTarget = `${target}${target.includes('?') ? '&' : '?'}welcome=new`;
+    welcomeTarget = `${target}${target.includes('?') ? '&' : '?'}welcome=new`;
 
     unmount = await mountClerkSignUp(mountNode, {
       signInUrl,
@@ -64,13 +73,18 @@
   $: if (browser && !redirected && $clerkAuthStore.signedIn) {
     redirected = true;
     void (async () => {
+      // Use welcomeTarget here (not the bare target) so the onboarding
+      // flag survives the email-link round-trip — that flow is the most
+      // common case where Clerk's hosted redirect drops the embedded
+      // widget's `forceRedirectUrl` and falls back through the safety
+      // net.
       try {
-        await goto(target, { replaceState: true });
+        await goto(welcomeTarget, { replaceState: true });
       } catch {
         /* fall through to hard replace below */
       }
       if (browser && window.location.pathname.startsWith('/sign-up')) {
-        window.location.replace(target);
+        window.location.replace(welcomeTarget);
       }
     })();
   }

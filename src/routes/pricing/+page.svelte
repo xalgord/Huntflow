@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   import { clerkAuthStore, mountClerkPricingTable, openClerkSubscriptions } from '$lib/cloud/clerk';
   import {
     ArrowRight,
@@ -46,7 +47,9 @@
       if (!opened) {
         // Clerk billing modal not available — the UserProfile widget on
         // /account has a Billing tab that serves as the next-best surface.
-        window.location.href = '/account';
+        // Use SvelteKit's goto so we don't trigger a full reload that
+        // would drop in-memory Clerk state.
+        await goto('/account');
       }
     } finally {
       openingSubscriptions = false;

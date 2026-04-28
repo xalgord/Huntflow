@@ -10,6 +10,14 @@
   let unmount: (() => void) | null = null;
   let mounted = false;
   let target = '/account';
+  // Welcome target with ?welcome=new injected — used by the safety-net
+  // redirect below so newly created accounts always trigger onboarding
+  // even when the multi-step Clerk flow (email-link verification,
+  // SSO callback) lands on /sign-up/[...rest] and bypasses the embedded
+  // widget's forceRedirectUrl.
+  let welcomeTarget = '/account?welcome=new';
+  // Required for the safety-net reactive block — see /sign-up/+page.svelte.
+  let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
     if (!raw) return '/account';
@@ -20,6 +28,7 @@
   onMount(async () => {
     if (!browser || !mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
+    welcomeTarget = `${target}${target.includes('?') ? '&' : '?'}welcome=new`;
     const signInUrl = target === '/account'
       ? '/sign-in'
       : `/sign-in?redirect=${encodeURIComponent(target)}`;
@@ -28,13 +37,18 @@
     // landed on /sign-up/sso-callback. Without this, the catch-all mount
     // doesn't recognize the URL state and Clerk falls back to its hosted
     // "after sign-up URL" — typically the marketing landing.
+    //
+    // forceRedirectUrl/afterSignUpUrl include the welcome=new flag so a
+    // freshly created account routes through the onboarding-aware path
+    // on /account; the existing-user paths keep the bare target so we
+    // don't re-trigger onboarding for returning users.
     unmount = await mountClerkSignUp(mountNode, {
       signInUrl,
       routing: 'path',
       path: '/sign-up',
-      forceRedirectUrl: target,
-      fallbackRedirectUrl: target,
-      afterSignUpUrl: target,
+      forceRedirectUrl: welcomeTarget,
+      fallbackRedirectUrl: welcomeTarget,
+      afterSignUpUrl: welcomeTarget,
       afterSignInUrl: target
     });
     mounted = true;
@@ -53,13 +67,15 @@
   $: if (browser && !redirected && $clerkAuthStore.signedIn) {
     redirected = true;
     void (async () => {
+      // Use welcomeTarget so onboarding fires for new accounts even when
+      // the email-link round-trip drops the embedded widget's redirect.
       try {
-        await goto(target, { replaceState: true });
+        await goto(welcomeTarget, { replaceState: true });
       } catch {
         /* fall through to hard replace */
       }
       if (browser && window.location.pathname.startsWith('/sign-up')) {
-        window.location.replace(target);
+        window.location.replace(welcomeTarget);
       }
     })();
   }

@@ -14,6 +14,9 @@
   let unmount: (() => void) | null = null;
   let mounted = false;
   let target = '/account';
+  // See comment in /sign-in/+page.svelte — this declaration is required
+  // for the safety-net reactive block below to compile under strict mode.
+  let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
     if (!raw) return '/account';
