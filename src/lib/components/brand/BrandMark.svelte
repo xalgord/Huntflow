@@ -1,29 +1,24 @@
 <script lang="ts">
   /**
-   * HuntFlow brand mark — a precision-reticle monogram.
+   * HuntFlow brand mark — three stacked chevron-cut slabs with a small
+   * leading accent diamond on the centre slab. Mirrors the marketing
+   * logo image at /brand/huntflow-mark.jpg so every entry point reads
+   * as the same brand:
    *
-   * Composition (32x32 grid):
-   *   1. Outer ring at r=9.5 — the scope barrel.
-   *   2. Four compass tick marks just outside the ring — they extend the
-   *      mark to the edges of the tile so it doesn't read as "icon
-   *      floating in a square", but as a single integrated piece.
-   *   3. Four inner crosshair segments between the ring and the center
-   *      dot — gives the reticle its targeting precision.
-   *   4. A solid center dot — the "lock" / aim point.
+   *   - Marketing landing page hero/footer → JPG (premium polish)
+   *   - SideNav, MobileHeader, favicon, PWA icon → this SVG (crisp at
+   *     any size, themable for tinted tiles)
    *
-   * This intentionally evokes the previous Crosshair favicon (which the
-   * team liked) but is custom geometry: the lucide Crosshair has only a
-   * single ring + 4 lines through the center, while this reticle has
-   * gapped crosshairs, dual tick rings, and a filled lock dot — a
-   * distinct and more polished mark suitable for a brand identity.
-   *
-   * The mark sits well within the central 80% safe area, so the same
-   * geometry is reused as a full-bleed maskable PWA icon.
+   * The silhouette evokes layered hunting passes flowing forward in
+   * time — three reconnaissance/probe layers stacked and chevroned to
+   * the right, with a cyan accent on the centre layer reading as the
+   * "lock-on" highlight.
    *
    * Two render modes:
-   *  - `filled = true` (default): full green tile + white reticle.
-   *  - `filled = false`: reticle only, in `currentColor` — for use
-   *    inside an existing colored container (e.g. SideNav brand chip).
+   *  - filled (default): self-contained green tile + white slabs +
+   *    cyan accent. Use on dark surfaces.
+   *  - filled={false}: slabs in currentColor, no tile. Use inside a
+   *    pre-tinted container (SideNav brand chip, MobileHeader badge).
    */
   export let size = 32;
   export let filled = true;
@@ -40,35 +35,25 @@
   focusable="false"
 >
   {#if filled}
+    <!-- Brand tile background (matches the generated marketing JPG). -->
     <rect width="32" height="32" rx="7" fill="#16a34a" />
-    <g fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round">
-      <!-- Outer scope ring -->
-      <circle cx="16" cy="16" r="9.5" />
-      <!-- Compass tick marks (extending from the tile edge toward the ring) -->
-      <line x1="16" y1="3.5" x2="16" y2="6" />
-      <line x1="16" y1="26" x2="16" y2="28.5" />
-      <line x1="3.5" y1="16" x2="6" y2="16" />
-      <line x1="26" y1="16" x2="28.5" y2="16" />
-      <!-- Inner crosshair segments (ring → center, with a gap for the dot) -->
-      <line x1="16" y1="9" x2="16" y2="12.5" />
-      <line x1="16" y1="19.5" x2="16" y2="23" />
-      <line x1="9" y1="16" x2="12.5" y2="16" />
-      <line x1="19.5" y1="16" x2="23" y2="16" />
+    <!--
+      Three stacked slabs. Each slab is a hexagonal band: notched on
+      the leading (left) edge and chevroned to a point on the trailing
+      (right) edge. Together they form the layered hunt-pass silhouette.
+    -->
+    <g fill="#ffffff">
+      <path d="M7 7 L21 7 L25 10 L21 13 L7 13 L9.5 10 Z" />
+      <path d="M7 14 L21 14 L25 17 L21 20 L7 20 L9.5 17 Z" />
+      <path d="M7 21 L21 21 L25 24 L21 27 L7 27 L9.5 24 Z" />
     </g>
-    <!-- Lock dot -->
-    <circle cx="16" cy="16" r="2" fill="#ffffff" />
+    <!-- Cyan accent diamond — the lock-on highlight on the centre slab. -->
+    <path d="M14.8 16 L18 17 L14.8 18 L13.4 17 Z" fill="#22d3ee" />
   {:else}
-    <g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-      <circle cx="16" cy="16" r="9.5" />
-      <line x1="16" y1="3.5" x2="16" y2="6" />
-      <line x1="16" y1="26" x2="16" y2="28.5" />
-      <line x1="3.5" y1="16" x2="6" y2="16" />
-      <line x1="26" y1="16" x2="28.5" y2="16" />
-      <line x1="16" y1="9" x2="16" y2="12.5" />
-      <line x1="16" y1="19.5" x2="16" y2="23" />
-      <line x1="9" y1="16" x2="12.5" y2="16" />
-      <line x1="19.5" y1="16" x2="23" y2="16" />
+    <g fill="currentColor">
+      <path d="M5 6 L19 6 L23 9 L19 12 L5 12 L7.5 9 Z" />
+      <path d="M5 13 L19 13 L23 16 L19 19 L5 19 L7.5 16 Z" />
+      <path d="M5 20 L19 20 L23 23 L19 26 L5 26 L7.5 23 Z" />
     </g>
-    <circle cx="16" cy="16" r="2" fill="currentColor" />
   {/if}
 </svg>

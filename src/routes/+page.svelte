@@ -19,7 +19,6 @@
     WifiOff,
     X as XIcon
   } from 'lucide-svelte';
-  import BrandMark from '$lib/components/brand/BrandMark.svelte';
   import { onDestroy, onMount } from 'svelte';
 
   type BeforeInstallPromptEvent = Event & {
@@ -184,7 +183,23 @@
   <header class="sticky top-0 z-30 border-b border-slate-900/80 bg-slate-950/80 backdrop-blur">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
       <a href="/" class="flex min-h-[44px] items-center gap-2.5 text-slate-100">
-        <BrandMark size={36} title="HuntFlow" />
+        <!--
+          Premium marketing-page brand mark. We use the generated JPG
+          (instead of the inline BrandMark SVG) because it carries the
+          subtle cyan-on-emerald lock-on highlight that renders better
+          as raster than as flat SVG. Internal surfaces (SideNav,
+          MobileHeader, favicon, PWA icon) still use the SVG mark so
+          they stay crisp at every size and themable for tinted tiles.
+        -->
+        <img
+          src="/brand/huntflow-mark.jpg"
+          alt="HuntFlow"
+          width="36"
+          height="36"
+          class="h-9 w-9 rounded-lg"
+          loading="eager"
+          decoding="async"
+        />
         <span class="text-base font-semibold tracking-tight">HuntFlow</span>
       </a>
 
@@ -459,7 +474,15 @@
     <div class="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-start md:justify-between">
       <div class="max-w-md">
         <div class="flex items-center gap-2.5 text-slate-100">
-          <BrandMark size={36} title="HuntFlow" />
+          <img
+            src="/brand/huntflow-mark.jpg"
+            alt="HuntFlow"
+            width="36"
+            height="36"
+            class="h-9 w-9 rounded-lg"
+            loading="lazy"
+            decoding="async"
+          />
           <span class="font-semibold">HuntFlow</span>
         </div>
         <p class="mt-3 text-sm leading-6 text-slate-500">
