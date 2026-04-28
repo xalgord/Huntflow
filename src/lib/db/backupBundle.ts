@@ -150,12 +150,16 @@ export async function collectBackupPayload(): Promise<BackupPayload> {
   // one allocates ArrayBuffers and we don't want to OOM on huge workspaces.
   const serializedBlobs: SerializedEvidenceBlob[] = [];
   for (const blob of evidenceBlobs) {
+    // Tolerate both the canonical `blob` field and the legacy `data`
+    // alias so backup bundles taken before the rename still encode
+    // properly. Newer writes always populate `blob`.
+    const payload = (blob.blob ?? blob.data) as Blob | undefined;
     serializedBlobs.push({
       assetId: blob.assetId,
       size: blob.size,
       mimeType: blob.mimeType,
       updatedAt: blob.updatedAt,
-      data: blob.data ? await blobToBase64(blob.data) : ''
+      data: payload ? await blobToBase64(payload) : ''
     });
   }
 
@@ -270,13 +274,21 @@ export async function restoreBackupPayload(rawPayload: unknown): Promise<Restore
   // Evidence blobs — special-cased because blobs are binary, not plain rows.
   await safeRun('evidenceBlobs', async () => {
     const serialized = asArray<SerializedEvidenceBlob>(payload.evidenceBlobs);
-    const restored = serialized.map((b) => ({
-      assetId: b.assetId,
-      size: b.size,
-      mimeType: b.mimeType,
-      updatedAt: b.updatedAt,
-      data: b.data ? base64ToBlob(b.data, b.mimeType) : new Blob([], { type: b.mimeType })
-    }));
+    const restored = serialized.map((b) => {
+      const decoded = b.data ? base64ToBlob(b.data, b.mimeType) : new Blob([], { type: b.mimeType });
+      // Populate both `blob` (canonical) and `data` (legacy alias) so
+      // restored bundles are readable by both code paths in the wild —
+      // older copies of the assets/canvas/sync helpers still expect
+      // `data`, and we don't want a restore to silently break them.
+      return {
+        assetId: b.assetId,
+        size: b.size,
+        mimeType: b.mimeType,
+        updatedAt: b.updatedAt,
+        blob: decoded,
+        data: decoded
+      };
+    });
     await evidenceBlobDB.putBatch(restored);
   });
 

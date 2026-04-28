@@ -141,6 +141,7 @@ const createRoutes: Array<{ match: (path: string) => boolean; href: string }> = 
 
 /** Cheatsheet rows that are not navigation but still listed for reference. */
 export const utilityShortcuts: NavShortcut[] = [
+  { group: 'Actions', keys: ['⌘', '⇧', 'K'], label: 'Quick Capture', hint: 'paste a request, JWT, URL, or screenshot — auto-classified' },
   { group: 'Actions', keys: ['c'], label: 'Create in context', hint: 'opens the new-item form for this page' },
   { group: 'Actions', keys: ['Esc'], label: 'Close dialog or palette' },
   { group: 'Help', keys: ['/'], label: 'Open command palette' },

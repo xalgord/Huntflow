@@ -113,8 +113,10 @@
         ? undefined
         : Math.max(0, Number(bountyAmount));
 
+    // Use `||` (not `??`) so an empty id from a "draft from note" prefill
+    // is treated as a new submission rather than persisting with id "".
     const next: Submission = {
-      id: submission?.id ?? generateId(),
+      id: submission?.id || generateId(),
       title: title.trim(),
       targetId,
       noteId: submission?.noteId,

@@ -13,10 +13,12 @@
     targetStore
   } from '$lib/stores';
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
+  import { quickCaptureStore } from '$lib/stores/quickCaptureStore';
   import { navItems } from '$lib/components/layout/navItems';
   import { fuzzyMatch } from '$lib/utils/fuzzy';
   import {
     BookMarked,
+    Clipboard,
     Crosshair,
     FileText,
     Flag,
@@ -108,6 +110,17 @@
   // ─── Static actions ───────────────────────────────────────────────────────
   function buildActions(): CommandItem[] {
     return [
+      {
+        id: 'action:quick-capture',
+        section: 'Actions',
+        title: 'Quick Capture',
+        subtitle: 'Paste request, JWT, screenshot — auto-files it · ⌘⇧K',
+        icon: Clipboard,
+        keywords: 'paste capture clipboard jwt request screenshot http',
+        perform: () => {
+          quickCaptureStore.open();
+        }
+      },
       {
         id: 'action:start-hunt',
         section: 'Actions',

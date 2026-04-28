@@ -91,6 +91,10 @@
     { label: 'Images', value: 'image' },
     { label: 'PDFs', value: 'pdf' },
     { label: 'Text', value: 'text' },
+    // HTTP exchanges (request + response paired) are the format real
+    // hunters paste from Burp/Caido — list them above the legacy
+    // request/response options so they're the obvious first choice.
+    { label: 'HTTP exchanges', value: 'http-exchange' },
     { label: 'Requests', value: 'request' },
     { label: 'Responses', value: 'response' },
     { label: 'Archives', value: 'archive' },
@@ -113,6 +117,7 @@
     text: FileText,
     request: ShieldCheck,
     response: ShieldCheck,
+    'http-exchange': Network,
     archive: Archive,
     binary: CircleDollarSign,
     url: LinkIcon
@@ -228,6 +233,18 @@
     selectedSessionId = $page.url.searchParams.get('session') ?? '';
     selectedNoteId = $page.url.searchParams.get('note') ?? '';
     targetFilter = selectedTargetId || 'all';
+
+    // Deep-link from `[[evidence:id]]` reference tiles in notes — when
+    // the URL carries `?asset=<id>` we open the inspector on that
+    // asset directly instead of making the user search for it.
+    const deepLinkAssetId = $page.url.searchParams.get('asset') ?? '';
+    if (deepLinkAssetId) {
+      selectedAssetId = deepLinkAssetId;
+      const linked = $evidenceAssetStore.find((asset) => asset.id === deepLinkAssetId);
+      if (linked) {
+        selectedGraphNodeId = `${linked.kind === 'url' ? 'url' : 'asset'}:${linked.id}`;
+      }
+    }
     hydrateCanvasView();
     loaded = true;
   });
