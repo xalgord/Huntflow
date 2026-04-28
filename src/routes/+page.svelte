@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import { clerkAuthStore, initClerk } from '$lib/cloud/clerk';
   import UserMenu from '$lib/components/auth/UserMenu.svelte';
   import ContactSection from '$lib/components/landing/ContactSection.svelte';
@@ -12,6 +13,7 @@
   import {
     ArrowRight,
     Check,
+    Crosshair,
     Github,
     LayoutDashboard,
     Sparkles,
@@ -97,6 +99,66 @@
     deferredPrompt = null;
   }
 
+  /**
+   * The landing page doubles as Clerk's post-email-verification landing
+   * pad. When a user clicks the verification link in their signup
+   * email, Clerk's hosted Frontend API processes the verification and
+   * redirects to the application origin (`/`) with a handshake query
+   * param like `__clerk_handshake=...`. The embedded mount's
+   * `forceRedirectUrl: '/dashboard'` does NOT apply to that hosted
+   * flow — only to in-app OTP verification — so without explicit
+   * handling here the user lands on the marketing landing while
+   * already signed in.
+   *
+   * We treat any of these as "Clerk is finishing an auth flow":
+   *   - `__clerk_handshake`         → email-link verification
+   *   - `__clerk_status=verified`   → legacy verified flag
+   *   - `__clerk_db_jwt`            → cross-subdomain handshake
+   *   - `__clerk_ticket` / `__clerk_invitation_token` → invitation flows
+   *
+   * When any are present, we render a redirect-pending screen instead
+   * of the marketing chrome and bounce to /dashboard the moment Clerk
+   * reports a session.
+   */
+  let redirecting = false;
+  let pendingHandshake = false;
+
+  function hasClerkHandshakeParam(url: URL): boolean {
+    const keys = [
+      '__clerk_handshake',
+      '__clerk_status',
+      '__clerk_db_jwt',
+      '__clerk_ticket',
+      '__clerk_invitation_token',
+      '__clerk_created_session'
+    ];
+    for (const key of keys) {
+      if (url.searchParams.has(key)) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Redirect to /dashboard once. Use SvelteKit's `goto` first (keeps
+   * the SPA history clean) and fall back to `window.location.replace`
+   * if `goto` fails or hasn't navigated within a few hundred ms. The
+   * fallback exists because we've seen rare cases where SvelteKit's
+   * router silently no-ops when the URL has lingering Clerk handshake
+   * params; a hard replace is a guaranteed escape hatch.
+   */
+  async function redirectToDashboard(): Promise<void> {
+    if (redirecting) return;
+    redirecting = true;
+    try {
+      await goto('/dashboard', { replaceState: true });
+    } catch {
+      /* fall through to window.location below */
+    }
+    if (browser && window.location.pathname === '/') {
+      window.location.replace('/dashboard');
+    }
+  }
+
   onMount(() => {
     if (!browser) return;
 
@@ -109,9 +171,16 @@
     // Send them straight to the workspace; the layout's auth gate will
     // bounce to /sign-in if they're not authenticated.
     if (isStandalone) {
-      void goto('/dashboard', { replaceState: true });
+      void redirectToDashboard();
       return;
     }
+
+    // Detect a Clerk auth handshake in the URL. If present, we're going
+    // to redirect to /dashboard regardless — render a placeholder
+    // instead of the marketing hero so users coming back from email
+    // verification see "Signing you in…" rather than a flash of the
+    // pricing pitch they already converted on.
+    pendingHandshake = hasClerkHandshakeParam($page.url);
 
     // Kick off Clerk so `clerkAuthStore` resolves; the reactive block
     // below will redirect signed-in visitors to /dashboard once it
@@ -132,7 +201,7 @@
     !$clerkAuthStore.loading &&
     $clerkAuthStore.signedIn
   ) {
-    void goto('/dashboard', { replaceState: true });
+    void redirectToDashboard();
   }
 
   onDestroy(() => {
@@ -178,6 +247,33 @@
   </script>
 </svelte:head>
 
+{#if pendingHandshake || redirecting || ($clerkAuthStore.configured && !$clerkAuthStore.loading && $clerkAuthStore.signedIn)}
+  <!--
+    Auth-handshake placeholder. Rendered instead of the full marketing
+    landing while we're (a) processing a Clerk verification handshake
+    coming back from the email link, (b) actively redirecting an
+    already-signed-in visitor, or (c) about to redirect because Clerk
+    just resolved a session. Showing this for the brief moment between
+    "Clerk reports session" and "router lands on /dashboard" prevents
+    the marketing pitch from flashing in front of users who already
+    converted.
+  -->
+  <main
+    class="flex min-h-screen flex-col items-center justify-center gap-4 bg-slate-950 px-4 text-center text-slate-300"
+    aria-busy="true"
+    aria-live="polite"
+  >
+    <span
+      class="flex h-12 w-12 items-center justify-center rounded-xl border border-primary-500/30 bg-primary-500/10 text-primary-400"
+    >
+      <Crosshair size={22} aria-hidden="true" />
+    </span>
+    <p class="text-sm font-medium text-slate-200">Signing you in&hellip;</p>
+    <p class="max-w-xs text-xs text-slate-500">
+      One second &mdash; HuntFlow is finishing your sign-in and opening your workspace.
+    </p>
+  </main>
+{:else}
 <main class="landing-page min-h-screen overflow-hidden bg-slate-950 text-slate-100">
   <!-- Site header -->
   <header class="sticky top-0 z-30 border-b border-slate-900/80 bg-slate-950/80 backdrop-blur">
@@ -531,6 +627,7 @@
     </div>
   </footer>
 </main>
+{/if}
 
 <style>
   :global(html.light) .landing-page:global(.bg-slate-950),
