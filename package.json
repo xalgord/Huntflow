@@ -2,8 +2,7 @@
   "name": "huntflow",
   "version": "1.0.0",
   "description": "Bug bounty hunting companion - track targets, sessions, notes, evidence, and submissions. Offline-first PWA with local IndexedDB storage.",
-  "license": "UNLICENSED",
-  "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "bin": {
     "huntflow": "./bin/huntflow.mjs"

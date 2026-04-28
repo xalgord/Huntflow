@@ -39,9 +39,36 @@ The screenshots below are captured from the real app with seeded sample bounty d
 - Settings, data import/export, typed clear-data confirmation, PWA install, and offline shell support
 - Optional Pro cloud sync through Clerk and Convex
 
-## Getting Started
+## Install
+
+Run HuntFlow locally with one command. No account, no telemetry, no cloud — your data lives in IndexedDB on this device.
 
 ```bash
+npx huntflow
+```
+
+This starts a tiny static server, opens your browser at `http://localhost:3000`, and drops you into a fresh local workspace. Sign-in is optional and only enables cloud sync; the app is fully usable without an account.
+
+To install globally so `huntflow` is on your PATH:
+
+```bash
+npm install -g huntflow
+huntflow
+```
+
+Pass `--port` to override the default:
+
+```bash
+npx huntflow --port 4000
+```
+
+## Local development
+
+For working on HuntFlow itself rather than running it:
+
+```bash
+git clone https://github.com/xalgord/huntflow.git
+cd huntflow
 npm install
 cp .env.example .env.local
 npm run dev
@@ -70,13 +97,24 @@ Cloud sync should fail gracefully when these values are missing.
 ## Scripts
 
 ```bash
-npm run dev
-npm run check
-npm run test -- --run
-npm run test:e2e
-npm run screenshots
-npm run build
+npm run dev               # development server with HMR
+npm run check             # type-check + svelte-check
+npm run test -- --run     # unit tests (Vitest)
+npm run test:e2e          # end-to-end tests (Playwright)
+npm run screenshots       # regenerate README screenshots from sample data
+npm run build             # default build (alias for build:web)
+npm run build:web         # hosted website build (huntflow.app)
+npm run build:app         # local app build for npm publish
 ```
+
+### Build modes
+
+HuntFlow ships two distinct builds from one codebase:
+
+- **`build:web`** — the hosted experience at `huntflow.app`. Includes the marketing landing, `/pricing`, `/demo` with seeded sample data, Clerk-gated app routes, and Stripe billing.
+- **`build:app`** — the npm-published binary. `bin/build-app.mjs` strips the marketing routes from `src/routes/` before invoking Vite, replaces `/` with a redirect to `/dashboard`, and tree-shakes web-only code paths via the `IS_APP` / `IS_WEB` constants in `src/lib/buildTarget.ts`. Sign-in remains available but is opt-in for cloud sync only — it never blocks access. The original route files are restored in a `try/finally` so the working tree is always clean.
+
+`npm publish` automatically runs `build:app` via `prepublishOnly`. Vercel deploys run the default `build` script, which is `build:web`.
 
 ## Testing
 
@@ -86,4 +124,8 @@ For manual note, preview, and report-builder testing, use `docs/sample-note.md`.
 
 ## License
 
-HuntFlow is released under the MIT License. See `LICENSE` for details.
+HuntFlow is proprietary software. Copyright (c) 2026 xalgord. All rights reserved.
+
+You may install and use HuntFlow on your own devices for personal or internal business use under the terms in [`LICENSE`](./LICENSE). Redistribution, resale, sublicensing, reverse engineering, and removal of attribution are not permitted. The published npm package contains the compiled application and CLI launcher only — source is not licensed for use.
+
+For commercial licensing, custom deployments, or partnership inquiries, contact the maintainer through [huntflow.app](https://huntflow.app).
