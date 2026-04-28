@@ -26,7 +26,23 @@
   }
 
   onMount(async () => {
-    if (!browser || !mountNode) return;
+    if (!browser) return;
+
+    // Local-mode short-circuit (see /sign-up/+page.svelte for context).
+    if (!$clerkAuthStore.configured) {
+      redirected = true;
+      try {
+        await goto('/account', { replaceState: true });
+      } catch {
+        /* fall through */
+      }
+      if (browser && window.location.pathname.startsWith('/sign-up')) {
+        window.location.replace('/account');
+      }
+      return;
+    }
+
+    if (!mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     welcomeTarget = `${target}${target.includes('?') ? '&' : '?'}welcome=new`;
     const signInUrl = target === '/account'
@@ -95,7 +111,10 @@
       </div>
     {/if}
   {:else}
-    <p class="text-sm text-slate-400">Authentication is not configured.</p>
+    <!-- Local-mode placeholder; the onMount above redirects to /account. -->
+    <div class="flex items-center justify-center py-12 text-sm text-slate-500" aria-live="polite">
+      Opening your local workspace&hellip;
+    </div>
   {/if}
 </AuthShell>
 

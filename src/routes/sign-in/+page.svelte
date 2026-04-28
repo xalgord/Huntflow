@@ -27,7 +27,26 @@
   }
 
   onMount(async () => {
-    if (!browser || !mountNode) return;
+    if (!browser) return;
+
+    // Local-mode short-circuit. Without a Clerk publishable key in the
+    // build, this app is running privately on the user's machine
+    // (npx/npm install). Sign-in doesn't apply — bounce to /account,
+    // which renders a local-workspace view in that mode.
+    if (!$clerkAuthStore.configured) {
+      redirected = true;
+      try {
+        await goto('/account', { replaceState: true });
+      } catch {
+        /* fall through */
+      }
+      if (browser && window.location.pathname.startsWith('/sign-in')) {
+        window.location.replace('/account');
+      }
+      return;
+    }
+
+    if (!mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     // Forward the redirect param across the sign-in <-> sign-up swap so
     // the user keeps their original destination if they switch flows.
@@ -94,10 +113,11 @@
   footer="sign-in"
 >
   {#if !$clerkAuthStore.configured}
-    <div class="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-      Sign-in is currently disabled because Clerk is not configured. Set
-      <span class="font-mono text-amber-200">VITE_CLERK_PUBLISHABLE_KEY</span> in your environment to enable
-      authentication.
+    <!-- Local-mode placeholder. The onMount above is already navigating
+         the user to /account; this just keeps the visual frame stable
+         during the brief bounce so they don't see a flash of error UI. -->
+    <div class="flex items-center justify-center py-12 text-sm text-slate-500" aria-live="polite">
+      Opening your local workspace&hellip;
     </div>
   {:else if $clerkAuthStore.error}
     <!-- Surface real Clerk failure modes (invalid publishable key, paused

@@ -139,9 +139,9 @@
 
   /**
    * Redirect signed-in visitors away from the marketing landing once.
-   * Dashboard is disabled, so we send everyone to /account which is
-   * the primary authenticated surface. Use SvelteKit's `goto` first
-   * (keeps the SPA history clean) and fall back to
+   * On the hosted site (Clerk configured) we send everyone to /account
+   * which is the primary authenticated surface. Use SvelteKit's `goto`
+   * first (keeps the SPA history clean) and fall back to
    * `window.location.replace` if `goto` fails or hasn't navigated,
    * which can happen when lingering Clerk handshake params are present.
    */
@@ -158,6 +158,26 @@
     }
   }
 
+  /**
+   * Local-mode redirect (`npx huntflow` / `npm install -g huntflow`).
+   * When the build has no Clerk publishable key, this app is running
+   * privately on the user's own machine — there's no marketing pitch
+   * to show, no signup, no pricing. Drop them straight into the
+   * workspace at /dashboard, which is the local-first home.
+   */
+  async function redirectToLocalHome(): Promise<void> {
+    if (redirecting) return;
+    redirecting = true;
+    try {
+      await goto('/dashboard', { replaceState: true });
+    } catch {
+      /* fall through to hard replace below */
+    }
+    if (browser && window.location.pathname === '/') {
+      window.location.replace('/dashboard');
+    }
+  }
+
   onMount(() => {
     if (!browser) return;
 
@@ -171,6 +191,16 @@
     // bounce to /sign-in if they're not authenticated.
     if (isStandalone) {
       void redirectToApp();
+      return;
+    }
+
+    // Local-mode short-circuit. Detected at runtime: if Clerk has no
+    // publishable key, we're running inside someone's `npx huntflow`
+    // (or self-hosted build) and the marketing site, signup, billing,
+    // and account flows don't apply. Land on /dashboard immediately
+    // so the experience feels like a native local app, not a website.
+    if (!$clerkAuthStore.configured) {
+      void redirectToLocalHome();
       return;
     }
 

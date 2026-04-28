@@ -17,6 +17,9 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let billingMounted = false;
+  // Set true when we're navigating away in local-mode so the static
+  // pricing fallback markup doesn't flash before the bounce lands.
+  let redirectingLocal = false;
 
   // Static feature list used as a fallback when Clerk Billing is not
   // configured yet. Every checkmark below is a Pro entitlement.
@@ -57,7 +60,25 @@
   }
 
   onMount(async () => {
-    if (!browser || !mountNode) return;
+    if (!browser) return;
+
+    // Local-mode short-circuit. There's no billing in a self-hosted
+    // build — bounce to /account, which renders a local-workspace
+    // view (with a "get cloud sync at huntflow.app" CTA) in that mode.
+    if (!$clerkAuthStore.configured) {
+      redirectingLocal = true;
+      try {
+        await goto('/account', { replaceState: true });
+      } catch {
+        /* fall through */
+      }
+      if (browser && window.location.pathname === '/pricing') {
+        window.location.replace('/account');
+      }
+      return;
+    }
+
+    if (!mountNode) return;
     unmount = await mountClerkPricingTable(mountNode, {
       // After a successful subscription checkout:
       //   · Signed-in flow  → /account?welcome=pro (shows the Pro welcome banner)
@@ -83,6 +104,25 @@
   <link rel="canonical" href="https://huntflow.xalgorix.com/pricing" />
 </svelte:head>
 
+{#if redirectingLocal || !$clerkAuthStore.configured}
+  <!-- Local-mode placeholder. Pricing has no meaning when running
+       self-hosted (no Clerk Billing, no subscription concept), so we
+       silently bounce to /account. Showing this minimal frame instead
+       of the full marketing pricing chrome avoids a flash of the
+       cloud pitch on private offline installs. -->
+  <main
+    class="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-950 px-4 text-center text-slate-300"
+    aria-busy="true"
+    aria-live="polite"
+  >
+    <span
+      class="flex h-12 w-12 items-center justify-center rounded-xl border border-primary-500/30 bg-primary-500/10 text-primary-400"
+    >
+      <Crosshair size={22} aria-hidden="true" />
+    </span>
+    <p class="text-sm font-medium text-slate-200">Opening your local workspace&hellip;</p>
+  </main>
+{:else}
 <div class="pricing-page min-h-screen overflow-hidden bg-slate-950 text-slate-100">
   <header class="border-b border-slate-900 bg-slate-950/90 backdrop-blur">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
@@ -322,6 +362,7 @@
     </div>
   </footer>
 </div>
+{/if}
 
 <style>
   /* Reset Clerk's default surface so the embedded PricingTable visually

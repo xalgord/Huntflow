@@ -27,7 +27,24 @@
   }
 
   onMount(async () => {
-    if (!browser || !mountNode) return;
+    if (!browser) return;
+
+    // Local-mode short-circuit. No Clerk = no signup. Drop the user
+    // into /account, which renders a local-workspace view in that mode.
+    if (!$clerkAuthStore.configured) {
+      redirected = true;
+      try {
+        await goto('/account', { replaceState: true });
+      } catch {
+        /* fall through */
+      }
+      if (browser && window.location.pathname.startsWith('/sign-up')) {
+        window.location.replace('/account');
+      }
+      return;
+    }
+
+    if (!mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     const signInUrl = target === '/account'
       ? '/sign-in'
@@ -105,10 +122,9 @@
   footer="sign-up"
 >
   {#if !$clerkAuthStore.configured}
-    <div class="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-      Sign-up is currently disabled because Clerk is not configured. Set
-      <span class="font-mono text-amber-200">VITE_CLERK_PUBLISHABLE_KEY</span> in your environment to enable
-      authentication.
+    <!-- Local-mode placeholder; the onMount above redirects to /account. -->
+    <div class="flex items-center justify-center py-12 text-sm text-slate-500" aria-live="polite">
+      Opening your local workspace&hellip;
     </div>
   {:else if $clerkAuthStore.error}
     <!-- Surface real Clerk failure modes (invalid publishable key, paused
