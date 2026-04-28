@@ -41,14 +41,8 @@ interface NavTarget extends NavShortcut {
  * cheatsheet UI and is wired into the global handler.
  */
 export const navTargets: NavTarget[] = [
-  {
-    group: 'Navigation',
-    prefix: 'g',
-    trigger: 'd',
-    keys: ['g', 'd'],
-    label: 'Dashboard',
-    href: '/dashboard'
-  },
+  // `g d` (Dashboard) is intentionally omitted — the /dashboard route is
+  // disabled. /account is reached via the user pill in the side nav.
   {
     group: 'Navigation',
     prefix: 'g',

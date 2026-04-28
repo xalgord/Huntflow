@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { IS_APP } from '$lib/buildTarget';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignIn } from '$lib/cloud/clerk';
   import { onDestroy, onMount } from 'svelte';
@@ -9,24 +10,57 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
-  let target = '/dashboard';
+  // Default redirect after sign-in. In the app build the user is already
+  // working in their local workspace and just signed in to enable cloud
+  // sync, so we send them straight to /dashboard. On the website the
+  // canonical post-sign-in destination is /account.
+  let target = IS_APP ? '/dashboard' : '/account';
+  // Guard for the safety-net redirect below — without this declaration
+  // Svelte's strict-mode reactive block would throw `redirected is not
+  // defined`, leaving the user stuck on /sign-in after Clerk reports a
+  // session and triggering the loop where the landing page bounces back
+  // here.
   let redirected = false;
 
   // The auth gate in +layout.svelte sends anonymous visitors here with
   // ?redirect=<originalPath>. Sanitize it (must be a same-origin absolute
   // path) before handing it to Clerk so we never bounce to an external URL.
+  // App-mode default lands users at /dashboard; web-mode default is /account.
   function sanitizeRedirect(raw: string | null): string {
-    if (!raw) return '/dashboard';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
+    const fallback = IS_APP ? '/dashboard' : '/account';
+    if (!raw) return fallback;
+    if (!raw.startsWith('/') || raw.startsWith('//')) return fallback;
     return raw;
   }
 
   onMount(async () => {
-    if (!browser || !mountNode) return;
+    if (!browser) return;
+
+    // Local-mode short-circuit. Without a Clerk publishable key in the
+    // build, this app is running privately on the user's machine
+    // (npx/npm install). Sign-in doesn't apply — bounce to /account,
+    // which renders a local-workspace view in that mode.
+    if (!$clerkAuthStore.configured) {
+      redirected = true;
+      try {
+        await goto('/account', { replaceState: true });
+      } catch {
+        /* fall through */
+      }
+      if (browser && window.location.pathname.startsWith('/sign-in')) {
+        window.location.replace('/account');
+      }
+      return;
+    }
+
+    if (!mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     // Forward the redirect param across the sign-in <-> sign-up swap so
     // the user keeps their original destination if they switch flows.
-    const signUpUrl = target === '/dashboard'
+    // The bare /sign-up link is fine when the target is the build-mode
+    // default (the sign-up page falls back to the same default).
+    const defaultTarget = IS_APP ? '/dashboard' : '/account';
+    const signUpUrl = target === defaultTarget
       ? '/sign-up'
       : `/sign-up?redirect=${encodeURIComponent(target)}`;
     // Path-based routing: Clerk's multi-step flow (factor-one,
@@ -85,14 +119,17 @@
 
 <AuthShell
   title="Welcome back"
-  subtitle="Sign in to sync your hunts, notes, evidence and reports across every device."
+  subtitle={IS_APP
+    ? 'Sign in to enable cloud sync. Your local workspace stays on this device either way.'
+    : 'Sign in to sync your hunts, notes, evidence and reports across every device.'}
   footer="sign-in"
 >
   {#if !$clerkAuthStore.configured}
-    <div class="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-      Sign-in is currently disabled because Clerk is not configured. Set
-      <span class="font-mono text-amber-200">VITE_CLERK_PUBLISHABLE_KEY</span> in your environment to enable
-      authentication.
+    <!-- Local-mode placeholder. The onMount above is already navigating
+         the user to /account; this just keeps the visual frame stable
+         during the brief bounce so they don't see a flash of error UI. -->
+    <div class="flex items-center justify-center py-12 text-sm text-slate-500" aria-live="polite">
+      Opening your local workspace&hellip;
     </div>
   {:else if $clerkAuthStore.error}
     <!-- Surface real Clerk failure modes (invalid publishable key, paused

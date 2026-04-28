@@ -105,10 +105,9 @@
    * email, Clerk's hosted Frontend API processes the verification and
    * redirects to the application origin (`/`) with a handshake query
    * param like `__clerk_handshake=...`. The embedded mount's
-   * `forceRedirectUrl: '/dashboard'` does NOT apply to that hosted
-   * flow — only to in-app OTP verification — so without explicit
-   * handling here the user lands on the marketing landing while
-   * already signed in.
+   * `forceRedirectUrl` does NOT apply to that hosted flow — only to
+   * in-app OTP verification — so without explicit handling here the
+   * user lands on the marketing landing while already signed in.
    *
    * We treat any of these as "Clerk is finishing an auth flow":
    *   - `__clerk_handshake`         → email-link verification
@@ -117,7 +116,7 @@
    *   - `__clerk_ticket` / `__clerk_invitation_token` → invitation flows
    *
    * When any are present, we render a redirect-pending screen instead
-   * of the marketing chrome and bounce to /dashboard the moment Clerk
+   * of the marketing chrome and bounce to /account the moment Clerk
    * reports a session.
    */
   let redirecting = false;
@@ -139,20 +138,40 @@
   }
 
   /**
-   * Redirect to /dashboard once. Use SvelteKit's `goto` first (keeps
-   * the SPA history clean) and fall back to `window.location.replace`
-   * if `goto` fails or hasn't navigated within a few hundred ms. The
-   * fallback exists because we've seen rare cases where SvelteKit's
-   * router silently no-ops when the URL has lingering Clerk handshake
-   * params; a hard replace is a guaranteed escape hatch.
+   * Redirect signed-in visitors away from the marketing landing once.
+   * On the hosted site (Clerk configured) we send everyone to /account
+   * which is the primary authenticated surface. Use SvelteKit's `goto`
+   * first (keeps the SPA history clean) and fall back to
+   * `window.location.replace` if `goto` fails or hasn't navigated,
+   * which can happen when lingering Clerk handshake params are present.
    */
-  async function redirectToDashboard(): Promise<void> {
+  async function redirectToApp(): Promise<void> {
+    if (redirecting) return;
+    redirecting = true;
+    try {
+      await goto('/account', { replaceState: true });
+    } catch {
+      /* fall through to window.location below */
+    }
+    if (browser && window.location.pathname === '/') {
+      window.location.replace('/account');
+    }
+  }
+
+  /**
+   * Local-mode redirect (`npx huntflow` / `npm install -g huntflow`).
+   * When the build has no Clerk publishable key, this app is running
+   * privately on the user's own machine — there's no marketing pitch
+   * to show, no signup, no pricing. Drop them straight into the
+   * workspace at /dashboard, which is the local-first home.
+   */
+  async function redirectToLocalHome(): Promise<void> {
     if (redirecting) return;
     redirecting = true;
     try {
       await goto('/dashboard', { replaceState: true });
     } catch {
-      /* fall through to window.location below */
+      /* fall through to hard replace below */
     }
     if (browser && window.location.pathname === '/') {
       window.location.replace('/dashboard');
@@ -171,19 +190,29 @@
     // Send them straight to the workspace; the layout's auth gate will
     // bounce to /sign-in if they're not authenticated.
     if (isStandalone) {
-      void redirectToDashboard();
+      void redirectToApp();
+      return;
+    }
+
+    // Local-mode short-circuit. Detected at runtime: if Clerk has no
+    // publishable key, we're running inside someone's `npx huntflow`
+    // (or self-hosted build) and the marketing site, signup, billing,
+    // and account flows don't apply. Land on /dashboard immediately
+    // so the experience feels like a native local app, not a website.
+    if (!$clerkAuthStore.configured) {
+      void redirectToLocalHome();
       return;
     }
 
     // Detect a Clerk auth handshake in the URL. If present, we're going
-    // to redirect to /dashboard regardless — render a placeholder
-    // instead of the marketing hero so users coming back from email
-    // verification see "Signing you in…" rather than a flash of the
-    // pricing pitch they already converted on.
+    // to redirect to /account regardless — render a placeholder instead
+    // of the marketing hero so users coming back from email verification
+    // see "Signing you in…" rather than a flash of the pricing pitch
+    // they already converted on.
     pendingHandshake = hasClerkHandshakeParam($page.url);
 
     // Kick off Clerk so `clerkAuthStore` resolves; the reactive block
-    // below will redirect signed-in visitors to /dashboard once it
+    // below will redirect signed-in visitors to /account once it
     // reports a session. Without this call the landing page never
     // initializes Clerk, leaving signed-in users stuck on marketing.
     void initClerk();
@@ -201,7 +230,7 @@
     !$clerkAuthStore.loading &&
     $clerkAuthStore.signedIn
   ) {
-    void redirectToDashboard();
+    void redirectToApp();
   }
 
   onDestroy(() => {
@@ -254,7 +283,7 @@
     coming back from the email link, (b) actively redirecting an
     already-signed-in visitor, or (c) about to redirect because Clerk
     just resolved a session. Showing this for the brief moment between
-    "Clerk reports session" and "router lands on /dashboard" prevents
+    "Clerk reports session" and "router lands on /account" prevents
     the marketing pitch from flashing in front of users who already
     converted.
   -->
@@ -334,13 +363,13 @@
             Signed-in visitors get a "Open app" shortcut + the Clerk
             profile menu instead of marketing CTAs they no longer need.
             This block is rarely seen for long because the reactive
-            redirect above sends them to /dashboard, but it stays in
+            redirect above sends them to /account, but it stays in
             place during the brief window between Clerk resolving and
             navigation completing — and during demo-mode visits where
             the landing is intentionally re-displayed.
           -->
           <a
-            href="/dashboard"
+            href="/account"
             class="hidden min-h-[36px] items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500 sm:inline-flex"
           >
             Open app
@@ -412,10 +441,10 @@
             Try the live demo
           </a>
           <a
-            href="/dashboard"
+            href="/account"
             class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-6 py-3 text-sm font-medium text-slate-100 transition hover:bg-slate-800"
           >
-            Open empty workspace
+            Open workspace
           </a>
           <button
             type="button"
@@ -508,7 +537,7 @@
           </ul>
 
           <a
-            href="/dashboard"
+            href="/account"
             class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-700"
           >
             Start hunting free
@@ -571,7 +600,7 @@
       </div>
       <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <a
-          href="/dashboard"
+          href="/account"
           class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-6 py-3 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500"
         >
           Open the app
@@ -613,7 +642,7 @@
           <a class="mt-3 block text-slate-300 hover:text-slate-100" href="#features">Features</a>
           <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/pricing">Pricing</a>
           <a class="mt-2 block text-slate-300 hover:text-slate-100" href="#cloud-sync">Cloud sync</a>
-          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/dashboard">Open app</a>
+          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/account">Open app</a>
         </div>
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Account</p>

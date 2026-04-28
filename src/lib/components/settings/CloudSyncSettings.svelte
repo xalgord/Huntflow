@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { IS_WEB } from '$lib/buildTarget';
   import { clerkAuthStore, initClerk, signOutFromClerk } from '$lib/cloud/clerk';
   import { cloudConfigured } from '$lib/cloud/convex';
   import {
@@ -151,13 +152,28 @@
           </p>
 
           <div class="mt-4 flex flex-col gap-2 sm:flex-row">
-            <a
-              href="/pricing"
-              class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
-            >
-              <Sparkles size={14} aria-hidden="true" />
-              Upgrade to Pro
-            </a>
+            {#if IS_WEB}
+              <a
+                href="/pricing"
+                class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
+              >
+                <Sparkles size={14} aria-hidden="true" />
+                Upgrade to Pro
+              </a>
+            {:else}
+              <!-- App build: /pricing doesn't exist locally. Send users to
+                   the hosted website's pricing page in a new tab so the
+                   purchase happens in the canonical billing surface. -->
+              <a
+                href="https://huntflow.app/pricing"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"
+              >
+                <Sparkles size={14} aria-hidden="true" />
+                Upgrade to Pro
+              </a>
+            {/if}
             <button
               type="button"
               class="hf-button-ghost border border-border"

@@ -1,9 +1,9 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { IS_WEB } from '$lib/buildTarget';
   import { exportDataAsJson } from '$lib/db/export';
   import { importData, validateImportData, ImportValidationError } from '$lib/db/import';
   import { getHuntFlowDB, resetMemoryDB } from '$lib/db';
-  import { loadDemoWorkspace } from '$lib/seeds/demoWorkspace';
   import {
     checklistInstanceStore,
     noteStore,
@@ -155,6 +155,9 @@
     demoStatus = '';
     demoError = '';
     try {
+      // Dynamic import keeps the demo seeder out of the bundle when the
+      // surrounding `{#if IS_WEB}` UI is dead-coded (app build).
+      const { loadDemoWorkspace } = await import('$lib/seeds/demoWorkspace');
       const result = await loadDemoWorkspace();
       // Refresh stats-derived stores so the dashboard reflects the new data.
       await Promise.all([
@@ -224,27 +227,68 @@
     </label>
   </div>
 
-  <div class="mt-4 rounded-lg border border-primary-500/20 bg-primary-500/5 p-4">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-100">
-          <Sparkles size={16} aria-hidden="true" />
-          Sample workspace
-        </h3>
-        <p class="mt-1 text-sm text-slate-400">
-          Adds 3 demo programs, sessions across two weeks, recon assets, notes, and a paid submission so you can explore every screen.
-        </p>
+  {#if IS_WEB}
+    <!-- Sample workspace block is web-only. The local app build ships
+         without the demo seeder so users always start with a clean,
+         empty workspace. The "Replay tour" button stays alongside it
+         here for layout consistency on the website; in the app build
+         it moves out into its own row below. -->
+    <div class="mt-4 rounded-lg border border-primary-500/20 bg-primary-500/5 p-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-100">
+            <Sparkles size={16} aria-hidden="true" />
+            Sample workspace
+          </h3>
+          <p class="mt-1 text-sm text-slate-400">
+            Adds 3 demo programs, sessions across two weeks, recon assets, notes, and a paid submission so you can explore every screen.
+          </p>
+        </div>
+        <div class="flex flex-col gap-2 sm:flex-row">
+          <button
+            type="button"
+            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary-200 transition hover:bg-primary-500/15 disabled:cursor-not-allowed disabled:opacity-60"
+            on:click={handleLoadDemo}
+            disabled={demoLoading}
+          >
+            <Sparkles size={16} aria-hidden="true" />
+            {demoLoading ? 'Loading…' : 'Load demo data'}
+          </button>
+          <button
+            type="button"
+            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600"
+            on:click={relaunchTour}
+          >
+            <RotateCcw size={16} aria-hidden="true" />
+            Replay tour
+          </button>
+        </div>
       </div>
-      <div class="flex flex-col gap-2 sm:flex-row">
-        <button
-          type="button"
-          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary-200 transition hover:bg-primary-500/15 disabled:cursor-not-allowed disabled:opacity-60"
-          on:click={handleLoadDemo}
-          disabled={demoLoading}
-        >
-          <Sparkles size={16} aria-hidden="true" />
-          {demoLoading ? 'Loading…' : 'Load demo data'}
-        </button>
+      {#if demoStatus}
+        <p class="mt-3 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-300">{demoStatus}</p>
+      {/if}
+      {#if demoError}
+        <p class="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{demoError}</p>
+      {/if}
+      {#if tourStatus}
+        <p class="mt-3 rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-300">{tourStatus}</p>
+      {/if}
+    </div>
+  {:else}
+    <!-- App-mode: the "Replay tour" affordance survives standalone so
+         users can re-trigger the onboarding modal from settings. The
+         demo seeder is intentionally absent. -->
+    <div class="mt-4 rounded-lg border border-slate-700 bg-slate-900/40 p-4">
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-100">
+            <RotateCcw size={16} aria-hidden="true" />
+            Onboarding tour
+          </h3>
+          <p class="mt-1 text-sm text-slate-400">
+            Replay the welcome tour the next time you load the app.
+          </p>
+        </div>
         <button
           type="button"
           class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600"
@@ -254,17 +298,11 @@
           Replay tour
         </button>
       </div>
+      {#if tourStatus}
+        <p class="mt-3 rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-300">{tourStatus}</p>
+      {/if}
     </div>
-    {#if demoStatus}
-      <p class="mt-3 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-300">{demoStatus}</p>
-    {/if}
-    {#if demoError}
-      <p class="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{demoError}</p>
-    {/if}
-    {#if tourStatus}
-      <p class="mt-3 rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-300">{tourStatus}</p>
-    {/if}
-  </div>
+  {/if}
 
   <div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

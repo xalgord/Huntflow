@@ -1,9 +1,9 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import { IS_WEB } from '$lib/buildTarget';
   import Button from '$lib/components/ui/Button.svelte';
   import Modal from '$lib/components/ui/Modal.svelte';
-  import { loadDemoWorkspace } from '$lib/seeds/demoWorkspace';
   import { settingsStore } from '$lib/stores';
-  import { goto } from '$app/navigation';
   import {
     BarChart3,
     CheckCircle2,
@@ -120,9 +120,14 @@
     loadingDemo = true;
     demoError = '';
     try {
+      // Dynamic import so the demo seeder (and its sample data payload) is
+      // only pulled into the bundle when this code path is reachable. In
+      // the app build the surrounding `{#if IS_WEB}` guard means this
+      // function is never called and the chunk is tree-shaken entirely.
+      const { loadDemoWorkspace } = await import('$lib/seeds/demoWorkspace');
       await loadDemoWorkspace();
       await settingsStore.setValue('onboardingCompleted', true);
-      await goto('/dashboard');
+      await goto('/account');
     } catch (error) {
       demoError = error instanceof Error ? error.message : 'Could not load the demo workspace.';
     } finally {
@@ -153,7 +158,12 @@
 
       <p class="mt-5 text-center text-sm leading-6 text-slate-400">{currentStep.description}</p>
 
-      {#if isLastStep}
+      {#if isLastStep && IS_WEB}
+        <!-- Demo workspace is a hosted-website-only feature. The local
+             app (`npx huntflow`) ships without the demo seeder so users
+             always start with a clean, empty workspace — and the
+             surrounding /demo route is stripped from the app build
+             entirely (see bin/build-app.mjs). -->
         <button
           type="button"
           class="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-primary-500/30 bg-primary-500/10 px-4 py-3 text-sm font-medium text-primary-200 transition hover:bg-primary-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 disabled:cursor-not-allowed disabled:opacity-60"

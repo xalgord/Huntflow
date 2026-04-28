@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { IS_APP } from '$lib/buildTarget';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignUp } from '$lib/cloud/clerk';
   import { onDestroy, onMount } from 'svelte';
@@ -9,19 +10,48 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
-  let target = '/dashboard';
+  // App-mode default: send fresh signups straight to /dashboard.
+  // Web-mode default: /account, where the welcome banner & subscription
+  // panel live.
+  const defaultTarget = IS_APP ? '/dashboard' : '/account';
+  let target = defaultTarget;
+  // Welcome target with ?welcome=new injected, used by both the embedded
+  // Clerk widget and the safety-net redirect below so onboarding fires
+  // for new accounts regardless of which path completes the sign-up.
+  let welcomeTarget = `${defaultTarget}?welcome=new`;
+  // Guard for the safety-net redirect below — without this declaration
+  // Svelte's strict-mode reactive block would throw `redirected is not
+  // defined`, leaving the user stuck on /sign-up after a successful
+  // sign-up.
   let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
-    if (!raw) return '/dashboard';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/dashboard';
+    if (!raw) return defaultTarget;
+    if (!raw.startsWith('/') || raw.startsWith('//')) return defaultTarget;
     return raw;
   }
 
   onMount(async () => {
-    if (!browser || !mountNode) return;
+    if (!browser) return;
+
+    // Local-mode short-circuit. No Clerk = no signup. Drop the user
+    // into /account, which renders a local-workspace view in that mode.
+    if (!$clerkAuthStore.configured) {
+      redirected = true;
+      try {
+        await goto('/account', { replaceState: true });
+      } catch {
+        /* fall through */
+      }
+      if (browser && window.location.pathname.startsWith('/sign-up')) {
+        window.location.replace('/account');
+      }
+      return;
+    }
+
+    if (!mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
-    const signInUrl = target === '/dashboard'
+    const signInUrl = target === defaultTarget
       ? '/sign-in'
       : `/sign-in?redirect=${encodeURIComponent(target)}`;
     // Append ?welcome=new to the post-signup destination so +layout.svelte
@@ -30,7 +60,7 @@
     // device. We only inject the flag on afterSignUpUrl (new accounts) and
     // leave afterSignInUrl pointing at the bare target so existing users
     // returning to /sign-up don't get re-onboarded.
-    const welcomeTarget = `${target}${target.includes('?') ? '&' : '?'}welcome=new`;
+    welcomeTarget = `${target}${target.includes('?') ? '&' : '?'}welcome=new`;
 
     unmount = await mountClerkSignUp(mountNode, {
       signInUrl,
@@ -65,13 +95,18 @@
   $: if (browser && !redirected && $clerkAuthStore.signedIn) {
     redirected = true;
     void (async () => {
+      // Use welcomeTarget here (not the bare target) so the onboarding
+      // flag survives the email-link round-trip — that flow is the most
+      // common case where Clerk's hosted redirect drops the embedded
+      // widget's `forceRedirectUrl` and falls back through the safety
+      // net.
       try {
-        await goto(target, { replaceState: true });
+        await goto(welcomeTarget, { replaceState: true });
       } catch {
         /* fall through to hard replace below */
       }
       if (browser && window.location.pathname.startsWith('/sign-up')) {
-        window.location.replace(target);
+        window.location.replace(welcomeTarget);
       }
     })();
   }
@@ -88,14 +123,15 @@
 
 <AuthShell
   title="Create your account"
-  subtitle="Free forever. Upgrade to Pro any time for real-time sync across every device."
+  subtitle={IS_APP
+    ? 'Create an account to sync across devices. Your local workspace keeps working without one.'
+    : 'Free forever. Upgrade to Pro any time for real-time sync across every device.'}
   footer="sign-up"
 >
   {#if !$clerkAuthStore.configured}
-    <div class="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-      Sign-up is currently disabled because Clerk is not configured. Set
-      <span class="font-mono text-amber-200">VITE_CLERK_PUBLISHABLE_KEY</span> in your environment to enable
-      authentication.
+    <!-- Local-mode placeholder; the onMount above redirects to /account. -->
+    <div class="flex items-center justify-center py-12 text-sm text-slate-500" aria-live="polite">
+      Opening your local workspace&hellip;
     </div>
   {:else if $clerkAuthStore.error}
     <!-- Surface real Clerk failure modes (invalid publishable key, paused

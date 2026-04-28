@@ -2,14 +2,17 @@
   "name": "huntflow",
   "version": "1.0.0",
   "description": "Bug bounty hunting companion - track targets, sessions, notes, evidence, and submissions. Offline-first PWA with local IndexedDB storage.",
-  "license": "MIT",
+  "license": "UNLICENSED",
+  "private": true,
   "type": "module",
   "bin": {
     "huntflow": "./bin/huntflow.mjs"
   },
   "files": [
     "bin",
-    "build"
+    "build",
+    "LICENSE",
+    "README.md"
   ],
   "keywords": [
     "bug-bounty",
@@ -35,13 +38,15 @@
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
     "build": "vite build",
+    "build:web": "vite build",
+    "build:app": "node bin/build-app.mjs",
     "preview": "vite preview",
     "screenshots": "node scripts/capture-readme-screenshots.mjs",
     "test": "vitest",
     "test:e2e": "playwright test",
     "lint": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run build:app",
     "prepare": "node bin/prepare.mjs"
   },
   "dependencies": {
