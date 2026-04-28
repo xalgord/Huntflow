@@ -64,7 +64,7 @@
 
     // Local-mode short-circuit. There's no billing in a self-hosted
     // build — bounce to /account, which renders a local-workspace
-    // view (with a "get cloud sync at huntflow.app" CTA) in that mode.
+    // view (with a "get cloud sync at huntflow.xalgorix.com" CTA) in that mode.
     if (!$clerkAuthStore.configured) {
       redirectingLocal = true;
       try {

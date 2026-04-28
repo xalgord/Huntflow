@@ -18,3 +18,4 @@ pnpm-debug.log*
 
 .DS_Store
 *.tsbuildinfo
+.npmrc

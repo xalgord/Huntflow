@@ -98,13 +98,13 @@
       const opened = await openClerkSubscriptions();
       // If Clerk doesn't expose a subscriptions modal on this instance,
       // bounce to a pricing surface where the user can change plans.
-      // Web: internal /pricing route. App: hosted huntflow.app/pricing
+      // Web: internal /pricing route. App: hosted huntflow.xalgorix.com/pricing
       // (the local /pricing route doesn't exist in the app build).
       if (!opened) {
         if (IS_WEB) {
           await goto('/pricing');
         } else if (browser) {
-          window.open('https://huntflow.app/pricing', '_blank', 'noopener,noreferrer');
+          window.open('https://huntflow.xalgorix.com/pricing', '_blank', 'noopener,noreferrer');
         }
       }
     } finally {
@@ -182,7 +182,7 @@
               and a meaningful account page must work without an identity.
         We never reference Clerk's UserProfile widget in this branch.
         In case (b) we surface a real "Connect cloud sync" CTA that
-        opens /sign-in; in case (a) the CTA points at huntflow.app.
+        opens /sign-in; in case (a) the CTA points at huntflow.xalgorix.com.
       -->
       <header class="hf-page-header">
         <div class="flex items-start gap-3">
@@ -261,7 +261,7 @@
                 Sign-in only enables sync; the local workspace keeps
                 working untouched.
              2. Legacy no-Clerk install: a quiet outbound link to the
-                hosted huntflow.app, since there's no in-app sign-in
+                hosted huntflow.xalgorix.com, since there's no in-app sign-in
                 surface to send the user to. -->
       <section class="hf-card p-4 sm:p-6">
         <div class="flex items-start gap-3">
@@ -294,20 +294,20 @@
             {:else}
               <h2 class="text-lg font-semibold text-foreground">Want it on every device?</h2>
               <p class="mt-1 text-sm text-muted-foreground">
-                The hosted version at <span class="font-medium text-foreground">huntflow.app</span>
+                The hosted version at <span class="font-medium text-foreground">huntflow.xalgorix.com</span>
                 adds real-time cloud sync, end-to-end encrypted evidence, and priority support
                 &mdash; same app, same data model, plus a sync backbone. Your local install keeps
                 working either way.
               </p>
               <div class="mt-4">
                 <a
-                  href="https://huntflow.app/pricing"
+                  href="https://huntflow.xalgorix.com/pricing"
                   target="_blank"
                   rel="noopener noreferrer"
                   class="inline-flex min-h-[40px] items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20"
                 >
                   <Sparkles size={14} aria-hidden="true" />
-                  Get cloud sync at huntflow.app
+                  Get cloud sync at huntflow.xalgorix.com
                   <ExternalLink size={13} aria-hidden="true" />
                 </a>
               </div>
@@ -569,7 +569,7 @@
               <!-- App build: /pricing was stripped by bin/build-app.mjs.
                    Send the user to the hosted billing page in a new tab. -->
               <a
-                href="https://huntflow.app/pricing"
+                href="https://huntflow.xalgorix.com/pricing"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"

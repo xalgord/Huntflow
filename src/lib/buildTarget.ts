@@ -1,7 +1,7 @@
 /**
  * Build-time discriminator between the two HuntFlow distribution targets.
  *
- *   - `web` — the hosted SaaS at huntflow.app. Includes marketing pages,
+ *   - `web` — the hosted SaaS at huntflow.xalgorix.com. Includes marketing pages,
  *     pricing, demo workspace, Clerk-gated app routes, and Stripe billing
  *     surfaces. This is the default when no `BUILD_TARGET` env var is set,
  *     so Vercel deploys produce the web variant unchanged.

@@ -103,7 +103,7 @@ npm run test -- --run     # unit tests (Vitest)
 npm run test:e2e          # end-to-end tests (Playwright)
 npm run screenshots       # regenerate README screenshots from sample data
 npm run build             # default build (alias for build:web)
-npm run build:web         # hosted website build (huntflow.app)
+npm run build:web         # hosted website build (huntflow.xalgorix.com)
 npm run build:app         # local app build for npm publish
 ```
 
@@ -111,7 +111,7 @@ npm run build:app         # local app build for npm publish
 
 HuntFlow ships two distinct builds from one codebase:
 
-- **`build:web`** — the hosted experience at `huntflow.app`. Includes the marketing landing, `/pricing`, `/demo` with seeded sample data, Clerk-gated app routes, and Stripe billing.
+- **`build:web`** — the hosted experience at `huntflow.xalgorix.com`. Includes the marketing landing, `/pricing`, `/demo` with seeded sample data, Clerk-gated app routes, and Stripe billing.
 - **`build:app`** — the npm-published binary. `bin/build-app.mjs` strips the marketing routes from `src/routes/` before invoking Vite, replaces `/` with a redirect to `/dashboard`, and tree-shakes web-only code paths via the `IS_APP` / `IS_WEB` constants in `src/lib/buildTarget.ts`. Sign-in remains available but is opt-in for cloud sync only — it never blocks access. The original route files are restored in a `try/finally` so the working tree is always clean.
 
 `npm publish` automatically runs `build:app` via `prepublishOnly`. Vercel deploys run the default `build` script, which is `build:web`.
@@ -128,4 +128,4 @@ HuntFlow is proprietary software. Copyright (c) 2026 xalgord. All rights reserve
 
 You may install and use HuntFlow on your own devices for personal or internal business use under the terms in [`LICENSE`](./LICENSE). Redistribution, resale, sublicensing, reverse engineering, and removal of attribution are not permitted. The published npm package contains the compiled application and CLI launcher only — source is not licensed for use.
 
-For commercial licensing, custom deployments, or partnership inquiries, contact the maintainer through [huntflow.app](https://huntflow.app).
+For commercial licensing, custom deployments, or partnership inquiries, contact the maintainer through [huntflow.xalgorix.com](https://huntflow.xalgorix.com).

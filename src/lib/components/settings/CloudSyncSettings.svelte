@@ -165,7 +165,7 @@
                    the hosted website's pricing page in a new tab so the
                    purchase happens in the canonical billing surface. -->
               <a
-                href="https://huntflow.app/pricing"
+                href="https://huntflow.xalgorix.com/pricing"
                 target="_blank"
                 rel="noopener noreferrer"
                 class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow-sm transition hover:bg-primary/90"

@@ -2,7 +2,7 @@
 /**
  * Builds HuntFlow for the npm-published app target (`npm install huntflow`).
  *
- * The hosted website (huntflow.app) and the local app share a single
+ * The hosted website (huntflow.xalgorix.com) and the local app share a single
  * codebase, but they ship as two distinct user experiences. The structural
  * difference between them is large enough that runtime branching alone
  * isn't enough — we want the published npm tarball to *physically not
