@@ -291,6 +291,7 @@ export const huntflowClerkAppearance = {
 type MountSignInOptions = Parameters<ClerkInstance['mountSignIn']>[1];
 type MountSignUpOptions = Parameters<ClerkInstance['mountSignUp']>[1];
 type MountPricingTableOptions = Parameters<ClerkInstance['mountPricingTable']>[1];
+type MountUserButtonOptions = Parameters<ClerkInstance['mountUserButton']>[1];
 
 // Wrap every `clerk.mount*` call so mount-time exceptions (e.g. UI components
 // chunk failed to load, instance paused, plan misconfigured) surface as a
@@ -330,6 +331,28 @@ export async function mountClerkSignUp(
     return () => clerk.unmountSignUp(node);
   } catch (error) {
     reportMountError('sign-up', error);
+    return () => {};
+  }
+}
+
+export async function mountClerkUserButton(
+  node: HTMLElement,
+  options: MountUserButtonOptions = {}
+): Promise<() => void> {
+  const clerk = await initClerk();
+  if (!clerk) return () => {};
+  try {
+    clerk.mountUserButton(node, {
+      appearance: huntflowClerkAppearance,
+      // After signing out from the user button on a chromeless landing,
+      // bounce back to the public landing page instead of leaving the
+      // visitor on a now-ambiguous "you used to be signed in" view.
+      afterSignOutUrl: '/',
+      ...options
+    });
+    return () => clerk.unmountUserButton(node);
+  } catch (error) {
+    reportMountError('user button', error);
     return () => {};
   }
 }

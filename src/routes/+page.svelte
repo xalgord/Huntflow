@@ -1,5 +1,8 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
+  import { clerkAuthStore, initClerk } from '$lib/cloud/clerk';
+  import UserMenu from '$lib/components/auth/UserMenu.svelte';
   import ContactSection from '$lib/components/landing/ContactSection.svelte';
   import FaqSection from '$lib/components/landing/FaqSection.svelte';
   import FeatureGrid from '$lib/components/landing/FeatureGrid.svelte';
@@ -102,8 +105,36 @@
       window.matchMedia('(display-mode: standalone)').matches ||
       Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
 
+    // PWA-installed users should never see the marketing landing — when
+    // they tap the home-screen icon they expect the app, not the pitch.
+    // Send them straight to the workspace; the layout's auth gate will
+    // bounce to /sign-in if they're not authenticated.
+    if (isStandalone) {
+      void goto('/dashboard', { replaceState: true });
+      return;
+    }
+
+    // Kick off Clerk so `clerkAuthStore` resolves; the reactive block
+    // below will redirect signed-in visitors to /dashboard once it
+    // reports a session. Without this call the landing page never
+    // initializes Clerk, leaving signed-in users stuck on marketing.
+    void initClerk();
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   });
+
+  // Auto-redirect already-signed-in visitors away from the public
+  // landing. We wait for `loading` to flip to false so we don't bounce
+  // anonymous users (who haven't been confirmed-anonymous yet) into a
+  // redirect loop. Configured-but-not-signed-in stays on the landing.
+  $: if (
+    browser &&
+    $clerkAuthStore.configured &&
+    !$clerkAuthStore.loading &&
+    $clerkAuthStore.signedIn
+  ) {
+    void goto('/dashboard', { replaceState: true });
+  }
 
   onDestroy(() => {
     if (!browser) return;
@@ -168,19 +199,39 @@
       </nav>
 
       <div class="flex items-center gap-2">
-        <a
-          href="/sign-in"
-          class="hidden min-h-[36px] items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-slate-100 sm:inline-flex"
-        >
-          Sign in
-        </a>
-        <a
-          href="/sign-up"
-          class="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500"
-        >
-          Get started
-          <ArrowRight size={14} aria-hidden="true" />
-        </a>
+        {#if $clerkAuthStore.signedIn}
+          <!--
+            Signed-in visitors get a "Open app" shortcut + the Clerk
+            profile menu instead of marketing CTAs they no longer need.
+            This block is rarely seen for long because the reactive
+            redirect above sends them to /dashboard, but it stays in
+            place during the brief window between Clerk resolving and
+            navigation completing — and during demo-mode visits where
+            the landing is intentionally re-displayed.
+          -->
+          <a
+            href="/dashboard"
+            class="hidden min-h-[36px] items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500 sm:inline-flex"
+          >
+            Open app
+            <ArrowRight size={14} aria-hidden="true" />
+          </a>
+          <UserMenu />
+        {:else}
+          <a
+            href="/sign-in"
+            class="hidden min-h-[36px] items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-slate-100 sm:inline-flex"
+          >
+            Sign in
+          </a>
+          <a
+            href="/sign-up"
+            class="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-md bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500"
+          >
+            Get started
+            <ArrowRight size={14} aria-hidden="true" />
+          </a>
+        {/if}
       </div>
     </div>
   </header>
