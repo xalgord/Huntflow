@@ -1,7 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
-  <title>HuntFlow</title>
-  <rect width="64" height="64" rx="14" fill="#0f172a" />
-  <circle cx="32" cy="32" r="19" fill="none" stroke="#16a34a" stroke-width="5" />
-  <circle cx="32" cy="32" r="8" fill="none" stroke="#4ade80" stroke-width="4" />
-  <path d="M32 8v12M32 44v12M8 32h12M44 32h12" stroke="#f8fafc" stroke-width="4" stroke-linecap="round" />
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HuntFlow favicon — three stacked chevron-cut slabs in white on a
+  brand-green tile, with a cyan lock-on accent on the centre slab.
+  Matches the marketing logo at /brand/huntflow-mark.jpg and the inline
+  BrandMark SVG so the browser tab, sidebar, and landing page all read
+  as a single coherent brand.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <rect width="32" height="32" rx="7" fill="#16a34a"/>
+  <g fill="#ffffff">
+    <path d="M7 7 L21 7 L25 10 L21 13 L7 13 L9.5 10 Z"/>
+    <path d="M7 14 L21 14 L25 17 L21 20 L7 20 L9.5 17 Z"/>
+    <path d="M7 21 L21 21 L25 24 L21 27 L7 27 L9.5 24 Z"/>
+  </g>
+  <path d="M14.8 16 L18 17 L14.8 18 L13.4 17 Z" fill="#22d3ee"/>
 </svg>

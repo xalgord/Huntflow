@@ -101,7 +101,7 @@
     class="inline-flex max-w-full items-stretch gap-2 overflow-hidden rounded-md border border-slate-700 bg-slate-900/80 align-middle text-left transition hover:border-primary-400/50 hover:bg-slate-900"
   >
     <img
-      src={thumbnailUrl || "/placeholder.svg"}
+      src={thumbnailUrl}
       alt={asset.title}
       class="h-12 w-16 shrink-0 object-cover"
     />

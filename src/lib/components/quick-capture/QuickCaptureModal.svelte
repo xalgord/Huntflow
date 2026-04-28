@@ -309,6 +309,47 @@
     return note;
   }
 
+  /**
+   * Dedicated note-from-screenshot builder. We deliberately do NOT
+   * route this through `persistNote` because that function emits a
+   * `### Captured payload` code-fenced section — appropriate for
+   * pasted text/JWT/HTTP, but for an image it would dump a raw
+   * `![title](evidence:id)` markdown source line that the in-app
+   * MarkdownPreview can't render anyway (its `[](url)` matcher only
+   * accepts http(s)). Instead we lean on the canonical evidence
+   * reference syntax `[[evidence:id]]`, which MarkdownPreview replaces
+   * with the EvidenceReferenceTile component — and that tile already
+   * loads the screenshot blob and shows it as an inline thumbnail.
+   */
+  async function persistImageNote(asset: EvidenceAsset): Promise<Note> {
+    const id = generateId();
+    const now = Date.now();
+    const tags = normalizeEvidenceTags(tagsInput);
+    const heading = title.trim() || `Screenshot · ${asset.title}`;
+    const content = [
+      `## ${heading}`,
+      '',
+      `> Screenshot captured at ${new Date(now).toLocaleString()}`,
+      '',
+      `[[evidence:${asset.id}]]`
+    ].join('\n');
+
+    const note: Note = {
+      id,
+      title: heading.slice(0, 200),
+      content,
+      targetId,
+      sessionId: sessionId || undefined,
+      tags,
+      severity: severity || undefined,
+      createdAt: now,
+      updatedAt: now
+    };
+    await noteStore.put(note);
+    await noteStore.persistNow();
+    return note;
+  }
+
   function pickFenceForKind(kind: CapturedKind): string {
     if (kind === 'http-exchange' || kind === 'http-request') return 'http';
     if (kind === 'curl') return 'bash';
@@ -325,15 +366,17 @@
       if (tab === 'image' && pastedFile) {
         const asset = await persistImageEvidence(pastedFile);
         if (saveAs === 'note' || saveAs === 'both') {
-          const fakeClassification: CapturedClassification = {
-            kind: 'note',
-            summary: asset.title,
-            text: `![${asset.title}](evidence:${asset.id})`
-          };
-          const note = await persistNote(fakeClassification, asset.id);
+          // Screenshots get their own note builder (see persistImageNote)
+          // so the resulting note shows the picture inline via the
+          // evidence-reference tile, not a code-fenced markdown source.
+          const note = await persistImageNote(asset);
           await goto(`/notes/${note.id}`);
         } else {
-          await goto(`/assets?target=${targetId}&id=${asset.id}`);
+          // The assets page deep-link contract is `?asset=<id>` (see
+          // assets/+page.svelte's `searchParams.get('asset')`). Using
+          // `?id=` here used to silently land on the asset list with
+          // nothing selected.
+          await goto(`/assets?target=${targetId}&asset=${asset.id}`);
         }
         quickCaptureStore.close();
         return;
@@ -350,7 +393,7 @@
         const note = await persistNote(classification, assetId);
         await goto(`/notes/${note.id}`);
       } else if (assetId) {
-        await goto(`/assets?target=${targetId}&id=${assetId}`);
+        await goto(`/assets?target=${targetId}&asset=${assetId}`);
       }
 
       quickCaptureStore.close();

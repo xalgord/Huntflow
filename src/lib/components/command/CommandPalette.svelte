@@ -313,7 +313,8 @@
         subtitle: `${evidence.kind} · ${evidence.fileName ?? evidence.mimeType}`,
         icon: Network,
         keywords: (evidence.tags ?? []).join(' '),
-        href: `/assets?id=${evidence.id}`
+        // Assets page reads `?asset=<id>` for deep-link selection.
+        href: `/assets?asset=${evidence.id}`
       });
     }
 
