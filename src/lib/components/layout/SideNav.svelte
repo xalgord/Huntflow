@@ -151,8 +151,9 @@
       -->
       <a
         href="/account"
-        class="m-3 block border-t border-border/70 pt-4 transition hover:opacity-90"
-        aria-label="Open account"
+        class="m-3 block rounded-[14px] border-t border-border/70 pt-4 transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 {pathname === '/account' ? 'opacity-100' : ''}"
+        aria-label="Account settings"
+        aria-current={pathname === '/account' ? 'page' : undefined}
       >
         <div class="flex items-center gap-3">
           {#if $clerkAuthStore.signedIn && $clerkAuthStore.imageUrl}

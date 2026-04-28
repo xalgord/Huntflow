@@ -19,6 +19,8 @@
    * into the same scroll context.
    */
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
+  import { page } from '$app/stores';
   import {
     clerkAuthStore,
     initClerk,
@@ -29,13 +31,15 @@
   import {
     ArrowRight,
     BadgeCheck,
+    CheckCircle2,
     CreditCard,
     LogOut,
     Mail,
     Settings as SettingsIcon,
     Shield,
     Sparkles,
-    UserRound
+    UserRound,
+    X
   } from 'lucide-svelte';
   import { onDestroy, onMount } from 'svelte';
 
@@ -44,9 +48,20 @@
   let profileMounted = false;
   let openingSubscriptions = false;
   let signingOut = false;
+  let showProWelcome = false;
 
   onMount(async () => {
     if (!browser) return;
+
+    // Detect ?welcome=pro injected by the pricing page after a successful
+    // subscription checkout. Show a one-time success banner and clean the
+    // param from the URL so it doesn't reappear on refresh or share.
+    if ($page.url.searchParams.get('welcome') === 'pro') {
+      showProWelcome = true;
+      const cleanUrl = new URL($page.url.toString());
+      cleanUrl.searchParams.delete('welcome');
+      history.replaceState(history.state, '', cleanUrl.toString());
+    }
     // Make sure Clerk is initialized — if the user lands here directly
     // via deep link the layout's `initClerk()` call may still be in
     // flight, so we await it explicitly before mounting the widget.
@@ -73,7 +88,7 @@
       // user change plans. That's a graceful fallback — never a
       // dead-end button.
       if (!opened) {
-        window.location.href = '/pricing';
+        await goto('/pricing');
       }
     } finally {
       openingSubscriptions = false;
@@ -120,6 +135,38 @@
 
 <main class="hf-page">
   <div class="hf-page-inner max-w-5xl">
+    {#if showProWelcome}
+      <!-- One-time Pro upgrade confirmation banner. Dismissed permanently
+           once the user closes it — the URL param has already been stripped
+           so it won't reappear on reload. -->
+      <div
+        role="status"
+        aria-live="polite"
+        class="flex items-start gap-3 rounded-xl border border-primary/40 bg-primary/10 p-4 text-sm ring-1 ring-primary/20"
+      >
+        <CheckCircle2
+          size={20}
+          class="mt-0.5 shrink-0 text-primary"
+          aria-hidden="true"
+        />
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-foreground">Welcome to HuntFlow Pro</p>
+          <p class="mt-0.5 text-muted-foreground">
+            Your Pro plan is now active. Real-time cloud sync and end-to-end encrypted evidence
+            are live across every signed-in device.
+          </p>
+        </div>
+        <button
+          type="button"
+          class="ml-2 shrink-0 rounded-md p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+          aria-label="Dismiss welcome banner"
+          on:click={() => (showProWelcome = false)}
+        >
+          <X size={16} aria-hidden="true" />
+        </button>
+      </div>
+    {/if}
+
     <header class="hf-page-header">
       <div class="flex items-start gap-3">
         <div class="rounded-lg border border-primary/25 bg-primary/10 p-2 text-primary shadow-inner-line">

@@ -25,6 +25,10 @@
   let navReady = false;
   let settingsReady = false;
 
+  // Tracks whether onboarding has been forced for this navigation so we
+  // don't repeatedly clear the flag on subsequent reactive re-evaluations.
+  let welcomeNewHandled = false;
+
   const themeColors = {
     dark: '#09090b',
     light: '#fafafa',
@@ -154,6 +158,26 @@
   // (self-hosted/local-only mode with no VITE_CLERK_PUBLISHABLE_KEY),
   // the app stays open so the offline-first experience still works.
   $: requiresAuth = !isMarketing;
+
+  // Detect ?welcome=new injected by the sign-up page after a fresh Clerk
+  // account is created. When present, we force onboardingCompleted = false
+  // so the modal always fires for new signups — regardless of any stale
+  // IndexedDB value left from a previous local/demo session on this device.
+  // We clean up the URL param immediately with replaceState so it doesn't
+  // linger in the browser history or get bookmarked.
+  $: if (
+    browser &&
+    !welcomeNewHandled &&
+    settingsReady &&
+    clerkSignedIn &&
+    $page.url.searchParams.get('welcome') === 'new'
+  ) {
+    welcomeNewHandled = true;
+    void settingsStore.setValue('onboardingCompleted', false);
+    const cleanUrl = new URL($page.url.toString());
+    cleanUrl.searchParams.delete('welcome');
+    history.replaceState(history.state, '', cleanUrl.toString());
+  }
   $: clerkConfigured = $clerkAuthStore.configured;
   $: clerkLoading = $clerkAuthStore.loading;
   $: clerkSignedIn = $clerkAuthStore.signedIn;
@@ -269,7 +293,7 @@
   <InstallPrompt />
 
   {#if !isLanding && settingsReady && !$settingsStore.onboardingCompleted}
-    <OnboardingModal open />
+    <OnboardingModal open isPro={$clerkAuthStore.isPro ?? false} />
   {/if}
 
   {#if !isLanding}

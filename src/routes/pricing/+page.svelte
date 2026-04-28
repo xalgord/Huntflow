@@ -1,10 +1,11 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { clerkAuthStore, mountClerkPricingTable } from '$lib/cloud/clerk';
+  import { clerkAuthStore, mountClerkPricingTable, openClerkSubscriptions } from '$lib/cloud/clerk';
   import {
     ArrowRight,
     Check,
     Cloud,
+    CreditCard,
     Crosshair,
     Lock,
     Smartphone,
@@ -36,13 +37,31 @@
     'Works fully offline'
   ];
 
+  let openingSubscriptions = false;
+
+  async function handleManageSubscription(): Promise<void> {
+    openingSubscriptions = true;
+    try {
+      const opened = await openClerkSubscriptions();
+      if (!opened) {
+        // Clerk billing modal not available — the UserProfile widget on
+        // /account has a Billing tab that serves as the next-best surface.
+        window.location.href = '/account';
+      }
+    } finally {
+      openingSubscriptions = false;
+    }
+  }
+
   onMount(async () => {
     if (!browser || !mountNode) return;
     unmount = await mountClerkPricingTable(mountNode, {
-      // forSignedOutFlow lets visitors see the table without an account.
-      // Clicking a paid plan redirects them through sign-up + checkout.
-      newSubscriptionRedirectUrl: '/?welcome=pro',
-      checkoutContinueUrl: '/?welcome=pro'
+      // After a successful subscription checkout:
+      //   · Signed-in flow  → /account?welcome=pro (shows the Pro welcome banner)
+      //   · Sign-up flow    → /sign-up?redirect=/account?welcome=pro
+      //     (Clerk handles sign-up, then lands on /account with the banner)
+      newSubscriptionRedirectUrl: '/account?welcome=pro',
+      checkoutContinueUrl: '/account?welcome=pro'
     });
     billingMounted = true;
   });
@@ -130,6 +149,40 @@
   <!-- Live Clerk Billing pricing table (preferred) with a static fallback -->
   <section class="border-b border-slate-800 px-4 py-16 sm:px-6 lg:px-8">
     <div class="mx-auto max-w-6xl">
+      {#if $clerkAuthStore.signedIn && $clerkAuthStore.isPro}
+        <!-- Signed-in Pro users see a clear "you're already subscribed" state
+             with a direct link to manage billing instead of a confusing
+             re-subscribe flow. -->
+        <div class="mx-auto mb-10 max-w-2xl rounded-2xl border border-primary-500/40 bg-primary-500/10 p-6 text-center ring-1 ring-primary-500/20">
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-primary-500/30 bg-primary-500/15 text-primary-300">
+            <Sparkles size={22} aria-hidden="true" />
+          </div>
+          <h2 class="mt-4 text-xl font-bold text-slate-100">You&apos;re already on HuntFlow Pro</h2>
+          <p class="mt-2 text-sm leading-6 text-slate-300">
+            Cloud sync, end-to-end encrypted evidence, and priority support are active on your account.
+            Manage your plan, update your payment method, or download invoices below.
+          </p>
+          <div class="mt-5 flex flex-wrap items-center justify-center gap-3">
+            <button
+              type="button"
+              class="inline-flex min-h-[44px] items-center gap-2 rounded-md bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500 disabled:cursor-not-allowed disabled:opacity-60"
+              on:click={handleManageSubscription}
+              disabled={openingSubscriptions}
+            >
+              <CreditCard size={15} aria-hidden="true" />
+              {openingSubscriptions ? 'Opening billing…' : 'Manage subscription'}
+            </button>
+            <a
+              href="/dashboard"
+              class="inline-flex min-h-[44px] items-center gap-2 rounded-md border border-slate-700 bg-slate-800/80 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-700"
+            >
+              Back to the app
+              <ArrowRight size={14} aria-hidden="true" />
+            </a>
+          </div>
+        </div>
+      {/if}
+
       {#if $clerkAuthStore.configured}
         <div
           bind:this={mountNode}
