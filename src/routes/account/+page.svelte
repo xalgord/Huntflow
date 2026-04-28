@@ -21,6 +21,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { IS_WEB } from '$lib/buildTarget';
   import {
     clerkAuthStore,
     initClerk,
@@ -59,11 +60,11 @@
 
     // Local-mode short-circuit. With no Clerk publishable key the app
     // is running as a private offline install — there's no Clerk
-    // session to mount a UserProfile against, no Pro upgrade flow
-    // sending us back here with ?welcome=pro, and no account to
-    // manage. The template below renders an entirely different
-    // local-workspace view in that mode.
+    // session to mount a UserProfile against. The app build also lands
+    // here in `localView` mode for signed-out users (they see a
+    // "Connect cloud sync" CTA instead of an identity widget).
     if (!$clerkAuthStore.configured) return;
+    if (IS_APP && !$clerkAuthStore.signedIn) return;
 
     // Detect ?welcome=pro injected by the pricing page after a successful
     // subscription checkout. Show a one-time success banner and clean the
@@ -96,11 +97,15 @@
     try {
       const opened = await openClerkSubscriptions();
       // If Clerk doesn't expose a subscriptions modal on this instance,
-      // bounce to /pricing where the embedded PricingTable lets the
-      // user change plans. That's a graceful fallback — never a
-      // dead-end button.
+      // bounce to a pricing surface where the user can change plans.
+      // Web: internal /pricing route. App: hosted huntflow.app/pricing
+      // (the local /pricing route doesn't exist in the app build).
       if (!opened) {
-        await goto('/pricing');
+        if (IS_WEB) {
+          await goto('/pricing');
+        } else if (browser) {
+          window.open('https://huntflow.app/pricing', '_blank', 'noopener,noreferrer');
+        }
       }
     } finally {
       openingSubscriptions = false;
@@ -137,6 +142,23 @@
   $: imageUrl = $clerkAuthStore.imageUrl;
   $: isPro = $clerkAuthStore.isPro;
   $: initials = avatarInitials(displayName);
+
+  // The account page has three logical modes:
+  //
+  //   1. `localView` — render a local-workspace summary with no Clerk
+  //      identity. Triggered when Clerk isn't configured at all (legacy
+  //      self-hosted) OR when we're in the app build and the user isn't
+  //      signed in. The app build always has a publishable key, so
+  //      "signed-out" is the normal state for users who haven't opted
+  //      into cloud sync — they should still see a meaningful page.
+  //
+  //   2. `signedInView` — render the Clerk identity hero, subscription
+  //      panel, and embedded UserProfile widget. Fires whenever Clerk
+  //      reports a session.
+  //
+  //   3. (web build, signed-out) — never reaches this page; the layout
+  //      auth gate redirects to /sign-in before mount.
+  $: localView = !$clerkAuthStore.configured || (IS_APP && !$clerkAuthStore.signedIn);
 </script>
 
 <svelte:head>
@@ -152,14 +174,15 @@
 
 <main class="hf-page">
   <div class="hf-page-inner max-w-5xl">
-    {#if !$clerkAuthStore.configured}
+    {#if localView}
       <!--
-        Local-mode view (`npx huntflow` / self-hosted install).
-        This branch renders a complete, standalone account page that
-        never references Clerk. It explains the privacy posture, links
-        to /settings for backup/import, and offers a *non-pushy* CTA
-        for the hosted huntflow.app version if the user ever wants
-        cross-device sync.
+        Local-workspace view. Renders for two scenarios:
+          (a) Clerk isn't configured at all (legacy self-hosted install).
+          (b) App build, user not signed in. Cloud sync is opt-in here
+              and a meaningful account page must work without an identity.
+        We never reference Clerk's UserProfile widget in this branch.
+        In case (b) we surface a real "Connect cloud sync" CTA that
+        opens /sign-in; in case (a) the CTA points at huntflow.app.
       -->
       <header class="hf-page-header">
         <div class="flex items-start gap-3">
@@ -170,8 +193,7 @@
             <p class="hf-eyebrow">Local installation</p>
             <h1 class="hf-title">Local workspace</h1>
             <p class="hf-description">
-              You&apos;re running HuntFlow privately on this device. There&apos;s no account, no
-              telemetry, no cloud &mdash; everything you create lives in
+              You&apos;re running HuntFlow privately on this device. Everything you create lives in
               <span class="text-foreground">IndexedDB</span> in this browser. App preferences,
               backups, import &amp; reset live in
               <a href="/settings" class="text-primary-300 underline-offset-4 hover:underline">Settings</a>.
@@ -233,35 +255,63 @@
         </div>
       </section>
 
-      <!-- Cloud sync CTA. Quiet, secondary, never pushy: this is a
-           local app and we don't want to nag offline users. We give
-           them the value prop and a single outbound link, then move
-           on to the actually-useful local data card below. -->
+      <!-- Cloud sync CTA. Two flavors:
+             1. App build (Clerk configured, just not signed in): a real
+                in-app "Connect cloud sync" button that opens /sign-in.
+                Sign-in only enables sync; the local workspace keeps
+                working untouched.
+             2. Legacy no-Clerk install: a quiet outbound link to the
+                hosted huntflow.app, since there's no in-app sign-in
+                surface to send the user to. -->
       <section class="hf-card p-4 sm:p-6">
         <div class="flex items-start gap-3">
           <div class="rounded-lg border border-primary/25 bg-primary/10 p-2 text-primary shadow-inner-line">
             <Cloud size={22} aria-hidden="true" />
           </div>
           <div class="min-w-0 flex-1">
-            <h2 class="text-lg font-semibold text-foreground">Want it on every device?</h2>
-            <p class="mt-1 text-sm text-muted-foreground">
-              The hosted version at <span class="font-medium text-foreground">huntflow.app</span>
-              adds real-time cloud sync, end-to-end encrypted evidence, and priority support &mdash;
-              same app, same data model, plus a sync backbone. Your local install keeps working
-              either way.
-            </p>
-            <div class="mt-4">
-              <a
-                href="https://huntflow.app/pricing"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex min-h-[40px] items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20"
-              >
-                <Sparkles size={14} aria-hidden="true" />
-                Get cloud sync at huntflow.app
-                <ExternalLink size={13} aria-hidden="true" />
-              </a>
-            </div>
+            {#if $clerkAuthStore.configured}
+              <h2 class="text-lg font-semibold text-foreground">Sync across every device</h2>
+              <p class="mt-1 text-sm text-muted-foreground">
+                Sign in to enable real-time cloud sync, end-to-end encrypted evidence, and access
+                from any device. Your local workspace on this machine keeps working either way.
+              </p>
+              <div class="mt-4 flex flex-col gap-2 sm:flex-row">
+                <a
+                  href="/sign-in"
+                  class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+                >
+                  <Cloud size={14} aria-hidden="true" />
+                  Connect cloud sync
+                  <ArrowRight size={14} aria-hidden="true" />
+                </a>
+                <a
+                  href="/sign-up"
+                  class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md border border-border bg-muted/40 px-4 py-2 text-sm font-medium text-foreground transition hover:bg-muted"
+                >
+                  Create account
+                </a>
+              </div>
+            {:else}
+              <h2 class="text-lg font-semibold text-foreground">Want it on every device?</h2>
+              <p class="mt-1 text-sm text-muted-foreground">
+                The hosted version at <span class="font-medium text-foreground">huntflow.app</span>
+                adds real-time cloud sync, end-to-end encrypted evidence, and priority support
+                &mdash; same app, same data model, plus a sync backbone. Your local install keeps
+                working either way.
+              </p>
+              <div class="mt-4">
+                <a
+                  href="https://huntflow.app/pricing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex min-h-[40px] items-center gap-1.5 rounded-md border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/20"
+                >
+                  <Sparkles size={14} aria-hidden="true" />
+                  Get cloud sync at huntflow.app
+                  <ExternalLink size={13} aria-hidden="true" />
+                </a>
+              </div>
+            {/if}
           </div>
         </div>
       </section>
@@ -506,7 +556,7 @@
                 <CreditCard size={14} aria-hidden="true" />
                 {openingSubscriptions ? 'Opening…' : 'Manage subscription'}
               </button>
-            {:else}
+            {:else if IS_WEB}
               <a
                 href="/pricing"
                 class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
@@ -514,6 +564,19 @@
                 <Sparkles size={14} aria-hidden="true" />
                 Upgrade to Pro
                 <ArrowRight size={14} aria-hidden="true" />
+              </a>
+            {:else}
+              <!-- App build: /pricing was stripped by bin/build-app.mjs.
+                   Send the user to the hosted billing page in a new tab. -->
+              <a
+                href="https://huntflow.app/pricing"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex min-h-[40px] items-center justify-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+              >
+                <Sparkles size={14} aria-hidden="true" />
+                Upgrade to Pro
+                <ExternalLink size={14} aria-hidden="true" />
               </a>
             {/if}
           </div>

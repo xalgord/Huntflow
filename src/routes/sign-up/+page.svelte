@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { IS_APP } from '$lib/buildTarget';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignUp } from '$lib/cloud/clerk';
   import { onDestroy, onMount } from 'svelte';
@@ -9,11 +10,15 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
-  let target = '/account';
+  // App-mode default: send fresh signups straight to /dashboard.
+  // Web-mode default: /account, where the welcome banner & subscription
+  // panel live.
+  const defaultTarget = IS_APP ? '/dashboard' : '/account';
+  let target = defaultTarget;
   // Welcome target with ?welcome=new injected, used by both the embedded
   // Clerk widget and the safety-net redirect below so onboarding fires
   // for new accounts regardless of which path completes the sign-up.
-  let welcomeTarget = '/account?welcome=new';
+  let welcomeTarget = `${defaultTarget}?welcome=new`;
   // Guard for the safety-net redirect below — without this declaration
   // Svelte's strict-mode reactive block would throw `redirected is not
   // defined`, leaving the user stuck on /sign-up after a successful
@@ -21,8 +26,8 @@
   let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
-    if (!raw) return '/account';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/account';
+    if (!raw) return defaultTarget;
+    if (!raw.startsWith('/') || raw.startsWith('//')) return defaultTarget;
     return raw;
   }
 
@@ -46,7 +51,7 @@
 
     if (!mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
-    const signInUrl = target === '/account'
+    const signInUrl = target === defaultTarget
       ? '/sign-in'
       : `/sign-in?redirect=${encodeURIComponent(target)}`;
     // Append ?welcome=new to the post-signup destination so +layout.svelte
@@ -118,7 +123,9 @@
 
 <AuthShell
   title="Create your account"
-  subtitle="Free forever. Upgrade to Pro any time for real-time sync across every device."
+  subtitle={IS_APP
+    ? 'Create an account to sync across devices. Your local workspace keeps working without one.'
+    : 'Free forever. Upgrade to Pro any time for real-time sync across every device.'}
   footer="sign-up"
 >
   {#if !$clerkAuthStore.configured}

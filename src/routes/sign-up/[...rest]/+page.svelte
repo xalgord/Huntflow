@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { IS_APP } from '$lib/buildTarget';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignUp } from '$lib/cloud/clerk';
   import { onDestroy, onMount } from 'svelte';
@@ -9,19 +10,21 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
-  let target = '/account';
+  // Build-mode default — see /sign-up/+page.svelte for context.
+  const defaultTarget = IS_APP ? '/dashboard' : '/account';
+  let target = defaultTarget;
   // Welcome target with ?welcome=new injected — used by the safety-net
   // redirect below so newly created accounts always trigger onboarding
   // even when the multi-step Clerk flow (email-link verification,
   // SSO callback) lands on /sign-up/[...rest] and bypasses the embedded
   // widget's forceRedirectUrl.
-  let welcomeTarget = '/account?welcome=new';
+  let welcomeTarget = `${defaultTarget}?welcome=new`;
   // Required for the safety-net reactive block — see /sign-up/+page.svelte.
   let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
-    if (!raw) return '/account';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/account';
+    if (!raw) return defaultTarget;
+    if (!raw.startsWith('/') || raw.startsWith('//')) return defaultTarget;
     return raw;
   }
 
@@ -45,7 +48,7 @@
     if (!mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     welcomeTarget = `${target}${target.includes('?') ? '&' : '?'}welcome=new`;
-    const signInUrl = target === '/account'
+    const signInUrl = target === defaultTarget
       ? '/sign-in'
       : `/sign-in?redirect=${encodeURIComponent(target)}`;
     // path: '/sign-up' tells Clerk this widget is in path-routing mode

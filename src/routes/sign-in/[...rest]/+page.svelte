@@ -6,6 +6,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { IS_APP } from '$lib/buildTarget';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignIn } from '$lib/cloud/clerk';
   import { onDestroy, onMount } from 'svelte';
@@ -13,14 +14,16 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
-  let target = '/account';
+  // Build-mode default redirect — see /sign-in/+page.svelte for context.
+  const defaultTarget = IS_APP ? '/dashboard' : '/account';
+  let target = defaultTarget;
   // See comment in /sign-in/+page.svelte — this declaration is required
   // for the safety-net reactive block below to compile under strict mode.
   let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
-    if (!raw) return '/account';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/account';
+    if (!raw) return defaultTarget;
+    if (!raw.startsWith('/') || raw.startsWith('//')) return defaultTarget;
     return raw;
   }
 
@@ -43,7 +46,7 @@
 
     if (!mountNode) return;
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
-    const signUpUrl = target === '/account'
+    const signUpUrl = target === defaultTarget
       ? '/sign-up'
       : `/sign-up?redirect=${encodeURIComponent(target)}`;
     // path: '/sign-in' tells Clerk this widget owns the /sign-in

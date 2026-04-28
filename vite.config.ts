@@ -2,7 +2,20 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// `BUILD_TARGET` discriminates between the two HuntFlow distribution
+// targets at compile time. See `src/lib/buildTarget.ts` for the full
+// rationale. We default to `'web'` so plain `vite build` (Vercel deploy)
+// keeps producing the marketing+app variant unchanged. `bin/build-app.mjs`
+// sets BUILD_TARGET=app before invoking the build for npm publishes.
+const buildTarget = process.env.BUILD_TARGET === 'app' ? 'app' : 'web';
+
 export default defineConfig({
+  define: {
+    // Inlined as a literal string at build time. Constants in
+    // `$lib/buildTarget` derive `IS_APP` / `IS_WEB` booleans from this,
+    // which Vite/esbuild then tree-shake throughout the bundle.
+    __BUILD_TARGET__: JSON.stringify(buildTarget)
+  },
   plugins: [
     sveltekit(),
     VitePWA({

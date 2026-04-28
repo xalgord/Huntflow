@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { IS_APP } from '$lib/buildTarget';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignIn } from '$lib/cloud/clerk';
   import { onDestroy, onMount } from 'svelte';
@@ -9,7 +10,11 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
-  let target = '/account';
+  // Default redirect after sign-in. In the app build the user is already
+  // working in their local workspace and just signed in to enable cloud
+  // sync, so we send them straight to /dashboard. On the website the
+  // canonical post-sign-in destination is /account.
+  let target = IS_APP ? '/dashboard' : '/account';
   // Guard for the safety-net redirect below — without this declaration
   // Svelte's strict-mode reactive block would throw `redirected is not
   // defined`, leaving the user stuck on /sign-in after Clerk reports a
@@ -20,9 +25,11 @@
   // The auth gate in +layout.svelte sends anonymous visitors here with
   // ?redirect=<originalPath>. Sanitize it (must be a same-origin absolute
   // path) before handing it to Clerk so we never bounce to an external URL.
+  // App-mode default lands users at /dashboard; web-mode default is /account.
   function sanitizeRedirect(raw: string | null): string {
-    if (!raw) return '/account';
-    if (!raw.startsWith('/') || raw.startsWith('//')) return '/account';
+    const fallback = IS_APP ? '/dashboard' : '/account';
+    if (!raw) return fallback;
+    if (!raw.startsWith('/') || raw.startsWith('//')) return fallback;
     return raw;
   }
 
@@ -50,7 +57,10 @@
     target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     // Forward the redirect param across the sign-in <-> sign-up swap so
     // the user keeps their original destination if they switch flows.
-    const signUpUrl = target === '/account'
+    // The bare /sign-up link is fine when the target is the build-mode
+    // default (the sign-up page falls back to the same default).
+    const defaultTarget = IS_APP ? '/dashboard' : '/account';
+    const signUpUrl = target === defaultTarget
       ? '/sign-up'
       : `/sign-up?redirect=${encodeURIComponent(target)}`;
     // Path-based routing: Clerk's multi-step flow (factor-one,
@@ -109,7 +119,9 @@
 
 <AuthShell
   title="Welcome back"
-  subtitle="Sign in to sync your hunts, notes, evidence and reports across every device."
+  subtitle={IS_APP
+    ? 'Sign in to enable cloud sync. Your local workspace stays on this device either way.'
+    : 'Sign in to sync your hunts, notes, evidence and reports across every device.'}
   footer="sign-in"
 >
   {#if !$clerkAuthStore.configured}

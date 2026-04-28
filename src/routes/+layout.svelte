@@ -2,6 +2,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import { IS_WEB } from '$lib/buildTarget';
   import { clerkAuthStore, initClerk } from '$lib/cloud/clerk';
   import BottomNav from '$lib/components/layout/BottomNav.svelte';
   import CommandPalette from '$lib/components/command/CommandPalette.svelte';
@@ -139,25 +140,32 @@
   // headers and footers and don't need the side nav, bottom nav, or
   // command palette overlays. Keeps the marketing surface decoupled from
   // the app shell.
-  // The root `/` is the public marketing landing page. Auth, pricing, and
-  // any nested Clerk catch-all routes (sign-in/factor-one, etc.) are also
-  // chromeless so they have their own headers/footers and don't render
-  // the app shell, side nav, or command palette overlays.
+  //
+  // In the app build (`IS_APP`), the landing page is replaced with a
+  // dashboard redirect stub and `/pricing` and `/demo` are stripped from
+  // `src/routes/` entirely (see `bin/build-app.mjs`). The auth pages
+  // remain in both targets because cloud sync is opt-in for app users —
+  // we just frame them differently in app mode.
+  //
+  // Auth pages (`/sign-in`, `/sign-up`) keep the chromeless treatment in
+  // app mode too, since `AuthShell` already provides a self-contained
+  // frame and the side nav would crowd the embedded Clerk widget.
   $: isMarketing =
-    pathname === '/' ||
+    (IS_WEB && pathname === '/') ||
     pathname === '/sign-in' ||
     pathname === '/sign-up' ||
-    pathname === '/pricing' ||
-    pathname === '/demo' ||
+    (IS_WEB && pathname === '/pricing') ||
+    (IS_WEB && pathname === '/demo') ||
     pathname.startsWith('/sign-in/') ||
     pathname.startsWith('/sign-up/');
   $: isLanding = isMarketing;
 
-  // Auth gate. Marketing pages are always public. App routes require a
-  // Clerk session WHEN Clerk is configured. If Clerk isn't configured
-  // (self-hosted/local-only mode with no VITE_CLERK_PUBLISHABLE_KEY),
-  // the app stays open so the offline-first experience still works.
-  $: requiresAuth = !isMarketing;
+  // Auth gate. In the hosted web build, app routes require a Clerk
+  // session WHEN Clerk is configured. In the local app build (`IS_APP`),
+  // **every route is open** — sign-in is purely opt-in for cloud sync
+  // and never blocks access. Anonymous users get a fresh local-only
+  // workspace stored in IndexedDB.
+  $: requiresAuth = IS_WEB && !isMarketing;
 
   // Detect ?welcome=new injected by the sign-up page after a fresh Clerk
   // account is created. When present, we force onboardingCompleted = false
@@ -202,14 +210,16 @@
   // to load or about to redirect an anonymous visitor to /sign-in. This
   // prevents the protected dashboard from flashing into view before the
   // redirect lands. Demo mode skips the spinner entirely so the seeded
-  // workspace renders immediately.
+  // workspace renders immediately. In app mode `requiresAuth` is always
+  // false, so this whole branch dead-codes away.
   $: authBlocking =
     browser && requiresAuth && clerkConfigured && !demoMode && (clerkLoading || !clerkSignedIn);
 
   // Once Clerk has finished loading and we still don't have a session,
   // bounce to the sign-in page with a return path so the user lands back
   // here after authenticating. Demo-mode tabs are exempt — the visitor
-  // is exploring sample data, not their own workspace.
+  // is exploring sample data, not their own workspace. App-mode skips
+  // this entirely (sign-in is opt-in for cloud sync, not a gate).
   $: if (
     browser &&
     requiresAuth &&
