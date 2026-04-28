@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignIn } from '$lib/cloud/clerk';
@@ -8,6 +9,8 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
+  let target = '/dashboard';
+  let redirected = false;
 
   // The auth gate in +layout.svelte sends anonymous visitors here with
   // ?redirect=<originalPath>. Sanitize it (must be a same-origin absolute
@@ -20,7 +23,7 @@
 
   onMount(async () => {
     if (!browser || !mountNode) return;
-    const target = sanitizeRedirect($page.url.searchParams.get('redirect'));
+    target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     // Forward the redirect param across the sign-in <-> sign-up swap so
     // the user keeps their original destination if they switch flows.
     const signUpUrl = target === '/dashboard'
@@ -37,6 +40,29 @@
   onDestroy(() => {
     unmount?.();
   });
+
+  /**
+   * Safety-net redirect. Mirror of the equivalent guard on /sign-up.
+   * Clerk's embedded mount honors `forceRedirectUrl` for credential
+   * sign-ins, but multi-factor flows that bounce through the hosted
+   * Frontend API (e.g. magic-link sign-in or social-account first-
+   * connect) don't always honor it. Watching the shared auth store
+   * means the page navigates the moment Clerk reports a session,
+   * regardless of which flow finalized it.
+   */
+  $: if (browser && !redirected && $clerkAuthStore.signedIn) {
+    redirected = true;
+    void (async () => {
+      try {
+        await goto(target, { replaceState: true });
+      } catch {
+        /* fall through to hard replace below */
+      }
+      if (browser && window.location.pathname.startsWith('/sign-in')) {
+        window.location.replace(target);
+      }
+    })();
+  }
 </script>
 
 <svelte:head>

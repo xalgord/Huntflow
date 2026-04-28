@@ -1,5 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
+  import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
   import { clerkAuthStore, mountClerkSignUp } from '$lib/cloud/clerk';
@@ -8,6 +9,8 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let mounted = false;
+  let target = '/dashboard';
+  let redirected = false;
 
   function sanitizeRedirect(raw: string | null): string {
     if (!raw) return '/dashboard';
@@ -17,7 +20,7 @@
 
   onMount(async () => {
     if (!browser || !mountNode) return;
-    const target = sanitizeRedirect($page.url.searchParams.get('redirect'));
+    target = sanitizeRedirect($page.url.searchParams.get('redirect'));
     const signInUrl = target === '/dashboard'
       ? '/sign-in'
       : `/sign-in?redirect=${encodeURIComponent(target)}`;
@@ -32,6 +35,34 @@
   onDestroy(() => {
     unmount?.();
   });
+
+  /**
+   * Safety-net redirect. Clerk's embedded mount honors
+   * `forceRedirectUrl` for in-app verification (typed OTP) but the
+   * hosted email-link verification path doesn't see it — that flow
+   * uses the URLs configured in the Clerk Dashboard. To make sign-up
+   * always land on the user's intended target, we also watch the
+   * shared auth store: the moment Clerk reports a signed-in session
+   * we navigate ourselves.
+   *
+   * `redirected` ensures we don't fire the navigation more than once.
+   * If `goto` fails for any reason we fall back to a hard
+   * `window.location.replace` so the user never gets stuck on the
+   * sign-up page after a successful sign-up.
+   */
+  $: if (browser && !redirected && $clerkAuthStore.signedIn) {
+    redirected = true;
+    void (async () => {
+      try {
+        await goto(target, { replaceState: true });
+      } catch {
+        /* fall through to hard replace below */
+      }
+      if (browser && window.location.pathname.startsWith('/sign-up')) {
+        window.location.replace(target);
+      }
+    })();
+  }
 </script>
 
 <svelte:head>
