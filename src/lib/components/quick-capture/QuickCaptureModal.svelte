@@ -55,7 +55,9 @@
   let noteId = '';
   let tagsInput = '';
   let severity: PayoutSeverity | '' = '';
-  let saveAs: 'evidence' | 'note' | 'both' = 'evidence';
+  type SaveAsMode = 'evidence' | 'note' | 'both';
+  let saveAs: SaveAsMode = 'evidence';
+  function setSaveAs(mode: string): void { saveAs = mode as SaveAsMode; }
 
   $: open = $quickCaptureStore.open;
   $: classification = inputText.trim() ? classifyClipboard(inputText) : null;
@@ -723,7 +725,7 @@
                 class="rounded-md border px-3 py-1.5 text-xs font-semibold transition {saveAs === choice.id
                   ? 'border-primary/60 bg-primary/15 text-primary'
                   : 'border-border/60 bg-muted/30 text-muted-foreground hover:border-primary/40 hover:text-foreground'}"
-                on:click={() => (saveAs = choice.id)}
+                on:click={() => setSaveAs(choice.id)}
               >
                 {choice.label}
               </button>

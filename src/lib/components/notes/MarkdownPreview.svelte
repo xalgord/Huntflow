@@ -196,7 +196,7 @@
           target: wrapper,
           props: { evidenceId: id, asset }
         });
-        mounted.push(instance);
+        mounted.push(instance as unknown as { destroy: () => void });
       });
 
       // Wire copy-to-clipboard on every code-block "Copy" button.

@@ -177,7 +177,7 @@
             <button
               type="button"
               class="hf-button-ghost border border-border"
-              on:click={signOutFromClerk}
+              on:click={() => signOutFromClerk()}
             >
               <LogOut size={16} aria-hidden="true" />
               Sign out
@@ -218,7 +218,7 @@
         <button
           type="button"
           class="hf-button-ghost border border-border"
-          on:click={signOutFromClerk}
+          on:click={() => signOutFromClerk()}
         >
           <LogOut size={18} aria-hidden="true" />
           Sign Out

@@ -51,8 +51,10 @@ export function previewTargetCascade(targetId: string): TargetCascadePreview {
   const checklistInstances = get(checklistInstanceStore).filter(
     (i) => i.targetId === targetId
   ).length;
-  const submissions = get(submissionStore).filter((s) => s.targetId === targetId).length;
-  const payouts = get(payoutStore).filter((p) => p.targetId === targetId).length;
+  const targetSubmissions = get(submissionStore).filter((s) => s.targetId === targetId);
+  const submissions = targetSubmissions.length;
+  const payoutIdSet = new Set(targetSubmissions.flatMap((s) => s.payoutIds ?? []));
+  const payouts = get(payoutStore).filter((p) => payoutIdSet.has(p.id)).length;
 
   return {
     sessions,
@@ -105,27 +107,44 @@ export async function deleteTargetCascade(targetId: string): Promise<TargetCasca
   const checklistIds = get(checklistInstanceStore)
     .filter((i) => i.targetId === targetId)
     .map((i) => i.id);
-  const submissionIds = get(submissionStore)
-    .filter((s) => s.targetId === targetId)
-    .map((s) => s.id);
+  const targetSubs = get(submissionStore).filter((s) => s.targetId === targetId);
+  const submissionIds = targetSubs.map((s) => s.id);
+  const payoutIdSet = new Set(targetSubs.flatMap((s) => s.payoutIds ?? []));
   const payoutIds = get(payoutStore)
-    .filter((p) => p.targetId === targetId)
+    .filter((p) => payoutIdSet.has(p.id))
     .map((p) => p.id);
 
-  // Run deletes in parallel within each store, sequentially across stores so
-  // a failure in one bucket doesn't leave another half-cleaned.
-  await Promise.all(linkIds.map((id) => evidenceLinkStore.delete(id)));
-  await Promise.all(evidenceAssetIds.map((id) => evidenceAssetStore.delete(id)));
-  await Promise.all(noteIds.map((id) => noteStore.delete(id)));
-  await Promise.all(reconIds.map((id) => reconAssetStore.delete(id)));
-  await Promise.all(checklistIds.map((id) => checklistInstanceStore.delete(id)));
-  await Promise.all(submissionIds.map((id) => submissionStore.delete(id)));
-  await Promise.all(payoutIds.map((id) => payoutStore.delete(id)));
-  await Promise.all(sessionIds.map((id) => sessionStore.delete(id)));
-  await targetStore.delete(targetId);
+  // Run deletes in parallel within each store, sequentially across stores.
+  // Errors in one store don't prevent cleanup of subsequent stores.
+  const errors: { store: string; error: unknown }[] = [];
+
+  async function safeDeleteAll(storeName: string, ids: string[], deleteFn: (id: string) => Promise<void>): Promise<void> {
+    try {
+      await Promise.all(ids.map((id) => deleteFn(id)));
+    } catch (error) {
+      errors.push({ store: storeName, error });
+    }
+  }
+
+  await safeDeleteAll('evidenceLinks', linkIds, (id) => evidenceLinkStore.delete(id));
+  await safeDeleteAll('evidenceAssets', evidenceAssetIds, (id) => evidenceAssetStore.delete(id));
+  await safeDeleteAll('notes', noteIds, (id) => noteStore.delete(id));
+  await safeDeleteAll('reconAssets', reconIds, (id) => reconAssetStore.delete(id));
+  await safeDeleteAll('checklistInstances', checklistIds, (id) => checklistInstanceStore.delete(id));
+  await safeDeleteAll('submissions', submissionIds, (id) => submissionStore.delete(id));
+  await safeDeleteAll('payouts', payoutIds, (id) => payoutStore.delete(id));
+  await safeDeleteAll('sessions', sessionIds, (id) => sessionStore.delete(id));
+  await safeDeleteAll('targets', [targetId], (id) => targetStore.delete(id));
 
   // Drain debounced writes so the cascade is durable immediately, even if
   // the user closes the tab right after confirming.
   await flushAllStores();
+
+  if (errors.length > 0) {
+    const summary = errors.map((e) => `${e.store}: ${String(e.error)}`).join('; ');
+    console.error('Cascade delete encountered errors:', errors);
+    throw new Error(`Cascade delete partially failed: ${summary}`);
+  }
+
   return preview;
 }

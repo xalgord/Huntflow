@@ -1,6 +1,7 @@
 import { evidenceBlobDB } from '$lib/db/evidence';
 import type { EvidenceAsset, EvidenceBlob } from '$lib/types';
 import { cloudEvidenceQuotaError } from '$lib/utils/evidence';
+import { isRecord } from '$lib/utils/guards';
 import { cloudApi, cloudConfigured, getConvexClient } from './convex';
 
 interface UploadResponse {
@@ -17,9 +18,7 @@ interface RemoteAssetFile {
   uploadedAt: number;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+
 
 function normalizeRemoteAssetFile(value: unknown): RemoteAssetFile | null {
   if (!isRecord(value)) return null;
@@ -60,13 +59,24 @@ export async function uploadEvidenceAssetFile(
   const uploadUrl = await convex.mutation(cloudApi.generateAssetUploadUrl, {});
   if (typeof uploadUrl !== 'string') throw new Error('Convex did not return an upload URL.');
 
-  const upload = await fetch(uploadUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': evidenceBlob.mimeType || asset.mimeType || 'application/octet-stream' },
-    body: evidenceBlob.blob
-  });
+  let upload: Response | undefined;
+  const MAX_RETRIES = 3;
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      upload = await fetch(uploadUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': evidenceBlob.mimeType || asset.mimeType || 'application/octet-stream' },
+        body: evidenceBlob.blob
+      });
+      if (upload.ok) break;
+    } catch (networkError) {
+      if (attempt === MAX_RETRIES) throw networkError;
+    }
+    // Exponential backoff: 500ms, 1s, 2s
+    if (attempt < MAX_RETRIES) await new Promise((r) => setTimeout(r, 250 * 2 ** attempt));
+  }
 
-  if (!upload.ok) throw new Error(`Evidence upload failed with HTTP ${upload.status}.`);
+  if (!upload || !upload.ok) throw new Error(`Evidence upload failed after ${MAX_RETRIES} attempts.`);
 
   const result = (await upload.json()) as UploadResponse;
   if (!result.storageId) throw new Error('Evidence upload did not return a storage ID.');

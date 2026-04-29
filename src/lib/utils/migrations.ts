@@ -23,6 +23,13 @@ export function buildSubmissionFromPayout(
     (target) => target.platform === payout.platform && target.name.toLowerCase() === payout.program.toLowerCase()
   );
 
+  if (!matchedTarget) {
+    console.warn(
+      `[migration] No matching target for payout "${payout.program}" on ${payout.platform}. ` +
+        (targets[0] ? `Falling back to "${targets[0].name}".` : 'No targets exist — targetId will be empty.')
+    );
+  }
+
   const status = payoutStatusToSubmissionStatus(payout.status);
   const now = Date.now();
   const submittedAt = payout.date;

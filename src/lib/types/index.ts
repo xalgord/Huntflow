@@ -251,6 +251,7 @@ export type ReconAssetStatus =
   | 'untested'
   | 'in-progress'
   | 'tested'
+  | 'safe'
   | 'vulnerable'
   | 'out-of-scope'
   | 'dead';
@@ -397,6 +398,8 @@ export interface ChecklistInstance {
   /** Per-item state keyed by ChecklistTemplateItem.id. */
   itemStates: Record<string, ChecklistInstanceItemState>;
   notes?: string;
+  /** Timestamp when the user first started working on this instance. */
+  startedAt?: number;
   /** Set when every item is `done`/`na`/`found`. Cleared when user reopens an item. */
   completedAt?: number;
   createdAt: number;
@@ -456,11 +459,18 @@ export interface Submission {
 // ─── New: Bookmarks library ─────────────────────────────────────────────────
 
 export type BookmarkCategory =
-  | 'methodology'
-  | 'cheatsheet'
-  | 'tools'
-  | 'recon'
+  | 'writeup'
   | 'cve'
+  | 'tool'
+  | 'tools'
+  | 'docs'
+  | 'cheatsheet'
+  | 'video'
+  | 'paper'
+  | 'blog'
+  | 'other'
+  | 'methodology'
+  | 'recon'
   | 'xss'
   | 'sqli'
   | 'ssrf'
@@ -605,6 +615,7 @@ export interface HuntFlowDB extends DBSchema {
       'by-severity': string;
       'by-status': string;
       'by-date': number;
+      'by-target': string;
       'by-updated': number;
     };
   };

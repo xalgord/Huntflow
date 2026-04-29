@@ -50,7 +50,10 @@ export interface ClerkAuthState {
 
 const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
 const frontendApiUrl = import.meta.env.VITE_CLERK_FRONTEND_API_URL as string | undefined;
-const redirectUrl = typeof window !== 'undefined' ? window.location.href : '/settings';
+/** Compute the redirect URL at call time so it reflects the user's current page. */
+function currentRedirectUrl(): string {
+  return typeof window !== 'undefined' ? window.location.href : '/settings';
+}
 
 const initialState: ClerkAuthState = {
   configured: Boolean(publishableKey),
@@ -157,7 +160,7 @@ async function loadClerkFromCDN(
     const script = existing ?? document.createElement('script');
     script.async = true;
     script.crossOrigin = 'anonymous';
-    script.src = `https://${host}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js`;
+    script.src = `https://${host}/npm/@clerk/clerk-js@5/dist/clerk.browser.js`;
     script.setAttribute('data-clerk-publishable-key', pk);
     script.setAttribute('data-clerk-script', 'huntflow');
     script.addEventListener(
@@ -181,7 +184,7 @@ async function loadClerkFromCDN(
       () => {
         reject(
           new Error(
-            `Failed to load Clerk from https://${host}/npm/@clerk/clerk-js@latest/dist/clerk.browser.js. ` +
+            `Failed to load Clerk from https://${host}/npm/@clerk/clerk-js@5/dist/clerk.browser.js. ` +
               'Check that VITE_CLERK_FRONTEND_API_URL is correct and reachable.'
           )
         );
@@ -270,12 +273,14 @@ export async function initClerk(): Promise<ClerkInstance | null> {
 export async function signInWithClerk(): Promise<void> {
   const clerk = await initClerk();
   if (!clerk) return;
+  const redirectUrl = currentRedirectUrl();
   await clerk.redirectToSignIn({ redirectUrl, signUpFallbackRedirectUrl: redirectUrl });
 }
 
 export async function signUpWithClerk(): Promise<void> {
   const clerk = await initClerk();
   if (!clerk) return;
+  const redirectUrl = currentRedirectUrl();
   await clerk.redirectToSignUp({ redirectUrl, signInFallbackRedirectUrl: redirectUrl });
 }
 
@@ -294,6 +299,9 @@ export async function signOutFromClerk(opts: { redirectUrl?: string } = {}): Pro
   if (!clerk) return;
   await clerk.signOut({ redirectUrl: opts.redirectUrl ?? '/' });
   updateState(clerk, { convexAuthenticated: false });
+  // Clear the Convex auth binding so it re-binds on next sign-in
+  const { resetConvexAuth } = await import('./convex');
+  resetConvexAuth();
 }
 
 // Shared dark theme so every embedded Clerk component (sign-in, sign-up,
@@ -371,8 +379,8 @@ export async function mountClerkSignIn(
   const clerk = await initClerk();
   if (!clerk) return () => {};
   try {
-    clerk.mountSignIn(node, { appearance: huntflowClerkAppearance, ...options });
-    return () => clerk.unmountSignIn(node);
+    clerk.mountSignIn(node as HTMLDivElement, { appearance: huntflowClerkAppearance, ...options });
+    return () => clerk.unmountSignIn(node as HTMLDivElement);
   } catch (error) {
     reportMountError('sign-in', error);
     return () => {};
@@ -386,8 +394,8 @@ export async function mountClerkSignUp(
   const clerk = await initClerk();
   if (!clerk) return () => {};
   try {
-    clerk.mountSignUp(node, { appearance: huntflowClerkAppearance, ...options });
-    return () => clerk.unmountSignUp(node);
+    clerk.mountSignUp(node as HTMLDivElement, { appearance: huntflowClerkAppearance, ...options });
+    return () => clerk.unmountSignUp(node as HTMLDivElement);
   } catch (error) {
     reportMountError('sign-up', error);
     return () => {};
@@ -401,15 +409,16 @@ export async function mountClerkUserButton(
   const clerk = await initClerk();
   if (!clerk) return () => {};
   try {
-    clerk.mountUserButton(node, {
+    clerk.mountUserButton(node as HTMLDivElement, {
       appearance: huntflowClerkAppearance,
       // After signing out from the user button on a chromeless landing,
       // bounce back to the public landing page instead of leaving the
       // visitor on a now-ambiguous "you used to be signed in" view.
       afterSignOutUrl: '/',
       ...options
-    });
-    return () => clerk.unmountUserButton(node);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any);
+    return () => clerk.unmountUserButton(node as HTMLDivElement);
   } catch (error) {
     reportMountError('user button', error);
     return () => {};
@@ -431,8 +440,8 @@ export async function mountClerkUserProfile(
   const clerk = await initClerk();
   if (!clerk) return () => {};
   try {
-    clerk.mountUserProfile(node, { appearance: huntflowClerkAppearance, ...options });
-    return () => clerk.unmountUserProfile(node);
+    clerk.mountUserProfile(node as HTMLDivElement, { appearance: huntflowClerkAppearance, ...options });
+    return () => clerk.unmountUserProfile(node as HTMLDivElement);
   } catch (error) {
     reportMountError('user profile', error);
     return () => {};
@@ -489,8 +498,8 @@ export async function mountClerkPricingTable(
   // dashboard has the billing addon enabled. Fall back gracefully if not.
   if (typeof clerk.mountPricingTable !== 'function') return () => {};
   try {
-    clerk.mountPricingTable(node, { appearance: huntflowClerkAppearance, ...options });
-    return () => clerk.unmountPricingTable?.(node);
+    clerk.mountPricingTable(node as HTMLDivElement, { appearance: huntflowClerkAppearance, ...options });
+    return () => clerk.unmountPricingTable?.(node as HTMLDivElement);
   } catch (error) {
     reportMountError('pricing table', error);
     return () => {};

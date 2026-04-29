@@ -98,11 +98,28 @@
       writeup: 'border-primary/30 bg-primary/10 text-primary',
       cve: 'border-red-500/30 bg-red-500/15 text-red-300',
       tool: 'border-blue-500/30 bg-blue-500/15 text-blue-300',
+      tools: 'border-blue-500/30 bg-blue-500/15 text-blue-300',
       docs: 'border-slate-500/30 bg-slate-700/30 text-slate-300',
       cheatsheet: 'border-yellow-500/30 bg-yellow-500/15 text-yellow-300',
       video: 'border-orange-500/30 bg-orange-500/15 text-orange-300',
       paper: 'border-purple-500/30 bg-purple-500/15 text-purple-300',
       blog: 'border-teal-500/30 bg-teal-500/15 text-teal-300',
+      methodology: 'border-indigo-500/30 bg-indigo-500/15 text-indigo-300',
+      recon: 'border-cyan-500/30 bg-cyan-500/15 text-cyan-300',
+      xss: 'border-rose-500/30 bg-rose-500/15 text-rose-300',
+      sqli: 'border-red-600/30 bg-red-600/15 text-red-400',
+      ssrf: 'border-amber-500/30 bg-amber-500/15 text-amber-300',
+      xxe: 'border-orange-600/30 bg-orange-600/15 text-orange-400',
+      ssti: 'border-pink-500/30 bg-pink-500/15 text-pink-300',
+      lfi: 'border-lime-500/30 bg-lime-500/15 text-lime-300',
+      rce: 'border-red-700/30 bg-red-700/15 text-red-400',
+      auth: 'border-violet-500/30 bg-violet-500/15 text-violet-300',
+      idor: 'border-fuchsia-500/30 bg-fuchsia-500/15 text-fuchsia-300',
+      jwt: 'border-emerald-500/30 bg-emerald-500/15 text-emerald-300',
+      oauth: 'border-sky-500/30 bg-sky-500/15 text-sky-300',
+      graphql: 'border-pink-600/30 bg-pink-600/15 text-pink-400',
+      mobile: 'border-teal-600/30 bg-teal-600/15 text-teal-400',
+      general: 'border-slate-500/30 bg-slate-700/30 text-slate-300',
       other: 'border-slate-500/30 bg-slate-700/30 text-slate-300'
     };
     return map[category] ?? map.other;
@@ -164,6 +181,7 @@
       description: formDescription.trim() || undefined,
       tags,
       isBuiltIn: editing?.isBuiltIn ?? false,
+      isFavorite: editing?.isFavorite ?? false,
       createdAt: editing?.createdAt ?? now,
       updatedAt: now
     };

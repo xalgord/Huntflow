@@ -112,15 +112,36 @@ export class PayoutDB {
     }
   }
 
-  async getByDate(date: number): Promise<Payout[]> {
+  /**
+   * Return payouts whose `date` falls within a given calendar day.
+   *
+   * When `date` is a number it's treated as epoch-ms somewhere in the
+   * target day. When it's a string in `YYYY-MM-DD` form the boundaries
+   * are derived from midnight local time.
+   */
+  async getByDate(date: number | string): Promise<Payout[]> {
+    const dayStart = typeof date === 'string'
+      ? new Date(`${date}T00:00:00`).getTime()
+      : new Date(new Date(date).toDateString()).getTime();
+    const dayEnd = dayStart + 86_400_000 - 1;
+    return this.getByDateRange(dayStart, dayEnd);
+  }
+
+  async getByDateRange(from: number, to: number): Promise<Payout[]> {
     const db = await getHuntFlowDB();
-    if (!db) return Array.from(getMemoryDB().payouts.values()).filter((p) => p.date === date);
+    if (!db) {
+      return Array.from(getMemoryDB().payouts.values()).filter(
+        (p) => p.date >= from && p.date <= to
+      );
+    }
 
     try {
-      return await db.getAllFromIndex('payouts', 'by-date', date);
+      return await db.getAllFromIndex('payouts', 'by-date', IDBKeyRange.bound(from, to));
     } catch (error) {
       enableMemoryFallback(error);
-      return Array.from(getMemoryDB().payouts.values()).filter((p) => p.date === date);
+      return Array.from(getMemoryDB().payouts.values()).filter(
+        (p) => p.date >= from && p.date <= to
+      );
     }
   }
 }

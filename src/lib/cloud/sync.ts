@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { uploadEvidenceAssetFile } from '$lib/cloud/assets';
+import { isRecord } from '$lib/utils/guards';
 import { bookmarkDB } from '$lib/db/bookmarks';
 import { checklistInstanceDB, checklistTemplateDB } from '$lib/db/checklists';
 import { evidenceAssetDB, evidenceBlobDB, evidenceCanvasViewDB, evidenceLinkDB } from '$lib/db/evidence';
@@ -111,7 +112,10 @@ function setLastCloudSyncAt(value: number): void {
 }
 
 function sessionUpdatedAt(session: Session): number {
-  return session.endedAt ?? session.startedAt;
+  // Completed/abandoned sessions use endedAt as their last-modified marker.
+  // Running/paused sessions have no endedAt; use Date.now() so mid-session
+  // edits (tags, quickNote) are always newer than any cached remote snapshot.
+  return session.endedAt ?? (session.status === 'running' || session.status === 'paused' ? Date.now() : session.startedAt);
 }
 
 function toSyncItem(collection: SyncCollection, item: SyncPayload): SyncItem {
@@ -144,9 +148,7 @@ const KNOWN_COLLECTIONS: SyncCollection[] = [
   'bookmarks'
 ];
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+// isRecord is now imported at the top of this file
 
 function normalizeRemoteItem(value: unknown): SyncItem | null {
   if (!isRecord(value)) return null;

@@ -82,7 +82,7 @@ function computeDailyStats(sessions: Session[]): DailyStat[] {
     day.sessionCount += 1;
     if (session.status === 'completed') {
       day.completedCount += 1;
-      day.totalMinutes += Math.round(session.durationActual / 60);
+      day.totalMinutes += Math.round((session.durationActual ?? 0) / 60);
     }
   }
 
@@ -99,17 +99,17 @@ export const todayMinutesStore = derived(sessionStore, ($sessions) => {
   const today = localDateKey(new Date());
   return completedSessions($sessions)
     .filter((session) => dateKey(session.startedAt) === today)
-    .reduce((sum, session) => sum + Math.round(session.durationActual / 60), 0);
+    .reduce((sum, session) => sum + Math.round((session.durationActual ?? 0) / 60), 0);
 });
 
 export const totalTimeStore = derived(sessionStore, ($sessions) =>
-  completedSessions($sessions).reduce((sum, session) => sum + session.durationActual, 0)
+  completedSessions($sessions).reduce((sum, session) => sum + (session.durationActual ?? 0), 0)
 );
 
 export const avgSessionLengthStore = derived(sessionStore, ($sessions) => {
   const completed = completedSessions($sessions);
   if (completed.length === 0) return 0;
-  return Math.round(completed.reduce((sum, session) => sum + session.durationActual, 0) / completed.length);
+  return Math.round(completed.reduce((sum, session) => sum + (session.durationActual ?? 0), 0) / completed.length);
 });
 
 export const byVulnTypeStore = derived(sessionStore, ($sessions) =>
@@ -154,7 +154,7 @@ export const userStatsStore = derived(
       byTarget: completed.reduce<Record<string, { count: number; time: number }>>((groups, session) => {
         const group = groups[session.targetId] ?? { count: 0, time: 0 };
         group.count += 1;
-        group.time += session.durationActual;
+        group.time += session.durationActual ?? 0;
         groups[session.targetId] = group;
         return groups;
       }, {}),

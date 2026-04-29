@@ -81,7 +81,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
     ['deriveKey']
   );
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt.buffer as ArrayBuffer, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
     baseKey,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -136,9 +136,9 @@ export async function decryptBackup(bundle: EncryptedBackup, passphrase: string)
   let plaintext: ArrayBuffer;
   try {
     plaintext = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
+      { name: 'AES-GCM', iv: iv.buffer as ArrayBuffer },
       key,
-      base64ToBytes(bundle.ciphertext)
+      base64ToBytes(bundle.ciphertext).buffer as ArrayBuffer
     );
   } catch {
     throw new Error('Wrong passphrase or the backup is corrupted.');
@@ -172,5 +172,5 @@ export async function blobToBase64(blob: Blob): Promise<string> {
 }
 
 export function base64ToBlob(b64: string, mimeType: string): Blob {
-  return new Blob([base64ToBytes(b64)], { type: mimeType });
+  return new Blob([base64ToBytes(b64).buffer as ArrayBuffer], { type: mimeType });
 }

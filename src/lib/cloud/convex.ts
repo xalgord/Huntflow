@@ -44,3 +44,12 @@ export function configureConvexAuth(
   );
   authConfigured = true;
 }
+
+/**
+ * Reset the auth flag so that the next `configureConvexAuth` call
+ * will re-bind the Convex client to the new Clerk session.
+ * Must be called on sign-out.
+ */
+export function resetConvexAuth(): void {
+  authConfigured = false;
+}

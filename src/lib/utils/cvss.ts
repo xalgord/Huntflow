@@ -162,7 +162,8 @@ export function parseCvssVector(vector: string): CvssBaseMetrics | null {
   for (const key of PARSE_KEYS) {
     const value = map[key];
     if (!value) return null;
-    metrics[key] = value as CvssBaseMetrics[typeof key];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (metrics as any)[key] = value;
   }
 
   // Validate enum membership.

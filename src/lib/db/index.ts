@@ -20,7 +20,7 @@ import type {
 } from './schema';
 
 export const DB_NAME = 'huntflow';
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 interface MemoryHuntFlowDB {
   sessions: Map<string, Session>;
@@ -64,6 +64,9 @@ let dbPromise: Promise<IDBPDatabase<HuntFlowDB>> | null = null;
 let memoryFallback = false;
 let fallbackReason: unknown;
 
+/**
+ * Create all object stores from scratch (new installs or major rebuild).
+ */
 function createStores(db: IDBPDatabase<HuntFlowDB>) {
   if (!db.objectStoreNames.contains('sessions')) {
     const store = db.createObjectStore('sessions', { keyPath: 'id' });
@@ -95,6 +98,7 @@ function createStores(db: IDBPDatabase<HuntFlowDB>) {
     store.createIndex('by-severity', 'severity', { unique: false });
     store.createIndex('by-status', 'status', { unique: false });
     store.createIndex('by-date', 'date', { unique: false });
+    store.createIndex('by-target', 'targetId', { unique: false });
     store.createIndex('by-updated', 'updatedAt', { unique: false });
   }
 
@@ -182,6 +186,21 @@ function createStores(db: IDBPDatabase<HuntFlowDB>) {
   }
 }
 
+/**
+ * Incremental migration from v4 → v5:
+ * - Adds the missing 'by-target' index on payouts for cascade-delete lookups.
+ */
+function migrateV4toV5(db: IDBPDatabase<HuntFlowDB>): void {
+  if (db.objectStoreNames.contains('payouts')) {
+    // The upgrade transaction gives us access to the store directly
+    const tx = (db as unknown as { transaction: IDBTransaction }).transaction;
+    const payoutsStore = tx.objectStore('payouts');
+    if (!payoutsStore.indexNames.contains('by-target')) {
+      payoutsStore.createIndex('by-target', 'targetId', { unique: false });
+    }
+  }
+}
+
 export function enableMemoryFallback(reason?: unknown): void {
   if (!memoryFallback) {
     console.warn('IndexedDB failed, using memory fallback:', reason);
@@ -214,8 +233,27 @@ export async function getHuntFlowDB(): Promise<IDBPDatabase<HuntFlowDB> | null> 
 
   try {
     dbPromise ??= openDB<HuntFlowDB>(DB_NAME, DB_VERSION, {
-      upgrade(db) {
+      upgrade(db, oldVersion, _newVersion, transaction) {
+        // Fresh install — create everything from scratch
+        if (oldVersion === 0) {
+          createStores(db);
+          return;
+        }
+
+        // Incremental migrations: run each step the user hasn't applied yet.
+        // New stores from createStores are only created when missing, so it's
+        // safe to call it on every upgrade path.
         createStores(db);
+
+        if (oldVersion < 5) {
+          // v4 → v5: add by-target index on payouts
+          if (db.objectStoreNames.contains('payouts')) {
+            const payoutsStore = transaction.objectStore('payouts');
+            if (!payoutsStore.indexNames.contains('by-target')) {
+              payoutsStore.createIndex('by-target', 'targetId', { unique: false });
+            }
+          }
+        }
       },
       blocked() {
         console.warn('HuntFlow IndexedDB upgrade is blocked by another open tab.');

@@ -21,7 +21,7 @@
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import { IS_WEB } from '$lib/buildTarget';
+  import { IS_APP, IS_WEB } from '$lib/buildTarget';
   import {
     clerkAuthStore,
     initClerk,

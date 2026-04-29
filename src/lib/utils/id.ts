@@ -1,4 +1,4 @@
-export function generateId(): string {
+export function generateId(_prefix?: string): string {
   const cryptoApi = globalThis.crypto;
 
   if (cryptoApi?.randomUUID) {

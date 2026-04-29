@@ -215,7 +215,8 @@ export const timerStore: TimerStore = {
       ...value,
       status: 'completed',
       remainingMs: 0,
-      progress: 100
+      progress: 100,
+      endTime: undefined
     });
   },
   reset(totalMs = DEFAULT_TOTAL_MS) {
@@ -224,7 +225,8 @@ export const timerStore: TimerStore = {
       status: 'idle',
       remainingMs: totalMs,
       totalMs,
-      progress: 0
+      progress: 0,
+      endTime: undefined
     });
   }
 };

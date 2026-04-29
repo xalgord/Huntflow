@@ -36,6 +36,7 @@
     text: 'Text',
     request: 'Requests',
     response: 'Responses',
+    'http-exchange': 'HTTP Exchanges',
     archive: 'Archives',
     binary: 'Binary',
     url: 'URLs'

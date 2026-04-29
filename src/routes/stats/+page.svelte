@@ -115,7 +115,7 @@
     }, {});
   $: topTemplate = Object.entries(templateTime).sort((a, b) => b[1] - a[1])[0];
   $: inactiveDays = daysSinceLastCompleted($sessionStore);
-  $: weekTrend = weekSeconds > previousWeekSeconds ? 'up' : weekSeconds < previousWeekSeconds ? 'down' : 'flat';
+  $: weekTrend = (weekSeconds > previousWeekSeconds ? 'up' : weekSeconds < previousWeekSeconds ? 'down' : 'flat') as 'up' | 'down' | 'flat';
 </script>
 
 <svelte:head>

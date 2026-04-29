@@ -45,7 +45,7 @@ function makeTarget(name: string, partial: Partial<Target> & Pick<Target, 'platf
     scope: partial.scope ?? '',
     notes: partial.notes ?? '',
     priority: partial.priority ?? 1,
-    status: partial.status ?? 'active',
+    status: partial.status ?? 'testing',
     createdAt: partial.createdAt ?? now - 14 * DAY,
     updatedAt: partial.updatedAt ?? now,
     lastSessionAt: partial.lastSessionAt,
@@ -173,7 +173,7 @@ export async function loadDemoWorkspace(_options: DemoLoadOptions = {}): Promise
       programUrl: 'https://hackerone.com/acme',
       scope: '+ *.acme.com\n+ api.acme.com/v1/*\n- admin.acme.com\n- *.staging.acme.com',
       priority: 0,
-      status: 'active',
+      status: 'testing',
       sessionCount: 7,
       lastSessionAt: Date.now() - 1 * DAY,
       notes: 'IDOR-prone account API, JWT auth. Triagers respond within 48h.'
@@ -183,7 +183,7 @@ export async function loadDemoWorkspace(_options: DemoLoadOptions = {}): Promise
       programUrl: 'https://bugcrowd.com/globex',
       scope: '+ globex.com\n+ *.globex.com\n+ shop.globex.com/api/*\n- legacy.globex.com',
       priority: 1,
-      status: 'active',
+      status: 'testing',
       sessionCount: 4,
       lastSessionAt: Date.now() - 3 * DAY,
       notes: 'Shopify-style storefront. Promotion logic looks tasty.'
@@ -193,7 +193,7 @@ export async function loadDemoWorkspace(_options: DemoLoadOptions = {}): Promise
       programUrl: 'https://security.initech.io',
       scope: '+ initech.io\n+ *.initech.io',
       priority: 2,
-      status: 'active',
+      status: 'testing',
       sessionCount: 1,
       notes: 'Recently launched. Smaller surface, less competition.'
     })

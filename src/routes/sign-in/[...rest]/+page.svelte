@@ -59,9 +59,7 @@
       routing: 'path',
       path: '/sign-in',
       forceRedirectUrl: target,
-      fallbackRedirectUrl: target,
-      afterSignInUrl: target,
-      afterSignUpUrl: target
+      fallbackRedirectUrl: target
     });
     mounted = true;
   });

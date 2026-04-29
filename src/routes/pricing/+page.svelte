@@ -84,8 +84,7 @@
       //   · Signed-in flow  → /account?welcome=pro (shows the Pro welcome banner)
       //   · Sign-up flow    → /sign-up?redirect=/account?welcome=pro
       //     (Clerk handles sign-up, then lands on /account with the banner)
-      newSubscriptionRedirectUrl: '/account?welcome=pro',
-      checkoutContinueUrl: '/account?welcome=pro'
+      newSubscriptionRedirectUrl: '/account?welcome=pro'
     });
     billingMounted = true;
   });
