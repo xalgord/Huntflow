@@ -19,7 +19,7 @@
  */
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
-import { cloudApi, cloudConfigured, getConvexClient } from './convex';
+import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient, getClerkToken } from './convex';
 import {
   applyLocalSnapshot,
   getLocalItems,
@@ -225,11 +225,26 @@ async function pollRemote(): Promise<void> {
     // Upload any pending evidence files so storageIds are current.
     await uploadPendingEvidenceFiles();
 
-    // Pull remote + read local in parallel.
+    // --- Authenticate the HTTP client with a fresh Clerk JWT ---
+    const httpClient = getConvexHttpClient();
+    const token = await getClerkToken();
+    if (!httpClient || !token) {
+      console.warn('[realtimeSync] poll skipped: no HTTP client or Clerk token');
+      return;
+    }
+    httpClient.setAuth(token);
+
+    // Pull remote via HTTP (cache-free!) + read local in parallel.
     const [localItems, rawRemote] = await Promise.all([
       getLocalItems(),
-      convex.query(cloudApi.getSnapshot, {})
+      httpClient.query(cloudApi.getSnapshot, {})
     ]);
+
+    console.debug(
+      '[realtimeSync] HTTP poll fetched',
+      Array.isArray(rawRemote) ? rawRemote.length : 0,
+      'remote items'
+    );
 
     const remoteItems = Array.isArray(rawRemote)
       ? rawRemote.map(normalizeRemoteItem).filter((item): item is SyncItem => Boolean(item))
@@ -243,6 +258,8 @@ async function pollRemote(): Promise<void> {
     await applyLocalSnapshot(merged);
 
     // Push merged snapshot back to Convex so other devices get our changes.
+    // We use the WebSocket-based client for mutations (faster, auth is
+    // already configured via setAuth callback).
     await convex.mutation(cloudApi.upsertSnapshot, {
       items: merged.map(({ collection, localId, payload, updatedAt }) => ({
         collection,

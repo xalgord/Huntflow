@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { ConvexClient } from 'convex/browser';
+import { ConvexHttpClient } from 'convex/browser';
 import { anyApi } from 'convex/server';
 
 type ClerkInstance = import('@clerk/clerk-js').Clerk;
@@ -7,6 +8,7 @@ type ClerkInstance = import('@clerk/clerk-js').Clerk;
 const convexUrl = import.meta.env.VITE_CONVEX_URL as string | undefined;
 
 let client: ConvexClient | null = null;
+let httpClient: ConvexHttpClient | null = null;
 let authConfigured = false;
 
 export const cloudConfigured = Boolean(convexUrl);
@@ -52,4 +54,29 @@ export function configureConvexAuth(
  */
 export function resetConvexAuth(): void {
   authConfigured = false;
+}
+
+/**
+ * Returns a ConvexHttpClient that makes direct HTTP requests, bypassing the
+ * WebSocket client's cache. Used for polling to guarantee fresh data.
+ */
+export function getConvexHttpClient(): ConvexHttpClient | null {
+  if (!browser || !convexUrl) return null;
+  httpClient ??= new ConvexHttpClient(convexUrl);
+  return httpClient;
+}
+
+/**
+ * Retrieve a fresh Clerk JWT for authenticating the ConvexHttpClient.
+ * Returns null if the session isn't available.
+ */
+export async function getClerkToken(): Promise<string | null> {
+  const clerk = window.Clerk;
+  if (!clerk?.session) return null;
+  try {
+    return await clerk.session.getToken({ template: 'convex', skipCache: true }) ?? null;
+  } catch (err) {
+    console.warn('[convex] Failed to get Clerk token for HTTP client:', err);
+    return null;
+  }
 }
