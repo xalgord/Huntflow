@@ -19,7 +19,7 @@
   // "Pro workspace" only when the user is actually signed in AND cloud sync is
   // configured. Otherwise show "Local workspace" — honest about the offline-first
   // free tier instead of misleading every visitor with a Pro badge.
-  $: isPro = cloudConfigured && $clerkAuthStore.signedIn && $clerkAuthStore.convexAuthenticated;
+  $: isPro = cloudConfigured && $clerkAuthStore.signedIn && $clerkAuthStore.convexAuthenticated && $clerkAuthStore.isPro;
   $: workspaceLabel = isPro ? 'Pro workspace' : 'Local workspace';
   $: displayName = $clerkAuthStore.displayName?.trim() || 'Local hunter';
   $: userSubtitle = isPro
