@@ -171,12 +171,11 @@ async function handleRemoteUpdate(rawRemote: unknown): Promise<void> {
   const localItems = await getLocalItems();
   const merged = mergeItems(localItems, remoteItems);
 
-  // Suppress the refresh → onFlush → push cycle for this remote-initiated
-  // write. Each store's `refresh()` will check this flag.
-  for (const entry of allStores()) {
-    entry.store.suppressRemoteRefresh = true;
-  }
-
+  // applyLocalSnapshot writes to IndexedDB then calls store.refresh()
+  // which re-reads via load(). The load() path sets the store value
+  // directly (source.set) without going through put/putBatch, so no
+  // dirtyIds are added, no scheduleSave fires, and onFlush never
+  // triggers — there is no circular push-back to worry about.
   await applyLocalSnapshot(merged);
 
   const now = Date.now();
