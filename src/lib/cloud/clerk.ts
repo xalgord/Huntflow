@@ -325,10 +325,53 @@ export const huntflowClerkAppearance = {
       background: 'transparent',
       boxShadow: 'none',
       border: 'none',
-      width: '100%'
+      width: '100%',
+      maxWidth: '100%'
     },
+    // UserProfile: dark navbar sidebar & content area
+    navbar: {
+      background: '#0c1222',
+      borderRight: '1px solid #1e293b'
+    },
+    navbarButton: {
+      color: '#94a3b8',
+      '&:hover': { background: 'rgba(20, 184, 166, 0.08)', color: '#f1f5f9' }
+    },
+    navbarButtonActive: {
+      color: '#14b8a6',
+      background: '#14b8a6' + '15'
+    },
+    navbarButtonIcon: { color: 'inherit' },
+    pageScrollBox: {
+      background: 'transparent',
+      padding: '1.25rem 1.5rem'
+    },
+    page: { background: 'transparent' },
+    // Profile sections (rows like "Profile", "Email addresses", etc.)
+    profileSection: { borderBottom: '1px solid #1e293b' },
+    profileSectionTitle: { color: '#94a3b8', borderBottom: '1px solid #1e293b' },
+    profileSectionTitleText: { color: '#94a3b8' },
+    profileSectionContent: { background: 'transparent' },
+    profileSectionPrimaryButton: {
+      color: '#14b8a6',
+      '&:hover': { background: '#14b8a6' + '18' }
+    },
+    // Accordion / detail panels
+    accordionTriggerButton: { color: '#f1f5f9' },
+    accordionContent: { background: '#0c1222' },
+    // Breadcrumbs & headers inside profile
+    breadcrumbs: { color: '#94a3b8' },
+    breadcrumbsItem: { color: '#94a3b8' },
+    breadcrumbsItemDivider: { color: '#334155' },
     headerTitle: { color: '#f1f5f9' },
     headerSubtitle: { color: '#94a3b8' },
+    // Active devices / sessions
+    activeDeviceListItem: {
+      background: '#0c1222',
+      border: '1px solid #1e293b'
+    },
+    activeDevice: { color: '#f1f5f9' },
+    // Form fields
     socialButtonsBlockButton: {
       background: '#1e293b',
       border: '1px solid #334155',
@@ -340,17 +383,53 @@ export const huntflowClerkAppearance = {
       border: '1px solid #334155',
       color: '#f1f5f9'
     },
+    formFieldSuccessText: { color: '#14b8a6' },
     formButtonPrimary: {
       background: '#14b8a6',
       color: '#020617',
       fontWeight: 600,
       '&:hover': { background: '#2dd4bf' }
     },
+    formButtonReset: {
+      color: '#94a3b8',
+      '&:hover': { color: '#f1f5f9' }
+    },
+    // Badges, tags, and misc
+    badge: {
+      background: '#14b8a6' + '20',
+      color: '#14b8a6',
+      border: '1px solid #14b8a6' + '40'
+    },
+    tagInputContainer: {
+      background: '#0f172a',
+      border: '1px solid #334155'
+    },
+    // Alerts and notices
+    alertText: { color: '#94a3b8' },
+    // Menus and dropdowns inside UserProfile
+    menuButton: { color: '#94a3b8' },
+    menuList: {
+      background: '#0f172a',
+      border: '1px solid #1e293b'
+    },
+    menuItem: {
+      color: '#f1f5f9',
+      '&:hover': { background: '#1e293b' }
+    },
+    // Footer
     footer: { background: 'transparent' },
     footerActionText: { color: '#94a3b8' },
     footerActionLink: { color: '#5eead4' },
+    footerItem: { color: '#64748b' },
+    // Dividers
     dividerLine: { background: '#1e293b' },
-    dividerText: { color: '#64748b' }
+    dividerText: { color: '#64748b' },
+    // Modal overlays
+    modalBackdrop: { background: 'rgba(0, 0, 0, 0.7)' },
+    modalContent: {
+      background: '#0f172a',
+      border: '1px solid #1e293b'
+    }
   }
 };
 
@@ -440,7 +519,14 @@ export async function mountClerkUserProfile(
   const clerk = await initClerk();
   if (!clerk) return () => {};
   try {
-    clerk.mountUserProfile(node as HTMLDivElement, { appearance: huntflowClerkAppearance, ...options });
+    clerk.mountUserProfile(node as HTMLDivElement, {
+      appearance: huntflowClerkAppearance,
+      // Hide the API keys tab — it serves no purpose in HuntFlow.
+      // This only hides the UI; to fully disable the feature, toggle
+      // it off in the Clerk Dashboard.
+      apiKeysProps: { hide: true },
+      ...options
+    });
     return () => clerk.unmountUserProfile(node as HTMLDivElement);
   } catch (error) {
     reportMountError('user profile', error);
@@ -506,22 +592,45 @@ export async function mountClerkPricingTable(
   }
 }
 
-// Pro entitlement helpers. Clerk Billing exposes `user.has({ plan })` to check
-// whether the active user is on a paid plan. We expose a derived boolean on
-// the auth store so any component can react to plan changes without re-querying.
+// Pro entitlement helpers. Clerk Billing sets `publicMetadata.plan` on the
+// user after a successful subscription checkout. We check that first (works
+// with the Clerk CDN v5 we currently load), and fall back to the v6+
+// `user.has({ plan })` API when available. The result is exposed as a
+// derived boolean on the auth store so any component can react to plan
+// changes without re-querying.
 export async function refreshProEntitlement(): Promise<void> {
   const clerk = await initClerk();
   if (!clerk) return;
   const user = clerk.user;
   let isPro = false;
-  if (user && typeof (user as unknown as { has?: (q: unknown) => boolean }).has === 'function') {
-    try {
-      isPro = Boolean(
-        (user as unknown as { has: (q: { plan: string }) => boolean }).has({ plan: 'huntflow_pro' })
-      );
-    } catch {
-      isPro = false;
+
+  if (user) {
+    // 1. Primary check — publicMetadata.plan (Clerk Billing syncs this
+    //    after every checkout / plan-switch / cancellation event).
+    const meta = (user as unknown as { publicMetadata?: Record<string, unknown> })
+      ?.publicMetadata;
+    if (meta?.plan === 'huntflow_pro' || meta?.plan === 'pro') {
+      isPro = true;
+    }
+
+    // 2. Secondary check — Clerk v6+ Billing SDK exposes `user.has()`
+    //    for plan / feature / permission queries. Use it when available
+    //    so we're future-proof if the CDN is upgraded.
+    if (
+      !isPro &&
+      typeof (user as unknown as { has?: (q: unknown) => boolean }).has === 'function'
+    ) {
+      try {
+        isPro = Boolean(
+          (user as unknown as { has: (q: unknown) => boolean }).has({
+            plan: 'huntflow_pro'
+          })
+        );
+      } catch {
+        // user.has() may throw if Billing addon isn't active — ignore.
+      }
     }
   }
+
   clerkAuthStore.update((state) => ({ ...state, isPro }));
 }

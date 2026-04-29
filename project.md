@@ -6,7 +6,7 @@
 
 HuntFlow is a lightweight, offline-first Progressive Web App (PWA) designed specifically for bug bounty hunters. It gamifies and organizes the entire bug bounty workflow — from recon to reporting — helping hunters build consistency, save time on reports, and track their income across platforms.
 
-Unlike generic productivity tools, HuntFlow understands the security researcher's workflow. No more duct-taping Toggl, Notion, and spreadsheets together.
+Unlike generic productivity tools, HuntFlow understands the security researcher's workflow. No more duct-taping time trackers, note apps, and spreadsheets together.
 
 ---
 
@@ -237,7 +237,7 @@ A single, focused PWA that combines:
 | Tool | Problem | Why HuntFlow Wins |
 |------|---------|-------------------|
 | Toggl | Generic time tracker | No security context, no templates |
-| Notion | General notes | Heavy, slow, no offline-first, no gamification |
+
 | Obsidian | Knowledge base | Overkill, steep learning curve, no report builder |
 | HackerOne Dashboard | Platform-only | Doesn't track cross-platform, no productivity features |
 | Forest App | Focus timer | No security workflow, no note-taking |

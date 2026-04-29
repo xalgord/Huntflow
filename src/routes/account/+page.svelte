@@ -54,6 +54,117 @@
   let openingSubscriptions = false;
   let signingOut = false;
   let showProWelcome = false;
+  let clerkObserver: MutationObserver | null = null;
+
+  /**
+   * Force-patch Clerk's internal DOM elements. Clerk injects CSS-in-JS
+   * with extremely high specificity (`cl-internal-*` classes) and even
+   * inline styles that no CSS `!important` can reliably override. This
+   * observer fires on every subtree mutation and brute-force clears any
+   * non-transparent background that sneaks through.
+   */
+  function patchClerkDom(root: HTMLElement): void {
+    const allEls = root.querySelectorAll<HTMLElement>('[class*="cl-"]');
+    for (const el of allEls) {
+      const cs = getComputedStyle(el);
+      const bg = cs.backgroundColor;
+      // Skip transparent/inherit
+      if (!bg || bg === 'transparent' || bg === 'rgba(0, 0, 0, 0)') continue;
+      // Parse the RGB values to detect "light" backgrounds
+      const match = bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (match) {
+        const [, r, g, b] = match.map(Number);
+        // If any channel is brighter than our dark theme floor (~30),
+        // this element has a light/medium background that needs clearing.
+        // Our darkest bg is #0c1222 = rgb(12,18,34). Anything with
+        // luminance above ~50 is "too light" for the dark card.
+        const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+        if (lum > 40) {
+          el.style.setProperty('background-color', 'transparent', 'important');
+          el.style.setProperty('background', 'transparent', 'important');
+        }
+      }
+    }
+    // Force all Clerk container widths to 100%
+    const widthTargets = [
+      '.cl-rootBox', '.cl-card', '.cl-cardBox',
+      '.cl-userProfile-root', '.cl-pageScrollBox',
+      '.cl-page', '.cl-scrollBox'
+    ];
+    for (const sel of widthTargets) {
+      const el = root.querySelector<HTMLElement>(sel);
+      if (el) {
+        el.style.setProperty('width', '100%', 'important');
+        el.style.setProperty('max-width', '100%', 'important');
+      }
+    }
+    // Also nuke backgrounds on card/cardBox
+    for (const sel of ['.cl-card', '.cl-cardBox']) {
+      const el = root.querySelector<HTMLElement>(sel);
+      if (el) {
+        el.style.setProperty('background', 'transparent', 'important');
+        el.style.setProperty('box-shadow', 'none', 'important');
+        el.style.setProperty('border', 'none', 'important');
+      }
+    }
+    // Force content areas to flex-grow and fill remaining width
+    const flexTargets = ['.cl-pageScrollBox', '.cl-page', '.cl-scrollBox'];
+    for (const sel of flexTargets) {
+      const el = root.querySelector<HTMLElement>(sel);
+      if (el) {
+        el.style.setProperty('flex', '1 1 0%', 'important');
+        el.style.setProperty('min-width', '0', 'important');
+        el.style.setProperty('max-width', '100%', 'important');
+        el.style.setProperty('width', '100%', 'important');
+      }
+    }
+    // Nuke any max-width on cl-internal elements that constrain layout
+    const internals = root.querySelectorAll<HTMLElement>('[class*="cl-internal"]');
+    for (const el of internals) {
+      const mw = getComputedStyle(el).maxWidth;
+      if (mw && mw !== 'none' && mw !== '100%') {
+        el.style.setProperty('max-width', '100%', 'important');
+        el.style.setProperty('width', '100%', 'important');
+      }
+    }
+    // Remove partial-width border lines from profileSectionTitle elements
+    const sectionTitles = root.querySelectorAll<HTMLElement>('[class*="cl-profileSectionTitle"]');
+    for (const el of sectionTitles) {
+      el.style.setProperty('border', 'none', 'important');
+      el.style.setProperty('border-bottom', 'none', 'important');
+      el.style.setProperty('border-top', 'none', 'important');
+    }
+    // Also remove the header divider line under "Profile details"
+    const headerElements = root.querySelectorAll<HTMLElement>('.cl-headerTitle, [class*="cl-header"]');
+    for (const el of headerElements) {
+      el.style.setProperty('border-bottom', 'none', 'important');
+      // Check parent for border too
+      const parent = el.parentElement;
+      if (parent && parent.closest('#hf-clerk-mount')) {
+        parent.style.setProperty('border-bottom', 'none', 'important');
+      }
+    }
+    // Hide the API keys nav button — belt-and-suspenders with apiKeysProps
+    const apiKeysBtn = root.querySelector<HTMLElement>(
+      '.cl-navbarButton__apiKeys, [class*="navbarButton__apiKeys"]'
+    );
+    if (apiKeysBtn) {
+      apiKeysBtn.style.setProperty('display', 'none', 'important');
+    }
+  }
+
+  function startClerkObserver(root: HTMLElement): void {
+    // Initial patch
+    patchClerkDom(root);
+    // Observe all future mutations
+    clerkObserver = new MutationObserver(() => patchClerkDom(root));
+    clerkObserver.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'style']
+    });
+  }
 
   onMount(async () => {
     if (!browser) return;
@@ -86,9 +197,12 @@
     // strategy; the default keeps tab state inside the widget.
     unmountProfile = await mountClerkUserProfile(mountNode, {});
     profileMounted = true;
+    // Start the DOM observer to force-patch Clerk's CSS-in-JS styles
+    startClerkObserver(mountNode);
   });
 
   onDestroy(() => {
+    clerkObserver?.disconnect();
     unmountProfile?.();
   });
 
@@ -605,7 +719,7 @@
           {$clerkAuthStore.error}
         </div>
       {:else}
-        <div bind:this={mountNode} class="hf-clerk-profile-mount" data-mounted={profileMounted}></div>
+        <div bind:this={mountNode} id="hf-clerk-mount" class="hf-clerk-profile-mount" data-mounted={profileMounted}></div>
         {#if !profileMounted}
           <div class="flex min-h-[280px] items-center justify-center text-sm text-muted-foreground" aria-live="polite">
             Loading profile&hellip;
@@ -618,20 +732,271 @@
 </main>
 
 <style>
-  /* Strip Clerk's white card so it inherits the hf-card look. */
-  :global(.hf-clerk-profile-mount) {
-    width: 100%;
-    padding: 0;
+  /* ── Clerk UserProfile dark-theme overrides ─────────────────────
+     Clerk's SDK injects CSS-in-JS with extremely high specificity
+     (cl-internal-* randomly-suffixed classes) and sometimes inline
+     styles. We use #id selectors (which beat any number of classes),
+     !important on everything, and a runtime MutationObserver as
+     a triple-layered defense to fully suppress light-mode styles. */
+
+  /* Force dark color-scheme on the entire mount subtree */
+  :global(#hf-clerk-mount) {
+    width: 100% !important;
+    padding: 0 !important;
+    color-scheme: dark !important;
   }
-  :global(.hf-clerk-profile-mount .cl-rootBox),
-  :global(.hf-clerk-profile-mount .cl-card) {
+
+  /* ── Root containers: transparent + full-width ── */
+  :global(#hf-clerk-mount .cl-rootBox),
+  :global(#hf-clerk-mount .cl-card),
+  :global(#hf-clerk-mount .cl-cardBox),
+  :global(#hf-clerk-mount .cl-userProfile-root),
+  :global(#hf-clerk-mount .cl-pageScrollBox),
+  :global(#hf-clerk-mount .cl-scrollBox),
+  :global(#hf-clerk-mount .cl-page),
+  :global(#hf-clerk-mount [class*='cl-userProfile']),
+  :global(#hf-clerk-mount [class*='cl-main']),
+  :global(#hf-clerk-mount [class*='cl-cardBox']) {
     background: transparent !important;
+    background-color: transparent !important;
     box-shadow: none !important;
     border: none !important;
     width: 100% !important;
+    max-width: 100% !important;
   }
-  :global(.hf-clerk-profile-mount .cl-navbar),
-  :global(.hf-clerk-profile-mount .cl-pageScrollBox) {
+
+  /* ── Sidebar navbar ── */
+  :global(#hf-clerk-mount .cl-navbar),
+  :global(#hf-clerk-mount [class*='cl-navbar']) {
+    background: #0c1222 !important;
+    background-color: #0c1222 !important;
+    border-right: 1px solid #1e293b !important;
+  }
+  :global(#hf-clerk-mount .cl-navbarButton),
+  :global(#hf-clerk-mount [class*='cl-navbarButton']) {
+    color: #94a3b8 !important;
+  }
+  :global(#hf-clerk-mount .cl-navbarButton:hover),
+  :global(#hf-clerk-mount [class*='cl-navbarButton']:hover) {
+    background: rgba(20, 184, 166, 0.08) !important;
+    background-color: rgba(20, 184, 166, 0.08) !important;
+    color: #f1f5f9 !important;
+  }
+  :global(#hf-clerk-mount .cl-navbarButton[data-active='true']),
+  :global(#hf-clerk-mount [class*='cl-navbarButton'][data-active]) {
+    color: #14b8a6 !important;
+    background: rgba(20, 184, 166, 0.08) !important;
+    background-color: rgba(20, 184, 166, 0.08) !important;
+  }
+
+  /* ── Hide useless API keys nav tab ── */
+  :global(#hf-clerk-mount .cl-navbarButton__apiKeys),
+  :global(#hf-clerk-mount [class*='navbarButton__apiKeys']),
+  :global(#hf-clerk-mount button[data-localization-key*='apiKeys']) {
+    display: none !important;
+  }
+
+  /* ── Main content / scroll areas ── */
+  :global(#hf-clerk-mount .cl-pageScrollBox),
+  :global(#hf-clerk-mount .cl-page),
+  :global(#hf-clerk-mount [class*='cl-page']),
+  :global(#hf-clerk-mount [class*='cl-scrollBox']),
+  :global(#hf-clerk-mount [class*='cl-content']) {
     background: transparent !important;
+    background-color: transparent !important;
+    flex: 1 1 0% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  /* ── Profile sections ── */
+  :global(#hf-clerk-mount .cl-profileSection),
+  :global(#hf-clerk-mount [class*='cl-profileSection']) {
+    border-color: #1e293b !important;
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+  :global(#hf-clerk-mount .cl-profileSectionTitle),
+  :global(#hf-clerk-mount .cl-profileSectionTitleText),
+  :global(#hf-clerk-mount [class*='cl-profileSectionTitle']) {
+    color: #94a3b8 !important;
+    border: none !important;
+    border-bottom: none !important;
+    border-top: none !important;
+  }
+  /* Kill ALL borders on any child/descendant inside section title rows */
+  :global(#hf-clerk-mount [class*='cl-profileSectionTitle'] *) {
+    border: none !important;
+    border-bottom: none !important;
+    border-top: none !important;
+  }
+  /* Kill pseudo-element decorative lines in section titles */
+  :global(#hf-clerk-mount [class*='cl-profileSectionTitle']::before),
+  :global(#hf-clerk-mount [class*='cl-profileSectionTitle']::after),
+  :global(#hf-clerk-mount [class*='cl-profileSectionTitle'] *::before),
+  :global(#hf-clerk-mount [class*='cl-profileSectionTitle'] *::after) {
+    border: none !important;
+    background: transparent !important;
+    display: none !important;
+  }
+  /* Also kill the header title area's decorative line */
+  :global(#hf-clerk-mount [class*='cl-headerTitle'] ~ *),
+  :global(#hf-clerk-mount [class*='cl-header'] > div:not([class*='cl-headerTitle'])) {
+    border: none !important;
+    border-bottom: none !important;
+  }
+  :global(#hf-clerk-mount .cl-profileSectionContent),
+  :global(#hf-clerk-mount [class*='cl-profileSectionContent']) {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+  :global(#hf-clerk-mount .cl-profileSectionPrimaryButton),
+  :global(#hf-clerk-mount [class*='cl-profileSectionPrimaryButton']) {
+    color: #14b8a6 !important;
+  }
+
+  /* ── Section items / rows ── */
+  :global(#hf-clerk-mount [class*='cl-profileSectionItem']),
+  :global(#hf-clerk-mount [class*='cl-profileSectionRow']) {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* ── Headers ── */
+  :global(#hf-clerk-mount .cl-headerTitle),
+  :global(#hf-clerk-mount [class*='cl-headerTitle']) {
+    color: #f1f5f9 !important;
+  }
+  :global(#hf-clerk-mount .cl-headerSubtitle),
+  :global(#hf-clerk-mount [class*='cl-headerSubtitle']) {
+    color: #94a3b8 !important;
+  }
+  /* Remove partial-width border from page header area */
+  :global(#hf-clerk-mount [class*='cl-header']),
+  :global(#hf-clerk-mount .cl-header) {
+    border-bottom: none !important;
+  }
+
+  /* ── Accordion / detail panels ── */
+  :global(#hf-clerk-mount .cl-accordionContent),
+  :global(#hf-clerk-mount [class*='cl-accordion']) {
+    background: #0c1222 !important;
+    background-color: #0c1222 !important;
+  }
+  :global(#hf-clerk-mount .cl-accordionTriggerButton),
+  :global(#hf-clerk-mount [class*='cl-accordionTrigger']) {
+    color: #f1f5f9 !important;
+  }
+
+  /* ── Active devices / sessions ── */
+  :global(#hf-clerk-mount .cl-activeDeviceListItem),
+  :global(#hf-clerk-mount [class*='cl-activeDevice']) {
+    background: #0c1222 !important;
+    border-color: #1e293b !important;
+  }
+
+  /* ── Forms ── */
+  :global(#hf-clerk-mount [class*='cl-formField']) {
+    color: #f1f5f9 !important;
+  }
+  :global(#hf-clerk-mount [class*='cl-formFieldLabel']) {
+    color: #cbd5e1 !important;
+  }
+  :global(#hf-clerk-mount [class*='cl-formFieldInput']),
+  :global(#hf-clerk-mount [class*='cl-input']) {
+    background: #0f172a !important;
+    background-color: #0f172a !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+  }
+  :global(#hf-clerk-mount [class*='cl-formButtonPrimary']) {
+    background: #14b8a6 !important;
+    color: #020617 !important;
+  }
+
+  /* ── Social buttons ── */
+  :global(#hf-clerk-mount [class*='cl-socialButton']) {
+    background: #1e293b !important;
+    border-color: #334155 !important;
+    color: #f1f5f9 !important;
+  }
+
+  /* ── Menus / dropdowns ── */
+  :global(#hf-clerk-mount [class*='cl-menuList']),
+  :global(#hf-clerk-mount [class*='cl-dropdown']) {
+    background: #0f172a !important;
+    border-color: #1e293b !important;
+  }
+  :global(#hf-clerk-mount [class*='cl-menuItem']) {
+    color: #f1f5f9 !important;
+  }
+  :global(#hf-clerk-mount [class*='cl-menuItem']:hover) {
+    background: #1e293b !important;
+  }
+
+  /* ── Badges ── */
+  :global(#hf-clerk-mount [class*='cl-badge']) {
+    background: rgba(20, 184, 166, 0.12) !important;
+    color: #14b8a6 !important;
+    border-color: rgba(20, 184, 166, 0.25) !important;
+  }
+
+  /* ── Footer (Clerk branding) ── */
+  :global(#hf-clerk-mount .cl-footer),
+  :global(#hf-clerk-mount [class*='cl-footer']),
+  :global(#hf-clerk-mount [class*='cl-internal'][class*='footer']) {
+    background: transparent !important;
+    background-color: transparent !important;
+  }
+
+  /* ── Dividers ── */
+  :global(#hf-clerk-mount [class*='cl-divider']) {
+    background: #1e293b !important;
+    border-color: #1e293b !important;
+  }
+
+  /* ── Text color normalization ── */
+  :global(#hf-clerk-mount [class*='cl-text']) {
+    color: #f1f5f9 !important;
+  }
+  :global(#hf-clerk-mount [class*='cl-label']) {
+    color: #cbd5e1 !important;
+  }
+
+  /* ── Modals triggered from inside the widget ── */
+  :global(#hf-clerk-mount [class*='cl-modal']),
+  :global(#hf-clerk-mount [class*='cl-modalContent']) {
+    background: #0f172a !important;
+    border: 1px solid #1e293b !important;
+  }
+
+  /* ── NUCLEAR: catch ALL Clerk internal elements ──
+     Clerk generates randomly-suffixed classes like cl-internal-1abc2d.
+     The #id prefix ensures this beats Clerk's own selectors in
+     specificity. This is the last-resort floor: transparent bg. */
+  :global(#hf-clerk-mount [class*='cl-internal']) {
+    background-color: transparent !important;
+    color: inherit !important;
+  }
+
+  /* ── SUPER-NUCLEAR: catch absolutely ANY child element ──
+     This brute-force rule targets every single descendant of
+     the mount container and sets CSS custom properties that
+     Clerk's CSS-in-JS may consume. */
+  :global(#hf-clerk-mount *) {
+    --clerk-color-background: #0f172a;
+    --clerk-surface-background: transparent;
+    --color-background: #0f172a;
+  }
+
+  /* Override any element that Clerk sets with a white-ish background */
+  :global(#hf-clerk-mount div),
+  :global(#hf-clerk-mount section),
+  :global(#hf-clerk-mount article),
+  :global(#hf-clerk-mount aside),
+  :global(#hf-clerk-mount nav),
+  :global(#hf-clerk-mount header) {
+    border-color: #1e293b !important;
   }
 </style>

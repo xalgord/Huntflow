@@ -147,7 +147,7 @@
         <div class="min-w-0">
           <p class="text-sm font-semibold text-foreground">Cloud sync is a Pro feature</p>
           <p class="mt-1 text-sm text-muted-foreground">
-            Real-time, Notion-style sync across every device is available with HuntFlow Pro. Your local data stays
+            Seamless real-time sync across every device is available with HuntFlow Pro. Your local data stays
             fully usable on the free plan.
           </p>
 

@@ -22,7 +22,7 @@
     {
       question: 'How does cloud sync compare to a regular database?',
       answer:
-        'Cloud sync is real-time, like Notion. Edits made on one device appear on every other signed-in device in under a second. Conflict resolution uses last-write-wins per record, with deletions tombstoned, so you never silently lose work.'
+        'Cloud sync is real-time. Edits made on one device appear on every other signed-in device in under a second. Conflict resolution uses last-write-wins per record, with deletions tombstoned, so you never silently lose work.'
     },
     {
       question: 'Is my data encrypted in the cloud?',

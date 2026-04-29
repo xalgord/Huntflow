@@ -17,7 +17,7 @@
       </span>
 
       <h2 class="mt-4 text-3xl font-bold leading-tight text-slate-100 sm:text-4xl">
-        Real-time cloud sync, like Notion — but for your hunting workspace.
+        Real-time cloud sync — built for your hunting workspace.
       </h2>
 
       <p class="mt-4 text-base leading-7 text-slate-300">

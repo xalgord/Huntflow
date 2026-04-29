@@ -183,7 +183,7 @@
       </h1>
       <p class="mx-auto mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
         Every feature except cloud sync is free, forever, with no account required. Upgrade only when you want
-        Notion-style real-time updates across every device you hunt from.
+        seamless real-time updates across every device you hunt from.
       </p>
     </div>
   </section>
@@ -238,9 +238,12 @@
         {/if}
       {/if}
 
-      <!-- Static plan summary always visible: this is the source of truth for
-           visitors before they create an account, and a fallback when Clerk
-           Billing isn't configured. -->
+      <!-- Static plan summary: only shown for non-signed-in visitors as a
+           marketing preview before they create an account. Signed-in users
+           always interact with the live Clerk pricing table or the "already
+           Pro" banner above — showing static cards for them causes confusing
+           duplicate pricing UI. -->
+      {#if !$clerkAuthStore.signedIn && !billingMounted}
       <div class="mt-10 grid gap-5 lg:grid-cols-2">
         <article class="flex flex-col rounded-2xl border border-slate-800 bg-slate-900/70 p-6 shadow-dark-sm">
           <div class="flex items-baseline justify-between gap-3">
@@ -309,6 +312,7 @@
           {/if}
         </article>
       </div>
+      {/if}
     </div>
   </section>
 

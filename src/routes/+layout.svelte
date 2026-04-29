@@ -71,7 +71,7 @@
       // (those should still get their normal Ctrl+K behavior).
       // Cmd/Ctrl+Shift+K is the dedicated Quick Capture hotkey — the
       // single most-used shortcut for live hunting, mirroring how
-      // Raycast / Notion / Linear treat their primary "create" key.
+      // Raycast / Linear treat their primary "create" key.
       const handleKeyShortcut = (event: KeyboardEvent) => {
         const isCmd = event.metaKey || event.ctrlKey;
         if (!isCmd) return;

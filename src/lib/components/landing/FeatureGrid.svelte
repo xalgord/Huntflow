@@ -79,7 +79,7 @@
       icon: Cloud,
       title: 'Cloud sync',
       description:
-        'Real-time, Notion-style sync across every device you use. Resolves conflicts, keeps you fast.',
+        'Seamless real-time sync across every device you use. Resolves conflicts, keeps you fast.',
       pro: true
     }
   ];
