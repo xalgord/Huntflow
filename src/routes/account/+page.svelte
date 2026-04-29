@@ -175,7 +175,7 @@
     // here in `localView` mode for signed-out users (they see a
     // "Connect cloud sync" CTA instead of an identity widget).
     if (!$clerkAuthStore.configured) return;
-    if (IS_APP && !$clerkAuthStore.signedIn) return;
+    if (!$clerkAuthStore.signedIn) return;
 
     // Detect ?welcome=pro injected by the pricing page after a successful
     // subscription checkout. Show a one-time success banner and clean the
