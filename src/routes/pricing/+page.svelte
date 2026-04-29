@@ -81,7 +81,9 @@
       return;
     }
 
-    if (!mountNode) return;
+    // Don't mount the pricing widget for Pro subscribers — they only
+    // need the "already Pro" management banner, not a second buy surface.
+    if (!mountNode || $clerkAuthStore.isPro) return;
     unmount = await mountClerkPricingTable(mountNode, {
       // After a successful subscription checkout:
       //   · Signed-in flow  → /account?welcome=pro (shows the Pro welcome banner)
@@ -239,7 +241,7 @@
         </div>
       {/if}
 
-      {#if $clerkAuthStore.configured}
+      {#if $clerkAuthStore.configured && !($clerkAuthStore.signedIn && $clerkAuthStore.isPro)}
         <div
           bind:this={mountNode}
           class="hf-pricing-mount mx-auto max-w-4xl"
@@ -258,50 +260,64 @@
            Pro" banner above — showing static cards for them causes confusing
            duplicate pricing UI. -->
       {#if !$clerkAuthStore.signedIn && !billingMounted}
-      <div class="mt-10 grid gap-6 lg:grid-cols-2">
-        <article class="plan-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.08] p-7 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/20 hover:-translate-y-0.5">
-          <div class="absolute inset-0 -z-10 bg-gradient-to-br from-primary-500/[0.03] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+      <div class="mt-10 grid items-start gap-6 lg:grid-cols-2">
+        <!-- FREE PLAN — The Foundation -->
+        <article class="plan-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] p-7 backdrop-blur-sm transition-all duration-300 hover:border-white/[0.12]">
+          <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white/[0.02] to-transparent"></div>
           <div class="flex items-baseline justify-between gap-3">
             <div>
-              <h2 class="text-2xl font-bold text-white">Free</h2>
-              <p class="mt-1 text-sm text-slate-400">For local-first hunters who want every tool in one place.</p>
+              <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">The foundation</p>
+              <h2 class="mt-1 text-2xl font-bold text-slate-100">Free</h2>
+              <p class="mt-1.5 text-sm leading-relaxed text-slate-400">Every tool a hunter needs. No account, no limits, no catch.</p>
             </div>
-            <p class="text-4xl font-bold text-white">$0</p>
+            <p class="text-4xl font-bold text-slate-200">$0</p>
           </div>
-          <ul class="mt-7 flex-1 space-y-3 text-sm text-slate-200">
+          <ul class="mt-7 flex-1 space-y-3 text-sm text-slate-300">
             {#each freeFeatures as feature}
               <li class="flex items-start gap-3">
-                <Check class="mt-0.5 shrink-0 text-primary-400" size={16} aria-hidden="true" />
+                <Check class="mt-0.5 shrink-0 text-slate-500" size={16} aria-hidden="true" />
                 <span>{feature}</span>
               </li>
             {/each}
           </ul>
           <a
             href="/account"
-            class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-white/[0.08] hover:border-white/[0.14]"
+            class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-transparent px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/[0.16] hover:text-slate-200 hover:bg-white/[0.04]"
           >
-            Open the app
+            Start hunting — free
           </a>
         </article>
 
+        <!-- PRO PLAN — The Upgrade Path -->
         <article class="plan-card plan-card-pro group relative flex flex-col overflow-hidden rounded-2xl border border-primary-500/30 p-7 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/50 hover:-translate-y-0.5">
-          <span class="absolute -top-3 right-6 inline-flex items-center gap-1 rounded-full bg-primary-500 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-950">
+          <!-- Ambient glow behind card -->
+          <div class="absolute -inset-px -z-10 rounded-2xl bg-gradient-to-b from-primary-500/[0.06] via-transparent to-primary-500/[0.03]" aria-hidden="true"></div>
+
+          <!-- Recommended badge -->
+          <span class="absolute -top-3 right-6 inline-flex items-center gap-1.5 rounded-full bg-primary-500 px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-950 shadow-[0_0_12px_rgba(96,255,92,0.3)]">
             <Sparkles size={11} aria-hidden="true" />
-            Cloud sync
+            Recommended
           </span>
 
           <div class="flex items-baseline justify-between gap-3">
             <div>
-              <h2 class="text-2xl font-bold text-white">Pro</h2>
-              <p class="mt-1 text-sm text-slate-400">For hunters working across multiple devices.</p>
+              <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-400/80">For serious hunters</p>
+              <h2 class="mt-1 text-2xl font-bold text-white">Pro</h2>
+              <p class="mt-1.5 text-sm leading-relaxed text-slate-400">Real-time sync, E2E encryption, multi-device.</p>
             </div>
             <div class="text-right">
               <p class="text-4xl font-bold text-white">$6<span class="text-base font-medium text-slate-400">/mo</span></p>
-              <p class="text-xs text-slate-500">or $60 billed yearly</p>
+              <p class="mt-0.5 text-xs text-primary-400/70">$60/yr · <span class="font-semibold text-primary-400">save 17%</span></p>
             </div>
           </div>
 
-          <ul class="mt-7 flex-1 space-y-3 text-sm text-slate-200">
+          <!-- Separator with "Everything in Free, plus" anchor -->
+          <div class="mt-7 flex items-center gap-3">
+            <span class="text-[11px] font-medium text-slate-500">Everything in Free, plus:</span>
+            <div class="h-px flex-1 bg-white/[0.06]"></div>
+          </div>
+
+          <ul class="mt-4 flex-1 space-y-3 text-sm text-slate-200">
             {#each proFeatures as feature}
               <li class="flex items-start gap-3">
                 <Check class="mt-0.5 shrink-0 text-primary-400" size={16} aria-hidden="true" />
@@ -319,10 +335,10 @@
           {:else}
             <a
               href="/sign-up"
-              class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_16px_rgba(96,255,92,0.15)] transition hover:bg-primary-500 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_24px_rgba(96,255,92,0.3)] hover:-translate-y-0.5"
+              class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-primary-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.2)] transition-all duration-200 hover:bg-primary-400 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_32px_rgba(96,255,92,0.35)] hover:-translate-y-0.5 active:translate-y-0"
             >
-              Create account &amp; upgrade
-              <ArrowRight size={14} aria-hidden="true" />
+              Get Pro — start free trial
+              <ArrowRight size={15} aria-hidden="true" />
             </a>
           {/if}
         </article>
@@ -725,8 +741,42 @@
   /* Plan cards entrance */
   .plan-card {
     animation: card-slide-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
+    background:
+      linear-gradient(180deg, hsl(150 10% 6% / 0.6), hsl(150 14% 4% / 0.8));
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.03),
+      0 8px 32px -8px rgba(0, 0, 0, 0.3);
   }
   .plan-card-pro {
     animation-delay: 0.25s;
+    background:
+      linear-gradient(168deg,
+        hsl(119 60% 14% / 0.08),
+        hsl(150 14% 7% / 0.85),
+        hsl(140 18% 3% / 0.95)
+      );
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.05),
+      0 16px 48px -12px rgba(0, 0, 0, 0.4),
+      0 0 40px -8px hsl(119 100% 67% / 0.06);
+  }
+
+  /* Pro CTA pulse glow on idle */
+  .pro-cta {
+    position: relative;
+  }
+  .pro-cta::after {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    background: hsl(119 100% 67% / 0.12);
+    filter: blur(12px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: -1;
+  }
+  .pro-cta:hover::after {
+    opacity: 1;
   }
 </style>

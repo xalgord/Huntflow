@@ -564,9 +564,13 @@ export async function openClerkSubscriptions(): Promise<boolean> {
   }
   // Fallback: open the User Profile modal so the user can navigate to
   // the Billing tab manually. Better than a no-op button.
+  // Pass the same options as the embedded widget to hide API keys.
   if (typeof clerk.openUserProfile === 'function') {
     try {
-      clerk.openUserProfile();
+      clerk.openUserProfile({
+        appearance: huntflowClerkAppearance,
+        apiKeysProps: { hide: true }
+      });
       return true;
     } catch (error) {
       reportMountError('user profile modal', error);
