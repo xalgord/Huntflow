@@ -4,6 +4,7 @@
   import { page } from '$app/stores';
   import { IS_WEB } from '$lib/buildTarget';
   import { clerkAuthStore, initClerk } from '$lib/cloud/clerk';
+  import { startRealtimeSync, stopRealtimeSync } from '$lib/cloud/realtimeSync';
   import BottomNav from '$lib/components/layout/BottomNav.svelte';
   import CommandPalette from '$lib/components/command/CommandPalette.svelte';
   import KeyboardShortcutsHelp from '$lib/components/KeyboardShortcutsHelp.svelte';
@@ -193,6 +194,22 @@
   $: clerkConfigured = $clerkAuthStore.configured;
   $: clerkLoading = $clerkAuthStore.loading;
   $: clerkSignedIn = $clerkAuthStore.signedIn;
+
+  // Real-time sync lifecycle: start when Pro is confirmed, stop otherwise.
+  // The reactive block re-evaluates whenever signedIn, isPro, or
+  // convexAuthenticated changes so the engine toggles automatically on
+  // sign-in/sign-out and subscription changes.
+  $: if (browser) {
+    const shouldSync =
+      $clerkAuthStore.signedIn &&
+      $clerkAuthStore.isPro &&
+      $clerkAuthStore.convexAuthenticated;
+    if (shouldSync) {
+      startRealtimeSync();
+    } else {
+      stopRealtimeSync();
+    }
+  }
 
   // Demo mode: when a visitor enters via /demo we set this tab-scoped
   // sessionStorage flag, which lets them navigate the seeded workspace

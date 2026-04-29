@@ -297,6 +297,12 @@ export async function signUpWithClerk(): Promise<void> {
 export async function signOutFromClerk(opts: { redirectUrl?: string } = {}): Promise<void> {
   const clerk = await initClerk();
   if (!clerk) return;
+
+  // Tear down real-time sync before the Clerk session is destroyed so
+  // any pending push gets flushed while auth tokens are still valid.
+  const { stopRealtimeSync } = await import('./realtimeSync');
+  stopRealtimeSync();
+
   await clerk.signOut({ redirectUrl: opts.redirectUrl ?? '/' });
   updateState(clerk, { convexAuthenticated: false });
   // Clear the Convex auth binding so it re-binds on next sign-in

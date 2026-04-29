@@ -9,7 +9,8 @@
     syncNow,
     type CloudSyncResult
   } from '$lib/cloud/sync';
-  import { Cloud, Lock, LogIn, LogOut, RefreshCw, Sparkles, Trash2, UserPlus } from 'lucide-svelte';
+  import { realtimeSyncStore } from '$lib/cloud/realtimeSync';
+  import { Activity, Cloud, Lock, LogIn, LogOut, RefreshCw, Sparkles, Trash2, UserPlus, Zap } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
   let syncing = false;
@@ -25,6 +26,9 @@
     $clerkAuthStore.isPro &&
     !syncing &&
     !clearing;
+
+  // Prefer real-time sync timestamp over the manual one when available
+  $: displayLastSync = $realtimeSyncStore.lastSyncAt ?? lastSyncAt;
 
   function formatDate(timestamp: number | null): string {
     if (!timestamp) return 'Never';
@@ -98,7 +102,7 @@
     </div>
 
     <div class="rounded-md border border-border bg-background/50 px-3 py-2 text-sm text-muted-foreground shadow-inner-line">
-      Last sync: <span class="text-foreground">{formatDate(lastSyncAt)}</span>
+      Last sync: <span class="text-foreground">{formatDate(displayLastSync)}</span>
     </div>
   </div>
 
@@ -194,6 +198,32 @@
         <p class="mt-1 text-xs text-muted-foreground">
           Convex auth: {$clerkAuthStore.convexAuthenticated ? 'ready' : 'waiting for token'}
         </p>
+
+        <!-- Real-time sync status -->
+        {#if $realtimeSyncStore.active}
+          <div class="mt-3 flex items-center gap-2 rounded-md border border-primary/20 bg-primary/5 px-3 py-2">
+            <Zap size={14} class="text-primary" aria-hidden="true" />
+            <span class="text-xs font-medium text-primary">Real-time sync active</span>
+            <span class="ml-auto text-[10px] text-muted-foreground">
+              {$realtimeSyncStore.statusLabel}
+            </span>
+          </div>
+          <div class="mt-2 flex gap-4 text-[11px] text-muted-foreground">
+            <span class="flex items-center gap-1">
+              <Activity size={11} aria-hidden="true" />
+              {$realtimeSyncStore.pushCount} pushes
+            </span>
+            <span class="flex items-center gap-1">
+              <Activity size={11} aria-hidden="true" />
+              {$realtimeSyncStore.pullCount} pulls
+            </span>
+          </div>
+        {:else}
+          <div class="mt-3 flex items-center gap-2 rounded-md border border-border bg-muted/30 px-3 py-2">
+            <span class="h-2 w-2 rounded-full bg-muted-foreground/50"></span>
+            <span class="text-xs text-muted-foreground">Real-time sync idle</span>
+          </div>
+        {/if}
       </div>
 
       <div class="flex flex-col gap-2 sm:flex-row">
@@ -234,3 +264,4 @@
     <p class="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{error}</p>
   {/if}
 </section>
+

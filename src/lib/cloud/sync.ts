@@ -118,7 +118,7 @@ function sessionUpdatedAt(session: Session): number {
   return session.endedAt ?? (session.status === 'running' || session.status === 'paused' ? Date.now() : session.startedAt);
 }
 
-function toSyncItem(collection: SyncCollection, item: SyncPayload): SyncItem {
+export function toSyncItem(collection: SyncCollection, item: SyncPayload): SyncItem {
   const updatedAt =
     collection === 'sessions'
       ? sessionUpdatedAt(item as Session)
@@ -132,7 +132,7 @@ function toSyncItem(collection: SyncCollection, item: SyncPayload): SyncItem {
   };
 }
 
-const KNOWN_COLLECTIONS: SyncCollection[] = [
+export const KNOWN_COLLECTIONS: SyncCollection[] = [
   'sessions',
   'notes',
   'targets',
@@ -150,7 +150,7 @@ const KNOWN_COLLECTIONS: SyncCollection[] = [
 
 // isRecord is now imported at the top of this file
 
-function normalizeRemoteItem(value: unknown): SyncItem | null {
+export function normalizeRemoteItem(value: unknown): SyncItem | null {
   if (!isRecord(value)) return null;
   const { collection, localId, payload, updatedAt } = value;
   if (typeof collection !== 'string' || !KNOWN_COLLECTIONS.includes(collection as SyncCollection)) {
@@ -167,7 +167,7 @@ function normalizeRemoteItem(value: unknown): SyncItem | null {
   };
 }
 
-async function getLocalItems(): Promise<SyncItem[]> {
+export async function getLocalItems(): Promise<SyncItem[]> {
   const [
     sessions,
     notes,
@@ -215,7 +215,7 @@ async function getLocalItems(): Promise<SyncItem[]> {
   ];
 }
 
-async function uploadPendingEvidenceFiles(): Promise<void> {
+export async function uploadPendingEvidenceFiles(): Promise<void> {
   const assets = await evidenceAssetDB.getAll();
   const uploadedBytes = assets
     .filter((asset) => asset.storageId)
@@ -250,7 +250,7 @@ async function uploadPendingEvidenceFiles(): Promise<void> {
   }
 }
 
-function mergeItems(localItems: SyncItem[], remoteItems: SyncItem[]): SyncItem[] {
+export function mergeItems(localItems: SyncItem[], remoteItems: SyncItem[]): SyncItem[] {
   const merged = new Map<string, SyncItem>();
 
   for (const item of [...localItems, ...remoteItems]) {
@@ -264,7 +264,7 @@ function mergeItems(localItems: SyncItem[], remoteItems: SyncItem[]): SyncItem[]
   return Array.from(merged.values());
 }
 
-async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {
+export async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {
   function pickPayloads<T>(collection: SyncCollection): T[] {
     return items
       .filter((item) => item.collection === collection)

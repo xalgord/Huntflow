@@ -10,6 +10,12 @@ type PersistedArrayDB<T extends { id: string }> = {
 
 interface PersistedArrayStoreOptions<T> {
   sort?: (a: T, b: T) => number;
+  /**
+   * Called after each IndexedDB flush with the IDs that were written or
+   * deleted. The real-time sync engine hooks into this to push local
+   * changes to Convex without waiting for the next manual "Sync Now".
+   */
+  onFlush?: (dirtyIds: string[], deletedIds: string[]) => void;
 }
 
 export interface PersistedArrayStore<T extends { id: string }> extends Readable<T[]> {
@@ -22,6 +28,14 @@ export interface PersistedArrayStore<T extends { id: string }> extends Readable<
   delete(id: string): Promise<void>;
   getById(id: string): T | undefined;
   persistNow(): Promise<void>;
+  /**
+   * When true, the next `refresh()` call is a no-op. Set by the real-time
+   * sync engine when it writes remote data directly into IndexedDB so the
+   * subsequent flush → onFlush cycle doesn't re-trigger a Convex push.
+   */
+  suppressRemoteRefresh: boolean;
+  /** Replace the onFlush callback at runtime. */
+  setOnFlush(cb: ((dirtyIds: string[], deletedIds: string[]) => void) | undefined): void;
 }
 
 export function createPersistedArrayStore<T extends { id: string }>(
@@ -71,6 +85,11 @@ export function createPersistedArrayStore<T extends { id: string }>(
       if (dirtyItems.length > 0) {
         await db.putBatch(dirtyItems);
       }
+    }
+
+    // Notify the real-time sync engine so it can push local changes.
+    if (dirty.length > 0 || deletes.length > 0) {
+      options.onFlush?.(dirty, deletes);
     }
   }
 
@@ -152,6 +171,16 @@ export function createPersistedArrayStore<T extends { id: string }>(
     scheduleSave();
   }
 
+  let suppressRemoteRefresh = false;
+
+  async function guardedRefresh(): Promise<T[]> {
+    if (suppressRemoteRefresh) {
+      suppressRemoteRefresh = false;
+      return value;
+    }
+    return refresh();
+  }
+
   return {
     subscribe(run, invalidate) {
       load().catch((err) => {
@@ -160,7 +189,7 @@ export function createPersistedArrayStore<T extends { id: string }>(
       return source.subscribe(run, invalidate);
     },
     load,
-    refresh,
+    refresh: guardedRefresh,
     set: setItems,
     update: updateItems,
     put,
@@ -169,6 +198,15 @@ export function createPersistedArrayStore<T extends { id: string }>(
     getById(id) {
       return value.find((item) => item.id === id);
     },
-    persistNow: flush
+    persistNow: flush,
+    get suppressRemoteRefresh() {
+      return suppressRemoteRefresh;
+    },
+    set suppressRemoteRefresh(v: boolean) {
+      suppressRemoteRefresh = v;
+    },
+    setOnFlush(cb: ((dirtyIds: string[], deletedIds: string[]) => void) | undefined) {
+      options.onFlush = cb;
+    }
   };
 }
