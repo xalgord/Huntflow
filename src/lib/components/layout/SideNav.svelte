@@ -22,11 +22,18 @@
   $: isPro = cloudConfigured && $clerkAuthStore.signedIn && $clerkAuthStore.convexAuthenticated && $clerkAuthStore.isPro;
   $: workspaceLabel = isPro ? 'Pro workspace' : 'Local workspace';
   $: displayName = $clerkAuthStore.displayName?.trim() || 'Local hunter';
+  // Three-state subtitle for the user pill:
+  //   1. Signed in + Pro → cloud sync is live
+  //   2. Signed in, free  → nudge toward subscription
+  //   3. Not signed in    → nudge toward sign-in
+  //   4. No Clerk at all  → pure offline install
   $: userSubtitle = isPro
     ? 'Synced'
-    : cloudConfigured
-      ? 'Local · sign in to sync'
-      : 'Local-only mode';
+    : $clerkAuthStore.signedIn
+      ? 'Subscribe to sync'
+      : cloudConfigured
+        ? 'Sign in to sync'
+        : 'Local-only mode';
 
   // Two-letter avatar fallback for the SideNav user pill — renders
   // when Clerk has resolved a user but not yet returned an image URL
