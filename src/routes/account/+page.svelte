@@ -27,6 +27,7 @@
     initClerk,
     mountClerkUserProfile,
     openClerkSubscriptions,
+    signInWithClerk,
     signOutFromClerk
   } from '$lib/cloud/clerk';
   import {
@@ -38,6 +39,7 @@
     Database,
     ExternalLink,
     HardDrive,
+    LogIn,
     LogOut,
     Mail,
     Settings as SettingsIcon,
@@ -270,9 +272,11 @@
   //      panel, and embedded UserProfile widget. Fires whenever Clerk
   //      reports a session.
   //
-  //   3. (web build, signed-out) — never reaches this page; the layout
-  //      auth gate redirects to /sign-in before mount.
+  //   3. `guestView` — web build, Clerk configured, but user isn't
+  //      signed in. Shows a sign-in / sign-up CTA instead of the
+  //      "Loading profile…" spinner.
   $: localView = !$clerkAuthStore.configured || (IS_APP && !$clerkAuthStore.signedIn);
+  $: guestView = !localView && $clerkAuthStore.configured && !$clerkAuthStore.signedIn;
 </script>
 
 <svelte:head>
@@ -288,7 +292,96 @@
 
 <main class="hf-page">
   <div class="hf-page-inner max-w-5xl">
-    {#if localView}
+    {#if guestView}
+      <!-- Guest view: web user not signed in. Show sign-in/signup CTA. -->
+      <header class="hf-page-header">
+        <div class="flex items-start gap-3">
+          <div class="rounded-lg border border-primary/25 bg-primary/10 p-2 text-primary shadow-inner-line">
+            <UserRound size={28} aria-hidden="true" />
+          </div>
+          <div class="min-w-0">
+            <p class="hf-eyebrow">Identity &amp; subscription</p>
+            <h1 class="hf-title">Account</h1>
+            <p class="hf-description">
+              Sign in to manage your profile, security, sessions, and HuntFlow Pro subscription.
+            </p>
+          </div>
+        </div>
+      </header>
+
+      <section class="hf-card overflow-hidden p-0">
+        <div class="relative isolate p-6 sm:p-8">
+          <div
+            class="absolute inset-x-0 top-0 -z-10 h-32 bg-[radial-gradient(ellipse_at_top_left,_hsl(var(--primary)/0.18),_transparent_60%)]"
+            aria-hidden="true"
+          ></div>
+
+          <div class="flex flex-col items-center gap-6 py-8 text-center">
+            <span
+              class="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary shadow-dark-sm"
+              aria-hidden="true"
+            >
+              <LogIn size={36} />
+            </span>
+
+            <div class="max-w-md">
+              <h2 class="text-2xl font-bold text-foreground">Sign in to your account</h2>
+              <p class="mt-2 text-sm text-muted-foreground">
+                Access your profile, manage security settings, view active sessions,
+                and control your HuntFlow Pro subscription.
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-3 sm:flex-row">
+              <a
+                href="/sign-in"
+                class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+              >
+                <LogIn size={16} aria-hidden="true" />
+                Sign in
+              </a>
+              <a
+                href="/sign-up"
+                class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-border bg-muted/40 px-6 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted"
+              >
+                Create account
+                <ArrowRight size={14} aria-hidden="true" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Teaser for what's behind the sign-in gate -->
+      <section class="hf-card p-4 sm:p-6">
+        <div class="flex items-start gap-3">
+          <div class="rounded-lg border border-primary/25 bg-primary/10 p-2 text-primary shadow-inner-line">
+            <Sparkles size={22} aria-hidden="true" />
+          </div>
+          <div class="min-w-0 flex-1">
+            <h2 class="text-lg font-semibold text-foreground">Why create an account?</h2>
+            <ul class="mt-3 space-y-2 text-sm text-muted-foreground">
+              <li class="flex items-start gap-2">
+                <Cloud size={14} class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                Real-time cloud sync across every device
+              </li>
+              <li class="flex items-start gap-2">
+                <Shield size={14} class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                End-to-end encrypted evidence and notes
+              </li>
+              <li class="flex items-start gap-2">
+                <BadgeCheck size={14} class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                Priority email support with Pro plan
+              </li>
+              <li class="flex items-start gap-2">
+                <CreditCard size={14} class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                Manage subscription and billing in one place
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    {:else if localView}
       <!--
         Local-workspace view. Renders for two scenarios:
           (a) Clerk isn't configured at all (legacy self-hosted install).

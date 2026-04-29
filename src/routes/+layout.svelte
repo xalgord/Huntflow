@@ -154,6 +154,7 @@
     (IS_WEB && pathname === '/') ||
     pathname === '/sign-in' ||
     pathname === '/sign-up' ||
+    pathname === '/account' ||
     (IS_WEB && pathname === '/pricing') ||
     (IS_WEB && pathname === '/demo') ||
     pathname.startsWith('/sign-in/') ||
