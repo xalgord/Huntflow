@@ -150,11 +150,14 @@
   // Auth pages (`/sign-in`, `/sign-up`) keep the chromeless treatment in
   // app mode too, since `AuthShell` already provides a self-contained
   // frame and the side nav would crowd the embedded Clerk widget.
+  // /account is chromeless (marketing layout) only when the user is NOT
+  // signed in — guests see a full-page sign-in CTA without the app shell.
+  // Once signed in, /account behaves like a normal app page with sidebar.
   $: isMarketing =
     (IS_WEB && pathname === '/') ||
     pathname === '/sign-in' ||
     pathname === '/sign-up' ||
-    pathname === '/account' ||
+    (pathname === '/account' && !clerkSignedIn) ||
     (IS_WEB && pathname === '/pricing') ||
     (IS_WEB && pathname === '/demo') ||
     pathname.startsWith('/sign-in/') ||

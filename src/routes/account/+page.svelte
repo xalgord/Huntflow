@@ -168,16 +168,15 @@
     });
   }
 
+  let componentAlive = true;
+
   onMount(async () => {
     if (!browser) return;
 
     // Local-mode short-circuit. With no Clerk publishable key the app
     // is running as a private offline install — there's no Clerk
-    // session to mount a UserProfile against. The app build also lands
-    // here in `localView` mode for signed-out users (they see a
-    // "Connect cloud sync" CTA instead of an identity widget).
+    // session to mount a UserProfile against.
     if (!$clerkAuthStore.configured) return;
-    if (!$clerkAuthStore.signedIn) return;
 
     // Detect ?welcome=pro injected by the pricing page after a successful
     // subscription checkout. Show a one-time success banner and clean the
@@ -188,22 +187,37 @@
       cleanUrl.searchParams.delete('welcome');
       history.replaceState(history.state, '', cleanUrl.toString());
     }
-    // Make sure Clerk is initialized — if the user lands here directly
-    // via deep link the layout's `initClerk()` call may still be in
-    // flight, so we await it explicitly before mounting the widget.
+
+    // Make sure Clerk is initialized eagerly — if the user lands here
+    // directly via deep link the layout's `initClerk()` call may still
+    // be in flight. The reactive block below will handle mounting once
+    // signedIn resolves to true.
     await initClerk();
-    if (!mountNode) return;
-    // Mount Clerk's full UserProfile widget. It manages its own
-    // internal navigation between tabs (Profile / Security / Sessions /
-    // Connected Accounts / Billing) — we don't need to pass a routing
-    // strategy; the default keeps tab state inside the widget.
-    unmountProfile = await mountClerkUserProfile(mountNode, {});
-    profileMounted = true;
-    // Start the DOM observer to force-patch Clerk's CSS-in-JS styles
-    startClerkObserver(mountNode);
   });
 
+  // Reactive Clerk mount: watches signedIn + mountNode. When the user
+  // signs in (or if they land here already signed in), this triggers the
+  // widget mount automatically. This fixes the race condition where
+  // onMount ran before Clerk finished loading and the early return
+  // prevented the profile from ever mounting.
+  $: if (
+    browser &&
+    $clerkAuthStore.configured &&
+    $clerkAuthStore.signedIn &&
+    mountNode &&
+    !profileMounted
+  ) {
+    (async () => {
+      await initClerk();
+      if (!mountNode || !componentAlive) return;
+      unmountProfile = await mountClerkUserProfile(mountNode, {});
+      profileMounted = true;
+      startClerkObserver(mountNode);
+    })();
+  }
+
   onDestroy(() => {
+    componentAlive = false;
     clerkObserver?.disconnect();
     unmountProfile?.();
   });
