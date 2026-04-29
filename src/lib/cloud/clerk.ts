@@ -598,44 +598,115 @@ export async function mountClerkPricingTable(
   }
 }
 
-// Pro entitlement helpers. Clerk Billing sets `publicMetadata.plan` on the
-// user after a successful subscription checkout. We check that first (works
-// with the Clerk CDN v5 we currently load), and fall back to the v6+
-// `user.has({ plan })` API when available. The result is exposed as a
-// derived boolean on the auth store so any component can react to plan
-// changes without re-querying.
+// Pro entitlement helpers. Clerk Billing stores plan/subscription status in
+// different locations depending on the SDK version and billing addon
+// configuration. We check every known path and log diagnostics so we can
+// always determine why isPro resolved the way it did.
 export async function refreshProEntitlement(): Promise<void> {
   const clerk = await initClerk();
   if (!clerk) return;
   const user = clerk.user;
   let isPro = false;
+  let matchedVia = '';
 
   if (user) {
-    // 1. Primary check — publicMetadata.plan (Clerk Billing syncs this
-    //    after every checkout / plan-switch / cancellation event).
-    const meta = (user as unknown as { publicMetadata?: Record<string, unknown> })
-      ?.publicMetadata;
-    if (meta?.plan === 'huntflow_pro' || meta?.plan === 'pro') {
-      isPro = true;
-    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const u = user as any;
+    const meta: Record<string, unknown> | undefined = u.publicMetadata;
 
-    // 2. Secondary check — Clerk v6+ Billing SDK exposes `user.has()`
-    //    for plan / feature / permission queries. Use it when available
-    //    so we're future-proof if the CDN is upgraded.
-    if (
-      !isPro &&
-      typeof (user as unknown as { has?: (q: unknown) => boolean }).has === 'function'
-    ) {
-      try {
-        isPro = Boolean(
-          (user as unknown as { has: (q: unknown) => boolean }).has({
-            plan: 'huntflow_pro'
-          })
-        );
-      } catch {
-        // user.has() may throw if Billing addon isn't active — ignore.
+    // Log what Clerk gives us so we can diagnose mismatches in the console.
+    console.debug('[HuntFlow] Clerk user for Pro check:', {
+      id: user.id,
+      publicMetadata: meta,
+      privateMetadata: u.privateMetadata,
+      unsafeMetadata: u.unsafeMetadata,
+      hasFunction: typeof u.has === 'function',
+      organizationMemberships: u.organizationMemberships,
+    });
+
+    // 1. publicMetadata.plan — Clerk Billing v1 & manual webhook sync.
+    if (meta) {
+      const plan = meta.plan;
+      if (
+        plan === 'huntflow_pro' ||
+        plan === 'pro' ||
+        plan === 'Pro' ||
+        plan === 'paid'
+      ) {
+        isPro = true;
+        matchedVia = `publicMetadata.plan="${plan}"`;
+      }
+
+      // Some setups use publicMetadata.subscription or publicMetadata.tier.
+      if (!isPro && (meta.subscription === 'pro' || meta.subscription === 'active')) {
+        isPro = true;
+        matchedVia = `publicMetadata.subscription="${meta.subscription}"`;
+      }
+      if (!isPro && (meta.tier === 'pro' || meta.tier === 'Pro')) {
+        isPro = true;
+        matchedVia = `publicMetadata.tier="${meta.tier}"`;
+      }
+      // Boolean flag shortcut (e.g. publicMetadata.isPro = true).
+      if (!isPro && meta.isPro === true) {
+        isPro = true;
+        matchedVia = 'publicMetadata.isPro=true';
       }
     }
+
+    // 2. Clerk v6+ Billing SDK — `user.has({ plan })` / `user.has({ feature })`.
+    if (
+      !isPro &&
+      typeof u.has === 'function'
+    ) {
+      const planSlugs = ['huntflow_pro', 'pro', 'Pro'];
+      for (const slug of planSlugs) {
+        try {
+          if (u.has({ plan: slug })) {
+            isPro = true;
+            matchedVia = `user.has({plan:"${slug}"})`;
+            break;
+          }
+        } catch {
+          // user.has() may throw if Billing addon isn't active — ignore.
+        }
+      }
+      // Also check feature-based entitlements.
+      if (!isPro) {
+        try {
+          if (u.has({ feature: 'cloud_sync' })) {
+            isPro = true;
+            matchedVia = 'user.has({feature:"cloud_sync"})';
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+
+    // 3. Clerk Commerce / __experimental subscriptions array.
+    if (!isPro && Array.isArray(u.subscriptions)) {
+      const activeSub = u.subscriptions.find(
+        (s: { status?: string }) => s.status === 'active'
+      );
+      if (activeSub) {
+        isPro = true;
+        matchedVia = `user.subscriptions[] (active id=${activeSub.id ?? '?'})`;
+      }
+    }
+
+    // 4. Organization-level plan (Clerk orgs with Billing).
+    if (!isPro && Array.isArray(u.organizationMemberships)) {
+      for (const mem of u.organizationMemberships) {
+        const orgMeta = mem?.organization?.publicMetadata as Record<string, unknown> | undefined;
+        if (orgMeta?.plan === 'huntflow_pro' || orgMeta?.plan === 'pro') {
+          isPro = true;
+          matchedVia = `org "${mem.organization.name}" publicMetadata.plan="${orgMeta.plan}"`;
+          break;
+        }
+      }
+    }
+
+    console.debug('[HuntFlow] Pro entitlement result:', { isPro, matchedVia: matchedVia || 'none' });
   }
 
   clerkAuthStore.update((state) => ({ ...state, isPro }));

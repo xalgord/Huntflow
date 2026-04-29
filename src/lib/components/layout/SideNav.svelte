@@ -16,24 +16,12 @@
     typeof navigator !== 'undefined' &&
     /Mac|iPhone|iPod|iPad/.test(navigator.platform || navigator.userAgent || '');
 
-  // "Pro workspace" only when the user is actually signed in AND cloud sync is
-  // configured. Otherwise show "Local workspace" — honest about the offline-first
-  // free tier instead of misleading every visitor with a Pro badge.
-  $: isPro = cloudConfigured && $clerkAuthStore.signedIn && $clerkAuthStore.convexAuthenticated && $clerkAuthStore.isPro;
+  // Pro when signed in with an active subscription.
+  $: isPro = $clerkAuthStore.signedIn && $clerkAuthStore.isPro;
   $: workspaceLabel = isPro ? 'Pro workspace' : 'Local workspace';
   $: displayName = $clerkAuthStore.displayName?.trim() || 'Local hunter';
-  // Three-state subtitle for the user pill:
-  //   1. Signed in + Pro → cloud sync is live
-  //   2. Signed in, free  → nudge toward subscription
-  //   3. Not signed in    → nudge toward sign-in
-  //   4. No Clerk at all  → pure offline install
-  $: userSubtitle = isPro
-    ? 'Synced'
-    : $clerkAuthStore.signedIn
-      ? 'Subscribe to sync'
-      : cloudConfigured
-        ? 'Sign in to sync'
-        : 'Local-only mode';
+  // Binary subtitle: Pro → Synced, otherwise → Subscribe to sync.
+  $: userSubtitle = isPro ? 'Synced' : 'Subscribe to sync';
 
   // Two-letter avatar fallback for the SideNav user pill — renders
   // when Clerk has resolved a user but not yet returned an image URL
