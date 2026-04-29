@@ -309,14 +309,14 @@ export async function signOutFromClerk(opts: { redirectUrl?: string } = {}): Pro
 // without restyling each call site.
 export const huntflowClerkAppearance = {
   variables: {
-    colorPrimary: '#14b8a6',
-    colorBackground: '#0f172a',
-    colorText: '#f1f5f9',
-    colorTextSecondary: '#94a3b8',
-    colorInputBackground: '#0f172a',
-    colorInputText: '#f1f5f9',
-    colorNeutral: '#94a3b8',
-    borderRadius: '0.5rem',
+    colorPrimary: '#60ff5c',
+    colorBackground: '#070d0a',
+    colorText: '#e8f0e7',
+    colorTextSecondary: '#8fa68e',
+    colorInputBackground: '#070d0a',
+    colorInputText: '#e8f0e7',
+    colorNeutral: '#8fa68e',
+    borderRadius: '0.75rem',
     fontFamily: 'inherit'
   },
   elements: {
@@ -329,17 +329,19 @@ export const huntflowClerkAppearance = {
       maxWidth: '100%'
     },
     // UserProfile: dark navbar sidebar & content area
+    // Note: Colors below use HuntFlow's green primary (#60ff5c) and
+    // dark backgrounds (#070d0a base, #0e1612 card, #1a2820 borders).
     navbar: {
-      background: '#0c1222',
-      borderRight: '1px solid #1e293b'
+      background: '#0e1612',
+      borderRight: '1px solid #1a2820'
     },
     navbarButton: {
-      color: '#94a3b8',
-      '&:hover': { background: 'rgba(20, 184, 166, 0.08)', color: '#f1f5f9' }
+      color: '#8fa68e',
+      '&:hover': { background: 'rgba(96, 255, 92, 0.08)', color: '#e8f0e7' }
     },
     navbarButtonActive: {
-      color: '#14b8a6',
-      background: '#14b8a6' + '15'
+      color: '#60ff5c',
+      background: '#60ff5c' + '15'
     },
     navbarButtonIcon: { color: 'inherit' },
     pageScrollBox: {
@@ -348,87 +350,87 @@ export const huntflowClerkAppearance = {
     },
     page: { background: 'transparent' },
     // Profile sections (rows like "Profile", "Email addresses", etc.)
-    profileSection: { borderBottom: '1px solid #1e293b' },
-    profileSectionTitle: { color: '#94a3b8', borderBottom: '1px solid #1e293b' },
-    profileSectionTitleText: { color: '#94a3b8' },
+    profileSection: { borderBottom: '1px solid #1a2820' },
+    profileSectionTitle: { color: '#8fa68e', borderBottom: '1px solid #1a2820' },
+    profileSectionTitleText: { color: '#8fa68e' },
     profileSectionContent: { background: 'transparent' },
     profileSectionPrimaryButton: {
-      color: '#14b8a6',
-      '&:hover': { background: '#14b8a6' + '18' }
+      color: '#60ff5c',
+      '&:hover': { background: '#60ff5c' + '18' }
     },
     // Accordion / detail panels
-    accordionTriggerButton: { color: '#f1f5f9' },
-    accordionContent: { background: '#0c1222' },
+    accordionTriggerButton: { color: '#e8f0e7' },
+    accordionContent: { background: '#0e1612' },
     // Breadcrumbs & headers inside profile
-    breadcrumbs: { color: '#94a3b8' },
-    breadcrumbsItem: { color: '#94a3b8' },
-    breadcrumbsItemDivider: { color: '#334155' },
-    headerTitle: { color: '#f1f5f9' },
-    headerSubtitle: { color: '#94a3b8' },
+    breadcrumbs: { color: '#8fa68e' },
+    breadcrumbsItem: { color: '#8fa68e' },
+    breadcrumbsItemDivider: { color: '#1a2820' },
+    headerTitle: { color: '#e8f0e7' },
+    headerSubtitle: { color: '#8fa68e' },
     // Active devices / sessions
     activeDeviceListItem: {
-      background: '#0c1222',
-      border: '1px solid #1e293b'
+      background: '#0e1612',
+      border: '1px solid #1a2820'
     },
-    activeDevice: { color: '#f1f5f9' },
+    activeDevice: { color: '#e8f0e7' },
     // Form fields
     socialButtonsBlockButton: {
-      background: '#1e293b',
-      border: '1px solid #334155',
-      color: '#f1f5f9'
+      background: '#1a2820',
+      border: '1px solid #263b30',
+      color: '#e8f0e7'
     },
-    formFieldLabel: { color: '#cbd5e1' },
+    formFieldLabel: { color: '#b5c9b4' },
     formFieldInput: {
-      background: '#0f172a',
-      border: '1px solid #334155',
-      color: '#f1f5f9'
+      background: '#070d0a',
+      border: '1px solid #1a2820',
+      color: '#e8f0e7'
     },
-    formFieldSuccessText: { color: '#14b8a6' },
+    formFieldSuccessText: { color: '#60ff5c' },
     formButtonPrimary: {
-      background: '#14b8a6',
-      color: '#020617',
+      background: '#60ff5c',
+      color: '#070d0a',
       fontWeight: 600,
-      '&:hover': { background: '#2dd4bf' }
+      '&:hover': { background: '#7fff7c' }
     },
     formButtonReset: {
-      color: '#94a3b8',
-      '&:hover': { color: '#f1f5f9' }
+      color: '#8fa68e',
+      '&:hover': { color: '#e8f0e7' }
     },
     // Badges, tags, and misc
     badge: {
-      background: '#14b8a6' + '20',
-      color: '#14b8a6',
-      border: '1px solid #14b8a6' + '40'
+      background: '#60ff5c' + '20',
+      color: '#60ff5c',
+      border: '1px solid #60ff5c' + '40'
     },
     tagInputContainer: {
-      background: '#0f172a',
-      border: '1px solid #334155'
+      background: '#070d0a',
+      border: '1px solid #1a2820'
     },
     // Alerts and notices
-    alertText: { color: '#94a3b8' },
+    alertText: { color: '#8fa68e' },
     // Menus and dropdowns inside UserProfile
-    menuButton: { color: '#94a3b8' },
+    menuButton: { color: '#8fa68e' },
     menuList: {
-      background: '#0f172a',
-      border: '1px solid #1e293b'
+      background: '#070d0a',
+      border: '1px solid #1a2820'
     },
     menuItem: {
-      color: '#f1f5f9',
-      '&:hover': { background: '#1e293b' }
+      color: '#e8f0e7',
+      '&:hover': { background: '#1a2820' }
     },
     // Footer
     footer: { background: 'transparent' },
-    footerActionText: { color: '#94a3b8' },
-    footerActionLink: { color: '#5eead4' },
-    footerItem: { color: '#64748b' },
+    footerActionText: { color: '#8fa68e' },
+    footerActionLink: { color: '#60ff5c' },
+    footerItem: { color: '#5a6f59' },
     // Dividers
-    dividerLine: { background: '#1e293b' },
-    dividerText: { color: '#64748b' },
+    dividerLine: { background: '#1a2820' },
+    dividerText: { color: '#5a6f59' },
     // Modal overlays
     modalBackdrop: { background: 'rgba(0, 0, 0, 0.7)' },
     modalContent: {
-      background: '#0f172a',
-      border: '1px solid #1e293b'
+      background: '#070d0a',
+      border: '1px solid #1a2820'
     }
   }
 };
