@@ -30,7 +30,7 @@
 <a
   {href}
   class={placement === 'bottom'
-    ? `flex min-h-[44px] flex-1 flex-col items-center justify-center rounded-[14px] px-2 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${bottomClass}`
+    ? `flex min-h-[44px] min-w-[4rem] shrink-0 flex-col items-center justify-center rounded-[14px] px-2 py-1 text-xs font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${bottomClass}`
     : `flex h-12 min-h-[48px] items-center gap-3 rounded-[14px] border px-3 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 ${collapsed ? 'justify-center' : ''} ${sideClass}`}
   aria-current={active ? 'page' : undefined}
   title={collapsed ? label : undefined}
