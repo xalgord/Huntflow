@@ -216,18 +216,18 @@
 </script>
 
 <section class="hf-card p-4">
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+  <div class="space-y-3">
     <div>
       <p class="op-kicker">Evidence analytics</p>
       <h2 class="mt-2 text-lg font-semibold text-foreground">Asset intelligence</h2>
       <p class="mt-1 text-sm text-muted-foreground">Distribution by proof type, target, capture date, and readiness.</p>
     </div>
-    <div class="grid grid-cols-4 overflow-hidden rounded-[14px] border border-border bg-background/50 shadow-inner-line">
+    <div class="grid grid-cols-4 gap-1 rounded-[14px] border border-border bg-background/50 p-1 shadow-inner-line">
       {#each modes as item}
         <button
           type="button"
-          class="min-h-[40px] px-3 text-xs font-medium transition {mode === item.value
-            ? 'bg-primary text-primary-foreground'
+          class="flex items-center justify-center min-h-[34px] rounded-[10px] px-2 py-1.5 text-[11px] font-medium transition whitespace-nowrap {mode === item.value
+            ? 'bg-primary text-primary-foreground shadow-sm'
             : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
           on:click={() => (mode = item.value)}
         >

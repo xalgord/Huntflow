@@ -4,6 +4,8 @@
   import { cacheRemoteEvidenceAsset, deleteRemoteEvidenceAssetFile } from '$lib/cloud/assets';
   import EvidenceCharts from '$lib/components/assets/EvidenceCharts.svelte';
   import EvidenceGraphCanvas from '$lib/components/assets/EvidenceGraphCanvas.svelte';
+  import HttpExchangeInspector from '$lib/components/assets/HttpExchangeInspector.svelte';
+  import { parseHttpExchange, hostOfRequest } from '$lib/utils/http';
   import {
     evidenceAssetStore,
     evidenceCanvasViewStore,
@@ -594,14 +596,35 @@
 
     const now = Date.now();
     const id = createId();
+
+    // Auto-parse HTTP exchange metadata when kind is http-exchange.
+    let httpExchange: EvidenceAsset['httpExchange'] = undefined;
+    let effectiveKind = snippetKind;
+    if (snippetKind === 'http-exchange') {
+      const exchange = parseHttpExchange(content);
+      if (exchange) {
+        httpExchange = {
+          method: exchange.request.method,
+          url: exchange.request.url,
+          host: hostOfRequest(exchange.request),
+          httpVersion: exchange.request.httpVersion,
+          statusCode: exchange.response?.statusCode,
+          statusText: exchange.response?.statusText,
+          requestRaw: content.slice(0, exchange.responseOffset > 0 ? exchange.responseOffset : content.length),
+          responseRaw: exchange.responseOffset > 0 ? content.slice(exchange.responseOffset) : undefined
+        };
+      }
+    }
+
     const asset: EvidenceAsset = {
       id,
-      title: snippetTitle.trim() || `${snippetKind} evidence`,
-      kind: snippetKind,
+      title: snippetTitle.trim() || (httpExchange ? `${httpExchange.method} ${httpExchange.url}` : `${effectiveKind} evidence`),
+      kind: effectiveKind,
       source: 'snippet',
       mimeType: 'text/plain',
       size: new Blob([content]).size,
       textContent: content,
+      httpExchange,
       description: description.trim() || undefined,
       targetId: selectedTargetId || undefined,
       sessionId: selectedSessionId || undefined,
@@ -807,32 +830,32 @@
       </div>
     </header>
 
-    <section class="grid gap-4 md:grid-cols-4">
-      <div class="hf-card p-4">
+    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div class="hf-card px-5 py-6">
         <p class="op-kicker">Vault</p>
-        <p class="mt-3 text-3xl font-semibold text-foreground">{$evidenceAssetStore.length}</p>
-        <p class="mt-1 text-sm text-muted-foreground">assets captured</p>
+        <p class="mt-3 text-3xl font-bold tabular-nums tracking-tight text-foreground">{$evidenceAssetStore.length}</p>
+        <p class="mt-1.5 text-sm text-muted-foreground">assets captured</p>
       </div>
-      <div class="hf-card p-4">
+      <div class="hf-card px-5 py-6">
         <p class="op-kicker">Storage</p>
-        <p class="mt-3 text-3xl font-semibold text-foreground">{formatEvidenceBytes(usedBytes)}</p>
-        <p class="mt-1 text-sm text-muted-foreground">
-          {formatEvidenceBytes(syncedBytes)} cloud-backed · {folderCount} folders
+        <p class="mt-3 text-3xl font-bold tabular-nums tracking-tight text-foreground">{formatEvidenceBytes(usedBytes)}</p>
+        <p class="mt-1.5 text-sm text-muted-foreground">
+          {formatEvidenceBytes(syncedBytes)} cloud · {folderCount} folders
         </p>
       </div>
-      <div class="hf-card p-4">
+      <div class="hf-card px-5 py-6">
         <p class="op-kicker">Signal</p>
-        <p class="mt-3 text-3xl font-semibold text-primary">{highSignalCount}</p>
-        <p class="mt-1 text-sm text-muted-foreground">critical or high tagged</p>
+        <p class="mt-3 text-3xl font-bold tabular-nums tracking-tight text-primary">{highSignalCount}</p>
+        <p class="mt-1.5 text-sm text-muted-foreground">critical / high tagged</p>
       </div>
-      <div class="hf-card p-4">
+      <div class="hf-card px-5 py-6">
         <p class="op-kicker">Report</p>
-        <p class="mt-3 text-3xl font-semibold text-amber-300">{reportReadyCount}</p>
-        <p class="mt-1 text-sm text-muted-foreground">marked needs-report</p>
+        <p class="mt-3 text-3xl font-bold tabular-nums tracking-tight text-amber-300">{reportReadyCount}</p>
+        <p class="mt-1.5 text-sm text-muted-foreground">marked needs-report</p>
       </div>
     </section>
 
-    <section class="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(360px,0.95fr)]">
+    <section class="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(340px,0.7fr)]">
       <div class="space-y-6">
         <div
           class="hf-card border-dashed p-4 transition {dragActive ? 'border-primary bg-primary/10' : ''}"
@@ -860,21 +883,21 @@
             aria-label="Upload evidence folder"
             on:change={handleFolderInput}
           />
-          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.75fr)]">
-            <div class="rounded-[14px] border border-border/70 bg-background/45 p-4">
+          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.65fr)]">
+            <div class="rounded-[14px] border border-border/70 bg-background/45 p-5">
               <div class="flex items-start gap-3">
                 <div class="rounded-[14px] border border-primary/30 bg-primary/10 p-3 text-primary">
                   <UploadCloud size={24} aria-hidden="true" />
                 </div>
                 <div>
                   <h2 class="text-lg font-semibold text-foreground">Drop, paste, or select proof files</h2>
-                  <p class="mt-1 text-sm leading-6 text-muted-foreground">
+                  <p class="mt-1.5 text-sm leading-6 text-muted-foreground">
                     Screenshots, folders, PDFs, logs, HAR files, request traces, and archives stay local without a local
                     size cap. Cloud sync supports 100MB per file and 1GB per user.
                   </p>
                 </div>
               </div>
-              <div class="mt-4 flex flex-wrap gap-2">
+              <div class="mt-5 flex flex-wrap gap-2">
                 <button type="button" class="hf-button-secondary" on:click={openFilePicker}>
                   <UploadCloud size={16} aria-hidden="true" />
                   Select files
@@ -884,19 +907,19 @@
                   Select folder
                 </button>
               </div>
-              <div class="mt-4 grid gap-3 2xl:grid-cols-3">
-                <label>
+              <div class="mt-6 grid gap-3 grid-cols-1 sm:grid-cols-3">
+                <label class="space-y-1.5">
                   <span class="hf-label">Target</span>
-                  <select bind:value={selectedTargetId} class="hf-select mt-2">
+                  <select bind:value={selectedTargetId} class="hf-select">
                     <option value="">No target</option>
                     {#each targetOptions as target}
                       <option value={target.id}>{target.name}</option>
                     {/each}
                   </select>
                 </label>
-                <label>
+                <label class="space-y-1.5">
                   <span class="hf-label">Session</span>
-                  <select bind:value={selectedSessionId} class="hf-select mt-2">
+                  <select bind:value={selectedSessionId} class="hf-select">
                     <option value="">No session</option>
                     {#each $sessionStore.filter((session) => !selectedTargetId || session.targetId === selectedTargetId) as session}
                       <option value={session.id}>
@@ -905,9 +928,9 @@
                     {/each}
                   </select>
                 </label>
-                <label>
+                <label class="space-y-1.5">
                   <span class="hf-label">Note</span>
-                  <select bind:value={selectedNoteId} class="hf-select mt-2">
+                  <select bind:value={selectedNoteId} class="hf-select">
                     <option value="">No note</option>
                     {#each $noteStore.filter((note) => !selectedTargetId || note.targetId === selectedTargetId) as note}
                       <option value={note.id}>{note.title}</option>
@@ -915,14 +938,14 @@
                   </select>
                 </label>
               </div>
-              <div class="mt-3 grid gap-3 2xl:grid-cols-2">
-                <label>
+              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                <label class="space-y-1.5">
                   <span class="hf-label">Tags</span>
-                  <input bind:value={tagsInput} class="hf-input mt-2" placeholder="high, needs-report" />
+                  <input bind:value={tagsInput} class="hf-input" placeholder="high, needs-report" />
                 </label>
-                <label>
+                <label class="space-y-1.5">
                   <span class="hf-label">Description</span>
-                  <input bind:value={description} class="hf-input mt-2" placeholder="What this proves" />
+                  <input bind:value={description} class="hf-input" placeholder="What this proves" />
                 </label>
               </div>
               {#if selectedTarget()}
@@ -956,6 +979,7 @@
                 <div class="mt-3 grid grid-cols-[1fr_auto] gap-2">
                   <input bind:value={snippetTitle} class="hf-input" placeholder="Request title" />
                   <select bind:value={snippetKind} class="hf-select">
+                    <option value="http-exchange">HTTP exchange</option>
                     <option value="request">Request</option>
                     <option value="response">Response</option>
                     <option value="text">Text</option>
@@ -971,29 +995,31 @@
           </div>
         </div>
 
-        <section class="hf-card p-4">
-          <div class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <section class="hf-card p-5">
+          <div class="space-y-5">
             <div>
               <p class="op-kicker">Vault</p>
               <h2 class="mt-2 text-lg font-semibold text-foreground">Evidence index</h2>
             </div>
-            <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-5 xl:min-w-[900px]">
-              <label class="relative">
-                <Search class="pointer-events-none absolute left-3 top-[38px] text-muted-foreground" size={16} aria-hidden="true" />
+            <div class="grid gap-x-3 gap-y-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+              <label class="relative space-y-1.5">
                 <span class="hf-label">Search</span>
-                <input bind:value={search} class="hf-input mt-2 pl-9" placeholder="Title, folder, tag, URL" />
+                <div class="relative">
+                  <Search class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} aria-hidden="true" />
+                  <input bind:value={search} class="hf-input pl-9" placeholder="Title, folder, tag, URL" />
+                </div>
               </label>
-              <label>
+              <label class="space-y-1.5">
                 <span class="hf-label">Type</span>
-                <select bind:value={kindFilter} class="hf-select mt-2">
+                <select bind:value={kindFilter} class="hf-select">
                   {#each kindOptions as option}
                     <option value={option.value}>{option.label}</option>
                   {/each}
                 </select>
               </label>
-              <label>
+              <label class="space-y-1.5">
                 <span class="hf-label">Folder</span>
-                <select bind:value={folderFilter} class="hf-select mt-2">
+                <select bind:value={folderFilter} class="hf-select">
                   <option value="all">All folders</option>
                   <option value="root">Root</option>
                   {#each folderOptions as folder}
@@ -1001,28 +1027,28 @@
                   {/each}
                 </select>
               </label>
-              <label>
+              <label class="space-y-1.5">
                 <span class="hf-label">Target</span>
-                <select bind:value={targetFilter} class="hf-select mt-2" on:change={hydrateCanvasView}>
+                <select bind:value={targetFilter} class="hf-select" on:change={hydrateCanvasView}>
                   <option value="all">All targets</option>
                   {#each $targetStore as target}
                     <option value={target.id}>{target.name}</option>
                   {/each}
                 </select>
               </label>
-              <label>
+              <label class="space-y-1.5">
                 <span class="hf-label">Tag</span>
-                <input bind:value={tagFilter} class="hf-input mt-2" placeholder="needs-report" />
+                <input bind:value={tagFilter} class="hf-input" placeholder="needs-report" />
               </label>
             </div>
           </div>
 
-          <div class="mt-4 grid gap-3">
+          <div class="mt-5 grid gap-3">
             {#if filteredAssets.length > 0}
               {#each groupedAssetSections as section (section.key)}
-                <div class="space-y-2">
+                <div class="space-y-2.5">
                   {#if groupedAssetSections.length > 1 || folderOptions.length > 0}
-                    <div class="flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    <div class="flex items-center gap-2 px-1 pt-1 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                       <Folder size={14} aria-hidden="true" />
                       <span class="truncate">{section.label}</span>
                       <span class="text-primary">{section.assets.length}</span>
@@ -1032,7 +1058,7 @@
                     {@const Icon = kindIcons[asset.kind]}
                     <button
                       type="button"
-                      class="w-full rounded-[14px] border p-4 text-left transition hover:border-primary/40 hover:bg-muted/40 {selectedAssetId === asset.id
+                      class="w-full rounded-[14px] border px-4 py-3.5 text-left transition hover:border-primary/40 hover:bg-muted/40 {selectedAssetId === asset.id
                         ? 'border-primary/50 bg-primary/10'
                         : 'border-border/70 bg-background/45'}"
                       on:click={() => {
@@ -1041,21 +1067,21 @@
                       }}
                     >
                       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div class="flex min-w-0 items-start gap-3">
-                          <span class="rounded-[14px] border border-primary/30 bg-primary/10 p-2 text-primary">
+                        <div class="flex min-w-0 items-center gap-3">
+                          <span class="flex-shrink-0 rounded-xl border border-primary/30 bg-primary/10 p-2 text-primary">
                             <Icon size={18} aria-hidden="true" />
                           </span>
                           <span class="min-w-0">
-                            <span class="block truncate font-semibold text-foreground">{asset.title}</span>
-                            <span class="mt-1 block truncate text-sm text-muted-foreground">
+                            <span class="block truncate font-medium text-foreground">{asset.title}</span>
+                            <span class="mt-0.5 block truncate text-xs text-muted-foreground">
                               {assetSubtitle(asset)}
                             </span>
                           </span>
                         </div>
-                        <span class="flex flex-wrap gap-2">
-                          <span class="hf-pill">{asset.syncState}</span>
+                        <span class="flex flex-shrink-0 flex-wrap items-center gap-1.5">
+                          <span class="rounded-full border border-border/60 bg-muted/50 px-2.5 py-0.5 text-[11px] font-medium text-muted-foreground">{asset.syncState}</span>
                           {#each asset.tags.slice(0, 3) as tag}
-                            <span class="hf-pill border-primary/30 bg-primary/10 text-primary">{tag}</span>
+                            <span class="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[11px] font-medium text-primary">{tag}</span>
                           {/each}
                         </span>
                       </div>
@@ -1064,7 +1090,7 @@
                 </div>
               {/each}
             {:else if loaded}
-              <div class="rounded-[14px] border border-dashed border-border bg-background/40 p-8 text-center">
+              <div class="rounded-[14px] border border-dashed border-border bg-background/40 px-8 py-10 text-center">
                 <Filter class="mx-auto text-muted-foreground" size={28} aria-hidden="true" />
                 <p class="mt-3 font-semibold text-foreground">No matching evidence</p>
                 <p class="mt-1 text-sm text-muted-foreground">Adjust filters or capture the first proof item.</p>
@@ -1075,7 +1101,7 @@
       </div>
 
       <aside class="space-y-6">
-        <section class="hf-card p-4">
+        <section class="hf-card p-5">
           {#if selectedAsset}
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
@@ -1106,6 +1132,8 @@
                 <img src={previewUrl} alt={selectedAsset.title} class="max-h-[420px] w-full object-contain" />
               {:else if selectedAsset.kind === 'pdf' && previewUrl}
                 <iframe src={previewUrl} title={selectedAsset.title} class="h-[420px] w-full"></iframe>
+              {:else if selectedAsset.kind === 'http-exchange' && selectedAsset.httpExchange}
+                <HttpExchangeInspector asset={selectedAsset} />
               {:else if previewText}
                 <pre class="max-h-[420px] overflow-auto whitespace-pre-wrap p-4 text-xs leading-5 text-slate-200">{previewText}</pre>
               {:else}
@@ -1115,28 +1143,28 @@
               {/if}
             </div>
 
-            <div class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+            <div class="mt-5 grid gap-3 text-sm sm:grid-cols-2">
               <div class="hf-stat-tile">
-                <p class="text-muted-foreground">File</p>
-                <p class="mt-1 truncate text-foreground">
+                <p class="text-xs text-muted-foreground">File</p>
+                <p class="mt-1.5 truncate font-medium text-foreground">
                   {selectedAsset.relativePath ?? selectedAsset.fileName ?? selectedAsset.url ?? 'Snippet'}
                 </p>
               </div>
               <div class="hf-stat-tile">
-                <p class="text-muted-foreground">Folder</p>
-                <p class="mt-1 truncate text-foreground">{selectedAsset.folderPath ?? 'Root'}</p>
+                <p class="text-xs text-muted-foreground">Folder</p>
+                <p class="mt-1.5 truncate font-medium text-foreground">{selectedAsset.folderPath ?? 'Root'}</p>
               </div>
               <div class="hf-stat-tile">
-                <p class="text-muted-foreground">Size</p>
-                <p class="mt-1 text-foreground">{formatEvidenceBytes(selectedAsset.size)}</p>
+                <p class="text-xs text-muted-foreground">Size</p>
+                <p class="mt-1.5 font-medium tabular-nums text-foreground">{formatEvidenceBytes(selectedAsset.size)}</p>
               </div>
               <div class="hf-stat-tile">
-                <p class="text-muted-foreground">Cloud</p>
-                <p class="mt-1 text-foreground">{selectedAsset.storageId ? 'File synced' : selectedAsset.source === 'url' ? 'Metadata only' : selectedAsset.syncState}</p>
+                <p class="text-xs text-muted-foreground">Cloud</p>
+                <p class="mt-1.5 font-medium text-foreground">{selectedAsset.storageId ? 'File synced' : selectedAsset.source === 'url' ? 'Metadata only' : selectedAsset.syncState}</p>
               </div>
               <div class="hf-stat-tile">
-                <p class="text-muted-foreground">Updated</p>
-                <p class="mt-1 text-foreground">{formatDate(selectedAsset.updatedAt)}</p>
+                <p class="text-xs text-muted-foreground">Updated</p>
+                <p class="mt-1.5 font-medium tabular-nums text-foreground">{formatDate(selectedAsset.updatedAt)}</p>
               </div>
             </div>
 
@@ -1199,11 +1227,13 @@
               </div>
             </div>
           {:else}
-            <div class="flex min-h-[360px] items-center justify-center text-center">
-              <div>
-                <Network class="mx-auto text-muted-foreground" size={32} aria-hidden="true" />
-                <h2 class="mt-3 text-lg font-semibold text-foreground">Select evidence</h2>
-                <p class="mt-2 max-w-sm text-sm leading-6 text-muted-foreground">
+            <div class="flex min-h-[360px] items-center justify-center rounded-[14px] border border-dashed border-border/50 bg-background/30 text-center">
+              <div class="px-6">
+                <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-border/60 bg-muted/40">
+                  <Network class="text-muted-foreground" size={24} aria-hidden="true" />
+                </div>
+                <h2 class="mt-4 text-lg font-semibold text-foreground">Select evidence</h2>
+                <p class="mx-auto mt-2 max-w-xs text-sm leading-6 text-muted-foreground">
                   Choose an asset from the vault or a graph node to inspect proof, relationships, and cloud state.
                 </p>
               </div>
@@ -1222,16 +1252,19 @@
           <h2 class="mt-2 text-lg font-semibold text-foreground">Visual link map</h2>
         </div>
         <div class="flex flex-wrap items-center gap-2">
-          <label class="hf-pill">
-            <input bind:checked={includeSessions} type="checkbox" class="h-4 w-4" />
+          <label class="ev-toggle" class:ev-toggle-active={includeSessions}>
+            <input bind:checked={includeSessions} type="checkbox" class="sr-only" />
+            <span class="ev-toggle-dot" class:ev-toggle-dot-on={includeSessions}></span>
             Sessions
           </label>
-          <label class="hf-pill">
-            <input bind:checked={includeNotes} type="checkbox" class="h-4 w-4" />
+          <label class="ev-toggle" class:ev-toggle-active={includeNotes}>
+            <input bind:checked={includeNotes} type="checkbox" class="sr-only" />
+            <span class="ev-toggle-dot" class:ev-toggle-dot-on={includeNotes}></span>
             Notes
           </label>
-          <label class="hf-pill">
-            <input bind:checked={includeUrls} type="checkbox" class="h-4 w-4" />
+          <label class="ev-toggle" class:ev-toggle-active={includeUrls}>
+            <input bind:checked={includeUrls} type="checkbox" class="sr-only" />
+            <span class="ev-toggle-dot" class:ev-toggle-dot-on={includeUrls}></span>
             URLs
           </label>
           <button type="button" class="hf-button-secondary" on:click={saveCanvasView}>

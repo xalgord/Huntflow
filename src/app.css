@@ -268,6 +268,21 @@
     @apply inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground shadow-inner-line;
   }
 
+  /* ── Evidence toggle buttons (graph controls) ── */
+  .ev-toggle {
+    @apply inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/60 px-3 py-1.5 text-xs font-medium text-muted-foreground transition cursor-pointer select-none hover:border-primary/40 hover:text-foreground;
+  }
+  .ev-toggle-active {
+    @apply border-primary/50 bg-primary/10 text-foreground;
+    color: hsl(var(--primary));
+  }
+  .ev-toggle-dot {
+    @apply inline-block h-2 w-2 rounded-full bg-border transition-colors;
+  }
+  .ev-toggle-dot-on {
+    background-color: hsl(var(--primary));
+  }
+
   .hf-chip {
     @apply inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground shadow-inner-line transition hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
   }
