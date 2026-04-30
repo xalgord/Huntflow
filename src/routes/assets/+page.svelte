@@ -1147,7 +1147,7 @@
               <div class="hf-stat-tile">
                 <p class="text-xs text-muted-foreground">File</p>
                 <p class="mt-1.5 truncate font-medium text-foreground">
-                  {selectedAsset.relativePath ?? selectedAsset.fileName ?? selectedAsset.url ?? 'Snippet'}
+                  {selectedAsset.kind === 'url' ? 'Bookmark' : selectedAsset.relativePath ?? selectedAsset.fileName ?? 'Snippet'}
                 </p>
               </div>
               <div class="hf-stat-tile">
@@ -1156,7 +1156,7 @@
               </div>
               <div class="hf-stat-tile">
                 <p class="text-xs text-muted-foreground">Size</p>
-                <p class="mt-1.5 font-medium tabular-nums text-foreground">{formatEvidenceBytes(selectedAsset.size)}</p>
+                <p class="mt-1.5 font-medium tabular-nums text-foreground">{selectedAsset.kind === 'url' ? '—' : formatEvidenceBytes(selectedAsset.size)}</p>
               </div>
               <div class="hf-stat-tile">
                 <p class="text-xs text-muted-foreground">Cloud</p>

@@ -37,12 +37,12 @@
 </script>
 
 <aside
-  class="fixed inset-y-0 left-0 z-40 hidden border-r border-border/80 bg-background/90 text-muted-foreground shadow-dark-sm backdrop-blur-xl transition-[width] duration-200 lg:block {collapsed
+  class="fixed inset-y-0 left-0 z-40 hidden border-r border-border/80 bg-background/90 text-muted-foreground shadow-dark-sm backdrop-blur-xl transition-[width] duration-200 lg:flex lg:flex-col {collapsed
     ? 'w-16'
     : 'w-56'}"
 >
-  <div class="flex h-full flex-col">
-    <div class="relative flex h-24 items-center justify-between border-b border-border/70 px-3">
+  <div class="flex min-h-0 flex-1 flex-col">
+    <div class="relative flex h-16 shrink-0 items-center justify-between border-b border-border/70 px-3">
       {#if !collapsed}
         <a href="/account" class="group flex min-h-[44px] items-center gap-3 rounded-[14px] px-1 text-foreground">
           <span class="relative flex h-11 w-11 items-center justify-center rounded-[14px] border border-primary/30 bg-primary/10 text-primary shadow-inner-line">
@@ -79,7 +79,7 @@
       </button>
     </div>
 
-    <div class="px-3 pt-4">
+    <div class="shrink-0 px-3 pt-3">
       <button
         type="button"
         class="group flex w-full items-center gap-2 rounded-[14px] border border-border/70 bg-muted/40 px-2.5 py-2 text-left text-sm text-muted-foreground shadow-inner-line transition hover:border-primary/30 hover:bg-muted/60 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 {collapsed
@@ -101,7 +101,7 @@
       </button>
     </div>
 
-    <nav class="flex-1 space-y-2 px-3 py-5" aria-label="Primary">
+    <nav class="min-h-0 flex-1 space-y-1 overflow-y-auto px-3 py-3" aria-label="Primary">
       {#each navItems as item}
         <NavItem
           href={item.href}
@@ -114,7 +114,7 @@
       {/each}
     </nav>
 
-    <div class="px-3">
+    <div class="shrink-0 px-3">
       <button
         type="button"
         class="flex w-full items-center gap-2 rounded-[14px] px-2.5 py-2 text-xs text-muted-foreground transition hover:bg-muted/50 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 {collapsed
@@ -195,3 +195,21 @@
     {/if}
   </div>
 </aside>
+
+<style>
+  /* Thin, unobtrusive scrollbar for the nav section */
+  aside :global(nav) {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+  aside :global(nav)::-webkit-scrollbar {
+    width: 4px;
+  }
+  aside :global(nav)::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  aside :global(nav)::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 9999px;
+  }
+</style>

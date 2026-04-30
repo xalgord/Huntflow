@@ -300,7 +300,7 @@
     <main
       class="relative min-h-screen {isLanding
         ? ''
-        : `pt-[calc(max(env(safe-area-inset-top),0px)+8.5rem)] transition-[padding] duration-200 lg:pt-0 ${
+        : `pt-[calc(max(env(safe-area-inset-top),0px)+7.5rem)] transition-[padding] duration-200 lg:pt-0 ${
             navCollapsed ? 'lg:pl-16' : 'lg:pl-56'
           }`}"
     >
