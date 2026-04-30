@@ -486,11 +486,12 @@ export async function syncNow(): Promise<CloudSyncResult> {
 
   // Push via the WebSocket client (faster, auth already configured).
   await convex.mutation(cloudApi.upsertSnapshot, {
-    items: merged.map(({ collection, localId, payload, updatedAt }) => ({
+    items: merged.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
       collection,
       localId,
       payload,
-      updatedAt
+      updatedAt,
+      ...(deletedAt ? { deletedAt } : {})
     }))
   });
 
