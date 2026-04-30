@@ -23,7 +23,8 @@ export default defineSchema({
     collection: syncCollection,
     localId: v.string(),
     payload: v.any(),
-    updatedAt: v.number()
+    updatedAt: v.number(),
+    deletedAt: v.optional(v.number())
   })
     .index('by_owner', ['ownerId'])
     .index('by_owner_updatedAt', ['ownerId', 'updatedAt'])

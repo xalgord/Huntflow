@@ -43,7 +43,7 @@ import type {
 } from '$lib/types';
 import { get } from 'svelte/store';
 import { clerkAuthStore, refreshProEntitlement } from './clerk';
-import { cloudApi, cloudConfigured, getConvexClient } from './convex';
+import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient, getClerkToken } from './convex';
 
 // Thrown when a signed-in but non-Pro user tries to sync. The settings UI
 // catches this and renders a paywall instead of an error toast.
@@ -89,6 +89,68 @@ export interface SyncItem {
   localId: string;
   payload: SyncPayload;
   updatedAt: number;
+  /** Set when the item was soft-deleted. Propagates deletions across devices. */
+  deletedAt?: number;
+}
+
+// ---------------------------------------------------------------------------
+// Tombstone management — localStorage-backed deletion markers
+// ---------------------------------------------------------------------------
+
+interface Tombstone {
+  collection: SyncCollection;
+  localId: string;
+  deletedAt: number;
+}
+
+const TOMBSTONE_KEY = 'huntflow-sync-tombstones';
+/** Tombstones older than 30 days are automatically purged. */
+const TOMBSTONE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+
+function getTombstones(): Tombstone[] {
+  if (!browser) return [];
+  try {
+    const raw = localStorage.getItem(TOMBSTONE_KEY);
+    return raw ? (JSON.parse(raw) as Tombstone[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function setTombstones(tombstones: Tombstone[]): void {
+  if (!browser) return;
+  localStorage.setItem(TOMBSTONE_KEY, JSON.stringify(tombstones));
+}
+
+export function saveTombstone(collection: SyncCollection, localId: string): void {
+  const tombstones = getTombstones();
+  // Deduplicate: only one tombstone per collection:localId
+  const key = `${collection}:${localId}`;
+  const existing = tombstones.findIndex((t) => `${t.collection}:${t.localId}` === key);
+  const entry: Tombstone = { collection, localId, deletedAt: Date.now() };
+  if (existing !== -1) {
+    tombstones[existing] = entry;
+  } else {
+    tombstones.push(entry);
+  }
+  setTombstones(tombstones);
+}
+
+/** Remove a tombstone (e.g. when an item is restored because a newer edit won). */
+function removeTombstone(collection: SyncCollection, localId: string): void {
+  const tombstones = getTombstones();
+  const key = `${collection}:${localId}`;
+  setTombstones(tombstones.filter((t) => `${t.collection}:${t.localId}` !== key));
+}
+
+/** Purge tombstones older than 30 days. Call on startup. */
+export function purgeStaleTombstones(): void {
+  const cutoff = Date.now() - TOMBSTONE_MAX_AGE_MS;
+  const tombstones = getTombstones();
+  const fresh = tombstones.filter((t) => t.deletedAt > cutoff);
+  if (fresh.length !== tombstones.length) {
+    setTombstones(fresh);
+  }
 }
 
 export interface CloudSyncResult {
@@ -152,7 +214,7 @@ export const KNOWN_COLLECTIONS: SyncCollection[] = [
 
 export function normalizeRemoteItem(value: unknown): SyncItem | null {
   if (!isRecord(value)) return null;
-  const { collection, localId, payload, updatedAt } = value;
+  const { collection, localId, payload, updatedAt, deletedAt } = value;
   if (typeof collection !== 'string' || !KNOWN_COLLECTIONS.includes(collection as SyncCollection)) {
     return null;
   }
@@ -163,7 +225,8 @@ export function normalizeRemoteItem(value: unknown): SyncItem | null {
     collection: collection as SyncCollection,
     localId,
     payload: payload as unknown as SyncItem['payload'],
-    updatedAt
+    updatedAt,
+    ...(typeof deletedAt === 'number' ? { deletedAt } : {})
   };
 }
 
@@ -198,7 +261,7 @@ export async function getLocalItems(): Promise<SyncItem[]> {
     bookmarkDB.getAll()
   ]);
 
-  return [
+  const liveItems: SyncItem[] = [
     ...sessions.map((item) => toSyncItem('sessions', item)),
     ...notes.map((item) => toSyncItem('notes', item)),
     ...targets.map((item) => toSyncItem('targets', item)),
@@ -213,6 +276,19 @@ export async function getLocalItems(): Promise<SyncItem[]> {
     ...submissions.map((item) => toSyncItem('submissions', item)),
     ...bookmarks.map((item) => toSyncItem('bookmarks', item))
   ];
+
+  // Include tombstones so deletions propagate through the merge.
+  const tombstoneItems: SyncItem[] = getTombstones().map((t) => ({
+    collection: t.collection,
+    localId: t.localId,
+    // Stub payload — the real data is gone. Only the id field is needed
+    // so normalizeRemoteItem() can validate `payload.id === localId`.
+    payload: { id: t.localId } as unknown as SyncPayload,
+    updatedAt: t.deletedAt,
+    deletedAt: t.deletedAt
+  }));
+
+  return [...liveItems, ...tombstoneItems];
 }
 
 export async function uploadPendingEvidenceFiles(): Promise<void> {
@@ -256,7 +332,16 @@ export function mergeItems(localItems: SyncItem[], remoteItems: SyncItem[]): Syn
   for (const item of [...localItems, ...remoteItems]) {
     const key = `${item.collection}:${item.localId}`;
     const existing = merged.get(key);
-    if (!existing || item.updatedAt >= existing.updatedAt) {
+    if (!existing) {
+      merged.set(key, item);
+      continue;
+    }
+
+    // Last-writer-wins: compare the effective timestamp of each side.
+    // For soft-deleted items, deletedAt IS the effective timestamp.
+    const existingTs = existing.deletedAt ?? existing.updatedAt;
+    const incomingTs = item.deletedAt ?? item.updatedAt;
+    if (incomingTs >= existingTs) {
       merged.set(key, item);
     }
   }
@@ -265,12 +350,40 @@ export function mergeItems(localItems: SyncItem[], remoteItems: SyncItem[]): Syn
 }
 
 export async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {
+  // Separate live items from soft-deleted tombstones.
+  const liveItems = items.filter((item) => !item.deletedAt);
+  const deletedItems = items.filter((item) => !!item.deletedAt);
+
   function pickPayloads<T>(collection: SyncCollection): T[] {
-    return items
+    return liveItems
       .filter((item) => item.collection === collection)
       .map((item) => item.payload as T);
   }
 
+  function pickDeletedIds(collection: SyncCollection): string[] {
+    return deletedItems
+      .filter((item) => item.collection === collection)
+      .map((item) => item.localId);
+  }
+
+  // DB handle map for deletions.
+  const dbMap: Record<SyncCollection, { delete(id: string): Promise<void> }> = {
+    sessions: sessionDB,
+    notes: noteDB,
+    targets: targetDB,
+    payouts: payoutDB,
+    evidenceAssets: evidenceAssetDB,
+    evidenceLinks: evidenceLinkDB,
+    evidenceCanvasViews: evidenceCanvasViewDB,
+    reconAssets: reconAssetDB,
+    payloads: payloadDB,
+    checklistTemplates: checklistTemplateDB,
+    checklistInstances: checklistInstanceDB,
+    submissions: submissionDB,
+    bookmarks: bookmarkDB
+  };
+
+  // 1. Upsert live items.
   const sessions = pickPayloads<Session>('sessions');
   const notes = pickPayloads<Note>('notes');
   const targets = pickPayloads<Target>('targets');
@@ -301,6 +414,15 @@ export async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {
     bookmarkDB.putBatch(bookmarks)
   ]);
 
+  // 2. Apply deletions — remove soft-deleted items from local IndexedDB.
+  for (const collection of KNOWN_COLLECTIONS) {
+    const ids = pickDeletedIds(collection);
+    if (ids.length === 0) continue;
+    const db = dbMap[collection];
+    await Promise.all(ids.map((id) => db.delete(id)));
+  }
+
+  // 3. Refresh all Svelte stores so the UI reflects both upserts and deletions.
   await Promise.all([
     sessionStore.refresh(),
     noteStore.refresh(),
@@ -316,6 +438,12 @@ export async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {
     submissionStore.refresh(),
     bookmarkStore.refresh()
   ]);
+
+  // 4. Clean up local tombstones for items that were restored (live item won
+  //    over the tombstone during merge).
+  for (const item of liveItems) {
+    removeTombstone(item.collection, item.localId);
+  }
 }
 
 export async function syncNow(): Promise<CloudSyncResult> {
@@ -335,9 +463,19 @@ export async function syncNow(): Promise<CloudSyncResult> {
 
   await uploadPendingEvidenceFiles();
 
+  // Use the cache-free HTTP client for pulling the remote snapshot so
+  // "Sync Now" always returns fresh data — the WebSocket client's
+  // convex.query() can serve stale cached results on cross-device syncs.
+  const httpClient = getConvexHttpClient();
+  const token = await getClerkToken();
+  if (!httpClient || !token) {
+    throw new Error('Could not authenticate with Convex. Please sign in again.');
+  }
+  httpClient.setAuth(token);
+
   const [localItems, rawRemoteItems] = await Promise.all([
     getLocalItems(),
-    convex.query(cloudApi.getSnapshot, {})
+    httpClient.query(cloudApi.getSnapshot, {})
   ]);
   const remoteItems = Array.isArray(rawRemoteItems)
     ? rawRemoteItems.map(normalizeRemoteItem).filter((item): item is SyncItem => Boolean(item))
@@ -345,6 +483,8 @@ export async function syncNow(): Promise<CloudSyncResult> {
   const merged = mergeItems(localItems, remoteItems);
 
   await applyLocalSnapshot(merged);
+
+  // Push via the WebSocket client (faster, auth already configured).
   await convex.mutation(cloudApi.upsertSnapshot, {
     items: merged.map(({ collection, localId, payload, updatedAt }) => ({
       collection,

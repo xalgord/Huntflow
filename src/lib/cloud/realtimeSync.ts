@@ -25,6 +25,8 @@ import {
   getLocalItems,
   mergeItems,
   normalizeRemoteItem,
+  purgeStaleTombstones,
+  saveTombstone,
   toSyncItem,
   uploadPendingEvidenceFiles,
   type SyncCollection,
@@ -87,6 +89,15 @@ const PUSH_DEBOUNCE_MS = 1500;
 const POLL_INTERVAL_MS = 10_000; // 10 seconds
 const LAST_SYNC_KEY = 'huntflow-cloud-last-sync-at';
 
+/**
+ * When the poll cycle pushes merged data via `upsertSnapshot`, the Convex
+ * `onUpdate` subscription fires with the data we just wrote. Setting this
+ * flag lets the subscription callback skip the redundant apply, avoiding
+ * wasted IndexedDB reads and potential UI flicker from store resets racing
+ * with the poll's own `applyLocalSnapshot` call.
+ */
+let suppressSubscription = false;
+
 // Map collection names → their persisted stores so the onFlush hook can
 // determine which collection changed and push only the delta.
 type StoreEntry = { collection: SyncCollection; store: PersistedArrayStore<{ id: string }> };
@@ -109,6 +120,19 @@ function allStores(): StoreEntry[] {
   ];
 }
 
+/**
+ * Build a per-collection onFlush handler that creates tombstones for any
+ * IDs deleted from that collection, then schedules a push.
+ */
+function makeFlushHandler(collection: SyncCollection) {
+  return (_dirtyIds: string[], deletedIds: string[]): void => {
+    for (const id of deletedIds) {
+      saveTombstone(collection, id);
+    }
+    schedulePush();
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Push: debounced full-snapshot push to Convex after local edits
 // ---------------------------------------------------------------------------
@@ -127,11 +151,12 @@ async function pushToConvex(): Promise<void> {
 
     const localItems = await getLocalItems();
     await convex.mutation(cloudApi.upsertSnapshot, {
-      items: localItems.map(({ collection, localId, payload, updatedAt }) => ({
+      items: localItems.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
         collection,
         localId,
         payload,
-        updatedAt
+        updatedAt,
+        ...(deletedAt ? { deletedAt } : {})
       }))
     });
 
@@ -158,16 +183,16 @@ function schedulePush(): void {
   }, PUSH_DEBOUNCE_MS);
 }
 
-// The onFlush callback installed into every persisted store.
-function handleStoreFlush(_dirtyIds: string[], _deletedIds: string[]): void {
-  schedulePush();
-}
+// NOTE: per-collection flush handlers are created by makeFlushHandler().
+// The old generic handleStoreFlush is replaced so each store's deletions
+// are correctly attributed to the right collection.
 
 // ---------------------------------------------------------------------------
 // Pull: process incoming Convex snapshot update
 // ---------------------------------------------------------------------------
 
 async function handleRemoteUpdate(rawRemote: unknown): Promise<void> {
+  if (suppressSubscription) return; // poll just pushed — data is already local
   if (!Array.isArray(rawRemote)) return;
 
   const remoteItems = rawRemote
@@ -260,14 +285,25 @@ async function pollRemote(): Promise<void> {
     // Push merged snapshot back to Convex so other devices get our changes.
     // We use the WebSocket-based client for mutations (faster, auth is
     // already configured via setAuth callback).
+    //
+    // Suppress the subscription callback while pushing — the mutation will
+    // trigger onUpdate with the data we just wrote, but we've already
+    // applied it locally. Without this, the callback would re-read all 13
+    // collections from IndexedDB and re-set every Svelte store for nothing.
+    suppressSubscription = true;
     await convex.mutation(cloudApi.upsertSnapshot, {
-      items: merged.map(({ collection, localId, payload, updatedAt }) => ({
+      items: merged.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
         collection,
         localId,
         payload,
-        updatedAt
+        updatedAt,
+        ...(deletedAt ? { deletedAt } : {})
       }))
     });
+    // Clear the flag after a short delay so legitimate remote updates
+    // (from other devices) still get processed. The subscription callback
+    // typically fires within a few hundred ms of the mutation completing.
+    setTimeout(() => { suppressSubscription = false; }, 2_000);
 
     const now = Date.now();
     localStorage.setItem(LAST_SYNC_KEY, String(now));
@@ -323,9 +359,12 @@ export function startRealtimeSync(): void {
   const convex = getConvexClient();
   if (!convex) return;
 
-  // Wire onFlush into every store.
+  // Purge old tombstones on startup so they don't grow unbounded.
+  purgeStaleTombstones();
+
+  // Wire per-collection onFlush handlers into every store.
   for (const entry of allStores()) {
-    entry.store.setOnFlush(handleStoreFlush);
+    entry.store.setOnFlush(makeFlushHandler(entry.collection));
   }
 
   // Subscribe to Convex live query (near-instant channel).

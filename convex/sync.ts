@@ -21,7 +21,8 @@ const syncItemInput = v.object({
   collection: syncCollection,
   localId: v.string(),
   payload: v.any(),
-  updatedAt: v.number()
+  updatedAt: v.number(),
+  deletedAt: v.optional(v.number())
 });
 
 async function requireOwnerId(ctx: { auth: { getUserIdentity: () => Promise<{ subject: string } | null> } }) {
@@ -64,10 +65,15 @@ export const upsertSnapshot = mutationGeneric({
       const existing = existingByKey.get(key);
 
       if (existing) {
-        if (item.updatedAt >= existing.updatedAt) {
+        // Last-writer-wins: update if the incoming timestamp is newer.
+        // For soft deletes, compare deletedAt against updatedAt too.
+        const incomingTs = item.deletedAt ?? item.updatedAt;
+        const existingTs = existing.deletedAt ?? existing.updatedAt;
+        if (incomingTs >= existingTs) {
           await ctx.db.patch(existing._id, {
             payload: item.payload,
-            updatedAt: item.updatedAt
+            updatedAt: item.updatedAt,
+            deletedAt: item.deletedAt
           });
         }
       } else {
@@ -76,7 +82,8 @@ export const upsertSnapshot = mutationGeneric({
           collection: item.collection,
           localId: item.localId,
           payload: item.payload,
-          updatedAt: item.updatedAt
+          updatedAt: item.updatedAt,
+          deletedAt: item.deletedAt
         });
       }
 
