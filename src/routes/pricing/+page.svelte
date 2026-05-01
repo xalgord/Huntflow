@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
-  import { clerkAuthStore, mountClerkPricingTable, openClerkSubscriptions } from '$lib/cloud/clerk';
+  import { clerkAuthStore, initClerk, mountClerkPricingTable, openClerkSubscriptions } from '$lib/cloud/clerk';
   import {
     ArrowRight,
     Check,
@@ -20,6 +20,7 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let billingMounted = false;
+  let billingEnabled = false;
   let billingUnavailable = false;
   let billingObserver: MutationObserver | null = null;
   let billingLoadTimer: ReturnType<typeof setTimeout> | null = null;
@@ -122,6 +123,40 @@
     }, 2500);
   }
 
+  function errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+  }
+
+  async function checkBillingAvailability(): Promise<boolean> {
+    type BillingProbeClerk = {
+      mountPricingTable?: unknown;
+      billing?: {
+        getPlans?: (params?: {
+          for?: 'user' | 'organization';
+          pageSize?: number;
+        }) => Promise<unknown>;
+      };
+    };
+
+    const clerk = (await initClerk()) as BillingProbeClerk | null;
+    if (!clerk) return false;
+
+    if (typeof clerk.billing?.getPlans !== 'function') {
+      return typeof clerk.mountPricingTable === 'function';
+    }
+
+    try {
+      await clerk.billing.getPlans({ for: 'user', pageSize: 1 });
+      return true;
+    } catch (error) {
+      console.info(
+        '[HuntFlow] Clerk Billing is unavailable; showing static pricing cards.',
+        errorMessage(error)
+      );
+      return false;
+    }
+  }
+
   async function handleManageSubscription(): Promise<void> {
     openingSubscriptions = true;
     try {
@@ -160,6 +195,13 @@
     // Don't mount the pricing widget for Pro subscribers — they only
     // need the "already Pro" management banner, not a second buy surface.
     if (!mountNode || $clerkAuthStore.isPro) return;
+
+    billingEnabled = await checkBillingAvailability();
+    if (!billingEnabled) {
+      billingUnavailable = true;
+      return;
+    }
+
     unmount = await mountClerkPricingTable(mountNode, {
       // After a successful subscription checkout:
       //   · Signed-in flow  → /account?welcome=pro (shows the Pro welcome banner)
@@ -318,20 +360,16 @@
         </div>
       {/if}
 
-      {#if $clerkAuthStore.configured && !($clerkAuthStore.signedIn && $clerkAuthStore.isPro)}
+      {#if $clerkAuthStore.configured && !billingUnavailable && !($clerkAuthStore.signedIn && $clerkAuthStore.isPro)}
         <div
           bind:this={mountNode}
           class="hf-pricing-mount mx-auto max-w-4xl"
           data-mounted={billingMounted}
           data-unavailable={billingUnavailable}
         ></div>
-        {#if !billingMounted && !billingUnavailable}
+        {#if billingEnabled && !billingMounted}
           <div class="mx-auto max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-center text-sm text-slate-400" aria-live="polite">
             Loading live pricing&hellip;
-          </div>
-        {:else if billingUnavailable && $clerkAuthStore.signedIn}
-          <div class="mx-auto max-w-2xl rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-5 text-center text-sm leading-6 text-amber-100/80" aria-live="polite">
-            Live checkout did not render. You can still review the plans below and open billing from your account.
           </div>
         {/if}
       {/if}
@@ -406,7 +444,7 @@
             {/each}
           </ul>
 
-          {#if $clerkAuthStore.signedIn}
+          {#if $clerkAuthStore.signedIn && !billingUnavailable}
             <button
               type="button"
               class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-primary-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.2)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-400 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_32px_rgba(96,255,92,0.35)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
@@ -416,6 +454,14 @@
               <CreditCard size={15} aria-hidden="true" />
               {openingSubscriptions ? 'Opening billing…' : 'Open billing'}
             </button>
+          {:else if $clerkAuthStore.signedIn}
+            <a
+              href="/account"
+              class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-white/[0.04] px-5 py-3 text-sm font-semibold text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-white/[0.14] hover:bg-white/[0.08]"
+            >
+              Back to account
+              <ArrowRight size={15} aria-hidden="true" />
+            </a>
           {:else}
             <a
               href="/sign-up"
