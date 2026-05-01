@@ -37,6 +37,11 @@
     system: '#09090b'
   };
 
+  function normalizePathname(path: string): string {
+    if (path === '/') return path;
+    return path.replace(/\/+$/, '') || '/';
+  }
+
   onMount(async () => {
     await settingsStore.load();
     settingsReady = true;
@@ -135,7 +140,7 @@
     }
   });
 
-  $: pathname = $page.url.pathname;
+  $: pathname = normalizePathname($page.url.pathname);
   $: canonicalUrl = `${$page.url.origin}${pathname}`;
   // Treat marketing/auth/billing pages as "no-chrome": they have their own
   // headers and footers and don't need the side nav, bottom nav, or

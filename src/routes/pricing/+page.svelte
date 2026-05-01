@@ -20,6 +20,9 @@
   let mountNode: HTMLDivElement | null = null;
   let unmount: (() => void) | null = null;
   let billingMounted = false;
+  let billingUnavailable = false;
+  let billingObserver: MutationObserver | null = null;
+  let billingLoadTimer: ReturnType<typeof setTimeout> | null = null;
   // Set true when we're navigating away in local-mode so the static
   // pricing fallback markup doesn't flash before the bounce lands.
   let redirectingLocal = false;
@@ -45,6 +48,79 @@
   ];
 
   let openingSubscriptions = false;
+
+  $: showStaticPlans =
+    !($clerkAuthStore.signedIn && $clerkAuthStore.isPro) &&
+    !billingMounted;
+
+  function normalizePathname(pathname: string): string {
+    if (pathname === '/') return pathname;
+    return pathname.replace(/\/+$/, '') || '/';
+  }
+
+  function clearBillingWatch(): void {
+    billingObserver?.disconnect();
+    billingObserver = null;
+    if (billingLoadTimer) {
+      clearTimeout(billingLoadTimer);
+      billingLoadTimer = null;
+    }
+  }
+
+  function mountHasVisiblePricing(node: HTMLElement | null): boolean {
+    if (!browser || !node) return false;
+
+    const likelyPricingElements = node.querySelectorAll<HTMLElement>(
+      '.cl-pricingTableCard, [class*="pricingTableCard"], [class*="PricingTableCard"], button, a'
+    );
+
+    for (let index = 0; index < likelyPricingElements.length; index += 1) {
+      const element = likelyPricingElements[index];
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      if (
+        style.display !== 'none' &&
+        style.visibility !== 'hidden' &&
+        rect.width > 0 &&
+        rect.height > 0 &&
+        element.textContent?.trim()
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  function refreshBillingMounted(): void {
+    if (!mountHasVisiblePricing(mountNode)) return;
+    billingMounted = true;
+    billingUnavailable = false;
+    if (billingLoadTimer) {
+      clearTimeout(billingLoadTimer);
+      billingLoadTimer = null;
+    }
+  }
+
+  function watchBillingMount(): void {
+    clearBillingWatch();
+    if (!browser || !mountNode) return;
+
+    billingObserver = new MutationObserver(refreshBillingMounted);
+    billingObserver.observe(mountNode, {
+      attributes: true,
+      childList: true,
+      subtree: true
+    });
+
+    requestAnimationFrame(refreshBillingMounted);
+    billingLoadTimer = setTimeout(() => {
+      refreshBillingMounted();
+      if (!billingMounted) {
+        billingUnavailable = true;
+      }
+    }, 2500);
+  }
 
   async function handleManageSubscription(): Promise<void> {
     openingSubscriptions = true;
@@ -75,7 +151,7 @@
       } catch {
         /* fall through */
       }
-      if (browser && window.location.pathname === '/pricing') {
+      if (browser && normalizePathname(window.location.pathname) === '/pricing') {
         window.location.replace('/account');
       }
       return;
@@ -91,10 +167,11 @@
       //     (Clerk handles sign-up, then lands on /account with the banner)
       newSubscriptionRedirectUrl: '/account?welcome=pro'
     });
-    billingMounted = true;
+    watchBillingMount();
   });
 
   onDestroy(() => {
+    clearBillingWatch();
     unmount?.();
   });
 </script>
@@ -246,20 +323,23 @@
           bind:this={mountNode}
           class="hf-pricing-mount mx-auto max-w-4xl"
           data-mounted={billingMounted}
+          data-unavailable={billingUnavailable}
         ></div>
-        {#if !billingMounted}
+        {#if !billingMounted && !billingUnavailable}
           <div class="mx-auto max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-center text-sm text-slate-400" aria-live="polite">
             Loading live pricing&hellip;
+          </div>
+        {:else if billingUnavailable && $clerkAuthStore.signedIn}
+          <div class="mx-auto max-w-2xl rounded-xl border border-amber-400/20 bg-amber-400/[0.06] p-5 text-center text-sm leading-6 text-amber-100/80" aria-live="polite">
+            Live checkout did not render. You can still review the plans below and open billing from your account.
           </div>
         {/if}
       {/if}
 
-      <!-- Static plan summary: only shown for non-signed-in visitors as a
-           marketing preview before they create an account. Signed-in users
-           always interact with the live Clerk pricing table or the "already
-           Pro" banner above — showing static cards for them causes confusing
-           duplicate pricing UI. -->
-      {#if !$clerkAuthStore.signedIn && !billingMounted}
+      <!-- Static plan summary stays visible until the embedded Clerk Billing
+           table produces actual visible pricing content, so the billing
+           section never collapses into an empty gap. -->
+      {#if showStaticPlans}
       <div class="mt-10 grid items-start gap-6 lg:grid-cols-2">
         <!-- FREE PLAN — The Foundation -->
         <article class="plan-card group relative flex flex-col overflow-hidden rounded-2xl border border-white/[0.06] p-7 backdrop-blur-sm transition-all duration-300 hover:border-white/[0.12]">
@@ -284,7 +364,7 @@
             href="/account"
             class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-transparent px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/[0.16] hover:text-slate-200 hover:bg-white/[0.04]"
           >
-            Start hunting — free
+            {$clerkAuthStore.signedIn ? 'Back to the app' : 'Start hunting — free'}
           </a>
         </article>
 
@@ -327,11 +407,15 @@
           </ul>
 
           {#if $clerkAuthStore.signedIn}
-            <p class="mt-7 rounded-md border border-slate-800 bg-slate-950/60 p-3 text-center text-xs text-slate-400">
-              {$clerkAuthStore.isPro
-                ? 'You are on the Pro plan. Manage your subscription from your profile.'
-                : 'Use the live pricing table above to upgrade.'}
-            </p>
+            <button
+              type="button"
+              class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-primary-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.2)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-400 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_32px_rgba(96,255,92,0.35)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              on:click={handleManageSubscription}
+              disabled={openingSubscriptions}
+            >
+              <CreditCard size={15} aria-hidden="true" />
+              {openingSubscriptions ? 'Opening billing…' : 'Open billing'}
+            </button>
           {:else}
             <a
               href="/sign-up"
