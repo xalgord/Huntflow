@@ -17,17 +17,20 @@
   import { navItems } from '$lib/components/layout/navItems';
   import { fuzzyMatch } from '$lib/utils/fuzzy';
   import {
+    BarChart3,
     BookMarked,
+    CircleDollarSign,
     Clipboard,
     Crosshair,
     FileText,
     Flag,
+    FolderKanban,
     ListChecks,
     Network,
     Plus,
     Send,
     Settings as SettingsIcon,
-    Sword,
+    ShieldAlert,
     Timer as TimerIcon,
     Sparkles,
     Search
@@ -38,7 +41,18 @@
 
   interface CommandItem {
     id: string;
-    section: 'Navigate' | 'Actions' | 'Targets' | 'Notes' | 'Payloads' | 'Submissions' | 'Recon' | 'Evidence' | 'Bookmarks' | 'Checklists';
+    section:
+      | 'Navigate'
+      | 'Actions'
+      | 'Programs'
+      | 'Targets'
+      | 'Notes'
+      | 'Payloads'
+      | 'Findings'
+      | 'Reports'
+      | 'Evidence'
+      | 'Bookmarks'
+      | 'Checklists';
     title: string;
     subtitle?: string;
     icon: IconComponent;
@@ -132,10 +146,19 @@
       {
         id: 'action:new-target',
         section: 'Actions',
-        title: 'Create new target',
-        subtitle: 'Add a program to your queue',
+        title: 'Create new program',
+        subtitle: 'Add scope, platform, priority, and hunting status',
         icon: Plus,
         keywords: 'add program platform create',
+        href: '/programs?new=1'
+      },
+      {
+        id: 'action:new-asset-target',
+        section: 'Actions',
+        title: 'Create target asset',
+        subtitle: 'Add an in-scope URL, domain, IP, API, or app',
+        icon: Flag,
+        keywords: 'add target asset domain url api mobile scope',
         href: '/targets?new=1'
       },
       {
@@ -150,11 +173,20 @@
       {
         id: 'action:new-submission',
         section: 'Actions',
-        title: 'Log new submission',
-        subtitle: 'Track a report through triage',
+        title: 'Capture new finding',
+        subtitle: 'Track a lead, confirmed bug, or submitted issue',
+        icon: ShieldAlert,
+        keywords: 'add finding lead vulnerability triage',
+        href: '/findings?new=1'
+      },
+      {
+        id: 'action:new-report',
+        section: 'Actions',
+        title: 'Draft new report',
+        subtitle: 'Open the structured bug bounty report builder',
         icon: Send,
-        keywords: 'add report triage hackerone',
-        href: '/submissions?new=1'
+        keywords: 'add report draft hackerone bugcrowd',
+        href: '/reports?new=1'
       },
       {
         id: 'action:new-payout',
@@ -163,7 +195,7 @@
         subtitle: 'Record a bounty you earned',
         icon: Plus,
         keywords: 'income bounty money paid',
-        href: '/income?new=1'
+        href: '/payouts?new=1'
       },
       {
         id: 'action:toggle-theme',
@@ -200,20 +232,20 @@
 
   // ─── Navigation ───────────────────────────────────────────────────────────
   function buildNavigation(): CommandItem[] {
-    // Dashboard is omitted: the /dashboard route is disabled and is no
-    // longer part of the navItems list, so an icon mapping for it would
-    // never be looked up.
     const iconForHref = new Map<string, IconComponent>([
-      ['/timer', Crosshair],
+      ['/dashboard', Sparkles],
+      ['/programs', FolderKanban],
       ['/targets', Flag],
-      ['/payloads', Sword],
+      ['/timer', TimerIcon],
       ['/notes', FileText],
-      ['/submissions', Send],
-      ['/income', Plus],
+      ['/findings', ShieldAlert],
+      ['/reports', Send],
+      ['/payouts', CircleDollarSign],
+      ['/analytics', BarChart3],
       ['/assets', Network],
       ['/bookmarks', BookMarked],
       ['/settings', SettingsIcon],
-      ['/stats', Sparkles]
+      ['/payloads', Crosshair]
     ]);
     const items: CommandItem[] = navItems.map((nav) => ({
       id: `nav:${nav.href}`,
@@ -223,22 +255,6 @@
       keywords: nav.label.toLowerCase(),
       href: nav.href
     }));
-    items.push({
-      id: 'nav:/stats',
-      section: 'Navigate',
-      title: 'Go to Stats',
-      icon: Sparkles,
-      keywords: 'analytics charts streak',
-      href: '/stats'
-    });
-    items.push({
-      id: 'nav:/income',
-      section: 'Navigate',
-      title: 'Go to Income',
-      icon: Plus,
-      keywords: 'bounty payout money paid earnings',
-      href: '/income'
-    });
     return items;
   }
 
@@ -249,12 +265,12 @@
     for (const target of $targetStore) {
       list.push({
         id: `target:${target.id}`,
-        section: 'Targets',
+        section: 'Programs',
         title: target.name,
         subtitle: `${target.platform} · ${target.status} · P${target.priority}`,
-        icon: Flag,
+        icon: FolderKanban,
         keywords: `${target.platform} ${target.status} ${target.notes ?? ''}`,
-        href: `/targets/${target.id}`
+        href: `/programs/${target.id}`
       });
     }
 
@@ -276,7 +292,7 @@
         section: 'Payloads',
         title: payload.name,
         subtitle: `${payload.category}${payload.context ? ` · ${payload.context}` : ''}`,
-        icon: Sword,
+        icon: Crosshair,
         keywords: `${payload.category} ${(payload.tags ?? []).join(' ')} ${payload.payload.slice(0, 80)}`,
         href: `/payloads?id=${payload.id}`
       });
@@ -285,24 +301,24 @@
     for (const submission of $submissionStore) {
       list.push({
         id: `submission:${submission.id}`,
-        section: 'Submissions',
+        section: submission.status === 'draft' ? 'Reports' : 'Findings',
         title: submission.title,
         subtitle: `${submission.status} · ${submission.severity}`,
-        icon: Send,
+        icon: submission.status === 'draft' ? Send : ShieldAlert,
         keywords: `${submission.platform} ${submission.vulnerabilityType ?? ''} ${(submission.tags ?? []).join(' ')}`,
-        href: `/submissions?id=${submission.id}`
+        href: submission.status === 'draft' ? `/reports?id=${submission.id}` : `/findings?id=${submission.id}`
       });
     }
 
     for (const asset of $reconAssetStore) {
       list.push({
         id: `recon:${asset.id}`,
-        section: 'Recon',
+        section: 'Targets',
         title: asset.hostname,
         subtitle: asset.title || asset.url || asset.ipAddress || asset.status,
         icon: Network,
         keywords: `${asset.status} ${asset.technologies.join(' ')} ${asset.notes ?? ''}`,
-        href: `/targets/${asset.targetId}/recon?focus=${asset.id}`
+        href: `/targets?asset=${asset.id}`
       });
     }
 
@@ -388,11 +404,12 @@
       'Recent',
       'Actions',
       'Navigate',
+      'Programs',
       'Targets',
-      'Submissions',
+      'Findings',
+      'Reports',
       'Notes',
       'Payloads',
-      'Recon',
       'Evidence',
       'Checklists',
       'Bookmarks'
@@ -475,7 +492,7 @@
           bind:value={query}
           on:input={() => (activeIndex = 0)}
           type="text"
-          placeholder="Search targets, notes, payloads, submissions, actions…"
+          placeholder="Search programs, targets, notes, findings, reports, actions..."
           class="flex-1 bg-transparent py-4 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
           autocomplete="off"
           spellcheck="false"

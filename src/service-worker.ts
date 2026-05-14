@@ -12,7 +12,7 @@ type HuntFlowServiceWorker = ServiceWorkerGlobalScope & {
 };
 
 const sw = self as unknown as HuntFlowServiceWorker;
-const CACHE = 'huntflow-v1';
+const CACHE = 'huntflow-command-center-v2';
 const INJECTED_ASSETS = ((self as unknown as HuntFlowServiceWorker).__WB_MANIFEST || []).map(
   (asset) => asset.url
 );
@@ -27,6 +27,36 @@ async function offlineFallback(): Promise<Response> {
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     })
   );
+}
+
+function isDocumentRequest(request: Request): boolean {
+  return request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html') === true;
+}
+
+async function networkFirst(request: Request): Promise<Response> {
+  try {
+    const response = await fetch(request);
+    if (response && response.status === 200 && response.type === 'basic') {
+      const cache = await caches.open(CACHE);
+      await cache.put(request, response.clone());
+    }
+    return response;
+  } catch {
+    const cached = await caches.match(request);
+    return cached ?? offlineFallback();
+  }
+}
+
+async function cacheFirst(request: Request): Promise<Response> {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+
+  const response = await fetch(request);
+  if (response && response.status === 200 && response.type === 'basic') {
+    const cache = await caches.open(CACHE);
+    await cache.put(request, response.clone());
+  }
+  return response;
 }
 
 sw.addEventListener('install', (event) => {
@@ -53,21 +83,5 @@ sw.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (new URL(request.url).origin !== sw.location.origin) return;
 
-  event.respondWith(
-    caches.match(request).then((cached) => {
-      if (cached) return cached;
-
-      return fetch(request)
-        .then((response) => {
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
-
-          const responseToCache = response.clone();
-          caches.open(CACHE).then((cache) => cache.put(request, responseToCache));
-          return response;
-        })
-        .catch(() => offlineFallback());
-    })
-  );
+  event.respondWith(isDocumentRequest(request) ? networkFirst(request) : cacheFirst(request));
 });

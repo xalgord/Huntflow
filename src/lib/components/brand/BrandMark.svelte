@@ -36,7 +36,7 @@
 >
   {#if filled}
     <!-- Brand tile background (matches the generated marketing JPG). -->
-    <rect width="32" height="32" rx="7" fill="#16a34a" />
+    <rect width="32" height="32" rx="7" fill="#111111" stroke="#262626" />
     <!--
       Three stacked slabs. Each slab is a hexagonal band: notched on
       the leading (left) edge and chevroned to a point on the trailing
@@ -48,7 +48,7 @@
       <path d="M7 21 L21 21 L25 24 L21 27 L7 27 L9.5 24 Z" />
     </g>
     <!-- Cyan accent diamond — the lock-on highlight on the centre slab. -->
-    <path d="M14.8 16 L18 17 L14.8 18 L13.4 17 Z" fill="#22d3ee" />
+    <path d="M14.8 16 L18 17 L14.8 18 L13.4 17 Z" fill="#a1a1aa" />
   {:else}
     <g fill="currentColor">
       <path d="M5 6 L19 6 L23 9 L19 12 L5 12 L7.5 9 Z" />

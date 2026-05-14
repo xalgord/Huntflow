@@ -256,6 +256,10 @@ export type ReconAssetStatus =
   | 'out-of-scope'
   | 'dead';
 
+export type TargetAssetType = 'web' | 'api' | 'mobile' | 'cloud' | 'source-code' | 'other';
+
+export type ScopeStatus = 'in-scope' | 'out-of-scope' | 'unknown';
+
 export type ReconAssetSource =
   | 'manual'
   | 'import'
@@ -275,6 +279,12 @@ export interface ReconAsset {
   url?: string;
   /** Resolved IPv4/IPv6 address. */
   ipAddress?: string;
+  /** Optional command-center classification for first-class Targets page UX. */
+  assetType?: TargetAssetType;
+  /** Optional scope state. Older workspaces use `inScope` as the fallback. */
+  scopeStatus?: ScopeStatus;
+  /** Optional target priority, mirroring program priority scale. */
+  priority?: Priority;
   status: ReconAssetStatus;
   inScope: boolean;
   httpStatus?: number;
@@ -284,6 +294,7 @@ export interface ReconAsset {
   ports?: number[];
   notes?: string;
   source?: ReconAssetSource;
+  tags?: string[];
   /** When the asset was first seen. */
   discoveredAt: number;
   /** When this asset was last manually retested. */

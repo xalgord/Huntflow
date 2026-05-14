@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 
 const sw = self as unknown as ServiceWorkerGlobalScope;
-const CACHE = 'huntflow-static-v1';
+const CACHE = 'huntflow-static-v2';
 const APP_SHELL = ['/', '/manifest.json', '/favicon.svg', '/icons/huntflow.svg'];
 
 async function offlineFallback(): Promise<Response> {
@@ -13,6 +13,10 @@ async function offlineFallback(): Promise<Response> {
       headers: { 'Content-Type': 'text/plain; charset=utf-8' }
     })
   );
+}
+
+function isDocumentRequest(request: Request): boolean {
+  return request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html') === true;
 }
 
 sw.addEventListener('install', (event) => {
@@ -40,6 +44,28 @@ sw.addEventListener('fetch', (event) => {
   if (new URL(request.url).origin !== sw.location.origin) return;
 
   event.respondWith(
-    caches.match(request).then((cached) => cached ?? fetch(request).catch(() => offlineFallback()))
+    (async () => {
+      if (isDocumentRequest(request)) {
+        try {
+          const response = await fetch(request);
+          if (response && response.status === 200 && response.type === 'basic') {
+            const cache = await caches.open(CACHE);
+            await cache.put(request, response.clone());
+          }
+          return response;
+        } catch {
+          return (await caches.match(request)) ?? offlineFallback();
+        }
+      }
+
+      const cached = await caches.match(request);
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response && response.status === 200 && response.type === 'basic') {
+        const cache = await caches.open(CACHE);
+        await cache.put(request, response.clone());
+      }
+      return response;
+    })()
   );
 });

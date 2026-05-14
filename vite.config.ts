@@ -31,7 +31,7 @@ export default defineConfig({
         injectionPoint: 'self.__WB_MANIFEST'
       },
       devOptions: {
-        enabled: true,
+        enabled: false,
         type: 'module'
       }
     })

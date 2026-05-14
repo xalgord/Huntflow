@@ -116,7 +116,7 @@
     class="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900/70 px-2 py-1.5 align-middle transition hover:border-primary-400/50 hover:bg-slate-900"
   >
     <span class="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-800 text-primary-200">
-      <Icon size={14} aria-hidden="true" />
+      <svelte:component this={Icon} size={14} aria-hidden="true" />
     </span>
     <span class="flex min-w-0 flex-col">
       <span class="max-w-[14rem] truncate text-xs font-medium text-slate-100">{title}</span>

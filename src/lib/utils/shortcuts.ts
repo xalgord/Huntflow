@@ -41,32 +41,37 @@ interface NavTarget extends NavShortcut {
  * cheatsheet UI and is wired into the global handler.
  */
 export const navTargets: NavTarget[] = [
-  // `g d` (Dashboard) is intentionally omitted — the /dashboard route is
-  // disabled. /account is reached via the user pill in the side nav.
   {
     group: 'Navigation',
     prefix: 'g',
-    trigger: 't',
-    keys: ['g', 't'],
-    label: 'Timer',
-    href: '/timer'
-  },
-  {
-    group: 'Navigation',
-    prefix: 'g',
-    trigger: 'r',
-    keys: ['g', 'r'],
-    label: 'Targets',
-    href: '/targets',
-    hint: 'r for "rooms"'
+    trigger: 'd',
+    keys: ['g', 'd'],
+    label: 'Dashboard',
+    href: '/dashboard'
   },
   {
     group: 'Navigation',
     prefix: 'g',
     trigger: 'p',
     keys: ['g', 'p'],
-    label: 'Payloads',
-    href: '/payloads'
+    label: 'Programs',
+    href: '/programs'
+  },
+  {
+    group: 'Navigation',
+    prefix: 'g',
+    trigger: 't',
+    keys: ['g', 't'],
+    label: 'Targets',
+    href: '/targets'
+  },
+  {
+    group: 'Navigation',
+    prefix: 'g',
+    trigger: 's',
+    keys: ['g', 's'],
+    label: 'Sessions',
+    href: '/sessions'
   },
   {
     group: 'Navigation',
@@ -79,10 +84,34 @@ export const navTargets: NavTarget[] = [
   {
     group: 'Navigation',
     prefix: 'g',
-    trigger: 's',
-    keys: ['g', 's'],
-    label: 'Submissions',
-    href: '/submissions'
+    trigger: 'f',
+    keys: ['g', 'f'],
+    label: 'Findings',
+    href: '/findings'
+  },
+  {
+    group: 'Navigation',
+    prefix: 'g',
+    trigger: 'r',
+    keys: ['g', 'r'],
+    label: 'Reports',
+    href: '/reports'
+  },
+  {
+    group: 'Navigation',
+    prefix: 'g',
+    trigger: 'y',
+    keys: ['g', 'y'],
+    label: 'Payouts',
+    href: '/payouts'
+  },
+  {
+    group: 'Navigation',
+    prefix: 'g',
+    trigger: 'a',
+    keys: ['g', 'a'],
+    label: 'Analytics',
+    href: '/analytics'
   },
   {
     group: 'Navigation',
@@ -92,6 +121,14 @@ export const navTargets: NavTarget[] = [
     label: 'Evidence',
     href: '/assets',
     hint: 'v for "view evidence"'
+  },
+  {
+    group: 'Navigation',
+    prefix: 'g',
+    trigger: 'l',
+    keys: ['g', 'l'],
+    label: 'Payloads',
+    href: '/payloads'
   },
   {
     group: 'Navigation',
@@ -124,10 +161,13 @@ export const navTargets: NavTarget[] = [
  * the URL or no-op based on the current pathname.
  */
 const createRoutes: Array<{ match: (path: string) => boolean; href: string }> = [
+  { match: (p) => p.startsWith('/programs') && p === '/programs', href: '/programs?new=1' },
   { match: (p) => p.startsWith('/targets') && p === '/targets', href: '/targets?new=1' },
   { match: (p) => p.startsWith('/notes') && p === '/notes', href: '/notes?new=1' },
   { match: (p) => p.startsWith('/payloads'), href: '/payloads?new=1' },
-  { match: (p) => p.startsWith('/submissions'), href: '/submissions?new=1' },
+  { match: (p) => p.startsWith('/findings'), href: '/findings?new=1' },
+  { match: (p) => p.startsWith('/reports'), href: '/reports?new=1' },
+  { match: (p) => p.startsWith('/payouts'), href: '/payouts?new=1' },
   { match: (p) => p.startsWith('/bookmarks'), href: '/bookmarks?new=1' },
   // Default: jump to the timer page so `c` always means "start hunting".
   { match: () => true, href: '/timer' }

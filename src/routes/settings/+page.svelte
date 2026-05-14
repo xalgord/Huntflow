@@ -3,7 +3,6 @@
   import AboutSection from '$lib/components/settings/AboutSection.svelte';
   import AppearanceSettings from '$lib/components/settings/AppearanceSettings.svelte';
   import BackupRestore from '$lib/components/settings/BackupRestore.svelte';
-  import CloudSyncSettings from '$lib/components/settings/CloudSyncSettings.svelte';
   import DataSettings from '$lib/components/settings/DataSettings.svelte';
   import TimerSettings from '$lib/components/settings/TimerSettings.svelte';
   import { settingsStore } from '$lib/stores';
@@ -83,7 +82,7 @@
         <p class="mt-1 text-sm text-muted-foreground">
           {signedIn
             ? 'Profile, password, connected accounts, sessions, and subscription.'
-            : 'Sign in to sync your hunts across devices and unlock account management.'}
+            : 'Optional account and cloud sync controls live outside the local-first workspace.'}
         </p>
       </div>
       <span class="hidden text-muted-foreground sm:inline-flex">
@@ -93,7 +92,6 @@
 
     <TimerSettings settings={$settingsStore} />
     <AppearanceSettings settings={$settingsStore} />
-    <CloudSyncSettings />
     <BackupRestore />
     <DataSettings />
     <AboutSection />

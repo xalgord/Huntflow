@@ -48,8 +48,13 @@ export interface ClerkAuthState {
   isPro: boolean;
 }
 
-const publishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined;
-const frontendApiUrl = import.meta.env.VITE_CLERK_FRONTEND_API_URL as string | undefined;
+function cleanEnvValue(value: string | undefined): string | undefined {
+  const cleaned = value?.replace(/\\n/g, '').trim();
+  return cleaned || undefined;
+}
+
+const publishableKey = cleanEnvValue(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as string | undefined);
+const frontendApiUrl = cleanEnvValue(import.meta.env.VITE_CLERK_FRONTEND_API_URL as string | undefined);
 /** Compute the redirect URL at call time so it reflects the user's current page. */
 function currentRedirectUrl(): string {
   return typeof window !== 'undefined' ? window.location.href : '/settings';

@@ -166,10 +166,17 @@ If running from source, run 'npm run build' first.
       if (serveFile(res, filePath + '.html')) return;
     }
 
-    // SPA fallback: serve index.html for client-side routing
-    const fallbackPath = join(BUILD_DIR, 'index.html');
+    // SPA fallback: serve the adapter-static fallback for client-side routing.
+    // `index.html` is allowed to be a prerendered public/home page, so prefer
+    // 200.html when present.
+    const fallbackPath = join(BUILD_DIR, '200.html');
     if (existsSync(fallbackPath)) {
       if (serveFile(res, fallbackPath)) return;
+    }
+
+    const legacyFallbackPath = join(BUILD_DIR, 'index.html');
+    if (existsSync(legacyFallbackPath)) {
+      if (serveFile(res, legacyFallbackPath)) return;
     }
 
     // 404

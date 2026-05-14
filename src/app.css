@@ -5,38 +5,38 @@
 :root,
 :root.dark {
   color-scheme: dark;
-  --background: 140 18% 3%;
-  --foreground: 150 28% 94%;
-  --card: 150 14% 7%;
-  --card-foreground: 150 28% 94%;
-  --popover: 150 14% 7%;
-  --popover-foreground: 150 28% 94%;
-  --primary: 119 100% 67%;
-  --primary-foreground: 140 26% 3%;
-  --secondary: 150 10% 11%;
-  --secondary-foreground: 150 28% 94%;
-  --muted: 150 10% 11%;
-  --muted-foreground: 150 7% 64%;
-  --accent: 119 56% 14%;
-  --accent-foreground: 119 100% 78%;
+  --background: 0 0% 0%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 6%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 6%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 4%;
+  --secondary: 0 0% 9%;
+  --secondary-foreground: 0 0% 96%;
+  --muted: 0 0% 10%;
+  --muted-foreground: 240 5% 64%;
+  --accent: 0 0% 14%;
+  --accent-foreground: 0 0% 98%;
   --destructive: 0 72% 51%;
   --destructive-foreground: 0 0% 98%;
-  --border: 150 12% 17%;
-  --input: 150 10% 14%;
-  --ring: 119 100% 67%;
+  --border: 0 0% 15%;
+  --input: 0 0% 15%;
+  --ring: 0 0% 82%;
   --radius: 0.875rem;
-  --commune-text-primary: lab(95.4802 -2.19598 2.90419);
-  --commune-text-secondary: lab(65.3931 -3.91746 3.65262);
+  --commune-text-primary: #fafafa;
+  --commune-text-secondary: #a1a1aa;
   --commune-surface-base: #000000;
-  --commune-surface-muted: oklab(0.19 -0.00866141 0.00500402 / 0.5);
-  --commune-surface-raised: oklab(0.189999 -0.00866141 0.00500402 / 0.6);
-  --commune-surface-strong: lab(86.3134 -58.5645 56.7524);
-  --commune-border-default: lab(15.4536 -2.95889 1.8883);
-  --commune-border-muted: oklab(0.269999 -0.00866215 0.00500588 / 0.7);
-  --commune-border-strong: oklab(0.859998 -0.173354 0.135454 / 0.4);
+  --commune-surface-muted: #0a0a0a;
+  --commune-surface-raised: #111111;
+  --commune-surface-strong: #171717;
+  --commune-border-default: #262626;
+  --commune-border-muted: #262626;
+  --commune-border-strong: #3f3f46;
   --commune-radius-xs: 8px;
-  --commune-radius-sm: 14px;
-  --commune-radius-md: 24px;
+  --commune-radius-sm: 12px;
+  --commune-radius-md: 16px;
   --commune-motion-instant: 150ms;
   --color-bg-page: hsl(var(--background));
   --color-bg-page-deep: var(--commune-surface-base);
@@ -46,17 +46,16 @@
   --color-border-strong: var(--commune-border-strong);
   --color-text-primary: hsl(var(--foreground));
   --color-text-secondary: hsl(var(--muted-foreground));
-  --color-text-muted: hsl(150 4% 48%);
+  --color-text-muted: #71717a;
   --color-link: hsl(var(--primary));
   --color-accent: hsl(var(--primary));
-  --color-accent-hover: hsl(119 100% 62%);
+  --color-accent-hover: #ffffff;
   --shadow-card:
-    rgba(0, 0, 0, 0) 0 0 0 0,
-    oklab(0.859998 -0.173354 0.135454 / 0.18) 0 0 0 1px,
-    rgba(0, 0, 0, 0.42) 0 24px 80px -38px;
-  --terminal-amber: 39 100% 62%;
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    rgba(0, 0, 0, 0.28) 0 18px 56px -36px;
+  --terminal-amber: 42 92% 58%;
   --terminal-red: 0 77% 61%;
-  --terminal-cyan: 184 96% 72%;
+  --terminal-cyan: 217 91% 60%;
 }
 
 :root:not(.dark),
@@ -112,40 +111,17 @@
   body {
     min-height: 100vh;
     margin: 0;
-    background:
-      linear-gradient(116deg, hsl(var(--primary) / 0.1), transparent 30%),
-      linear-gradient(155deg, transparent 54%, hsl(var(--terminal-amber) / 0.1) 100%),
-      linear-gradient(180deg, hsl(var(--background)) 0%, #000 100%),
-      hsl(var(--background));
+    background: #000;
     color: hsl(var(--foreground));
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    pointer-events: none;
-    background-image:
-      linear-gradient(rgba(96, 255, 92, 0.035) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(96, 255, 92, 0.025) 1px, transparent 1px);
-    background-size: 72px 72px;
-    mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.5), transparent 72%);
-  }
-
   html.light body {
     background:
       linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(240 6% 96%) 100%),
       hsl(var(--background));
-  }
-
-  html.light body::before {
-    background-image:
-      linear-gradient(rgba(24, 24, 27, 0.045) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(24, 24, 27, 0.035) 1px, transparent 1px);
   }
 
   html[data-font-size='small'] {
@@ -186,7 +162,7 @@
   }
 
   ::selection {
-    background: hsl(var(--primary) / 0.35);
+    background: hsl(0 0% 100% / 0.24);
     color: hsl(var(--primary-foreground));
   }
 }
@@ -197,19 +173,19 @@
   }
 
   .hf-page {
-    @apply min-h-screen px-4 pb-16 pt-6 text-foreground sm:px-6 lg:px-8;
+    @apply min-h-screen bg-black px-5 pb-16 pt-6 text-foreground sm:px-6 xl:px-10;
   }
 
   .hf-page-inner {
-    @apply mx-auto max-w-7xl space-y-6;
+    @apply mx-auto w-full max-w-none space-y-6;
   }
 
   .hf-page-header {
-    @apply flex flex-col gap-4 border-b border-border/70 pb-6 sm:flex-row sm:items-end sm:justify-between;
+    @apply flex flex-col gap-4 border-b border-zinc-900 pb-6 sm:flex-row sm:items-end sm:justify-between;
   }
 
   .hf-eyebrow {
-    @apply text-[10px] font-semibold uppercase tracking-[0.18em] text-primary;
+    @apply text-[10px] font-semibold uppercase tracking-normal text-zinc-500;
   }
 
   .hf-title {
@@ -217,55 +193,52 @@
   }
 
   .hf-description {
-    @apply mt-3 max-w-2xl text-sm leading-6 text-muted-foreground;
+    @apply mt-3 max-w-2xl text-sm leading-6 text-zinc-400;
   }
 
   .hf-card {
     position: relative;
-    border: 1px solid var(--commune-border-muted);
+    border: 1px solid #262626;
     border-radius: var(--commune-radius-sm);
-    background:
-      linear-gradient(180deg, hsl(var(--primary) / 0.035), transparent 34%),
-      var(--commune-surface-raised);
+    background: #0a0a0a;
     color: hsl(var(--card-foreground));
     box-shadow: var(--shadow-card);
-    backdrop-filter: blur(16px);
   }
 
   .hf-card-muted {
-    @apply rounded-lg border border-border/70 bg-muted/40 text-card-foreground shadow-inner-line;
+    @apply rounded-lg border border-zinc-800 bg-zinc-950 text-card-foreground shadow-inner-line;
   }
 
   .hf-interactive {
-    @apply transition duration-200 hover:-translate-y-0.5 hover:border-primary/30 hover:bg-card hover:shadow-dark-md active:translate-y-0;
+    @apply transition duration-150 hover:border-zinc-700 hover:bg-zinc-950 active:scale-[0.995];
   }
 
   .hf-input {
-    @apply w-full rounded-[14px] border border-input bg-background/70 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground/70 shadow-inner-line transition focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-600 shadow-inner-line transition focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .hf-select {
-    @apply w-full rounded-[14px] border border-input bg-background/70 px-3 py-2.5 text-sm text-foreground shadow-inner-line transition focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply w-full rounded-lg border border-zinc-800 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 shadow-inner-line transition focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .hf-label {
-    @apply text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground;
+    @apply text-xs font-medium text-zinc-500;
   }
 
   .hf-button-primary {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground shadow-dark-sm transition hover:bg-primary/90 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-zinc-50 px-4 py-2.5 text-sm font-medium text-black shadow-dark-sm transition hover:bg-white active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
   }
 
   .hf-button-secondary {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] border border-border bg-muted/70 px-4 py-2.5 text-sm font-medium text-foreground shadow-inner-line transition hover:bg-muted active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-4 py-2.5 text-sm font-medium text-zinc-200 shadow-inner-line transition hover:border-zinc-700 hover:bg-zinc-900 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
   }
 
   .hf-button-ghost {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted/70 hover:text-foreground;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-zinc-500 transition hover:bg-zinc-900 hover:text-zinc-100;
   }
 
   .hf-pill {
-    @apply inline-flex items-center gap-2 rounded-full border border-border/80 bg-muted/60 px-3 py-1 text-xs font-medium text-muted-foreground shadow-inner-line;
+    @apply inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1 text-xs font-medium text-zinc-400 shadow-inner-line;
   }
 
   /* ── Evidence toggle buttons (graph controls) ── */
@@ -284,16 +257,16 @@
   }
 
   .hf-chip {
-    @apply inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-border/70 bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground shadow-inner-line transition hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30;
+    @apply inline-flex min-h-[32px] items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-950 px-3 py-1 text-xs font-medium text-zinc-500 shadow-inner-line transition hover:border-zinc-700 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/30;
   }
 
   .hf-chip-active {
-    @apply border-primary/60 bg-primary/15 text-primary-foreground;
-    color: hsl(var(--primary));
+    @apply border-zinc-500 bg-zinc-800 text-zinc-50;
+    color: #fafafa;
   }
 
   .hf-icon-button {
-    @apply inline-flex h-8 w-8 items-center justify-center rounded-md border border-border/60 bg-background/40 text-muted-foreground shadow-inner-line transition hover:border-primary/40 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 text-zinc-500 shadow-inner-line transition hover:border-zinc-700 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/30 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .hf-stat-tile {

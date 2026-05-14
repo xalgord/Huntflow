@@ -1,12 +1,17 @@
 import {
+  BarChart3,
   BookMarked,
+  CircleDollarSign,
   Crosshair,
   FileText,
   Flag,
+  FolderKanban,
   Network,
   Send,
   Settings,
-  Sword,
+  ShieldAlert,
+  TableProperties,
+  Timer,
   Wrench
 } from 'lucide-svelte';
 import type { ComponentType } from 'svelte';
@@ -18,74 +23,121 @@ export interface NavItemConfig {
   match: (pathname: string) => boolean;
   // primary = visible in mobile bottom nav; all items are visible in side nav
   primary?: boolean;
+  section?: 'main' | 'resources';
 }
 
 export const navItems: NavItemConfig[] = [
-  // Dashboard is intentionally omitted: the /dashboard route is disabled
-  // and the user pill in SideNav / avatar in MobileHeader already link to
-  // /account, which is the authenticated home for this app.
   {
-    href: '/timer',
-    label: 'Timer',
-    icon: Crosshair,
-    match: (pathname) => pathname.startsWith('/timer'),
-    primary: true
+    href: '/dashboard',
+    label: 'Dashboard',
+    icon: TableProperties,
+    match: (pathname) => pathname === '/dashboard' || pathname === '/account',
+    primary: true,
+    section: 'main'
+  },
+  {
+    href: '/programs',
+    label: 'Programs',
+    icon: FolderKanban,
+    match: (pathname) => pathname.startsWith('/programs'),
+    primary: true,
+    section: 'main'
   },
   {
     href: '/targets',
     label: 'Targets',
     icon: Flag,
     match: (pathname) => pathname.startsWith('/targets'),
-    primary: true
+    primary: true,
+    section: 'main'
   },
   {
-    href: '/payloads',
-    label: 'Payloads',
-    icon: Sword,
-    match: (pathname) => pathname.startsWith('/payloads'),
-    primary: true
+    href: '/timer',
+    label: 'Sessions',
+    icon: Timer,
+    match: (pathname) => pathname.startsWith('/timer') || pathname.startsWith('/sessions'),
+    primary: true,
+    section: 'main'
   },
   {
     href: '/notes',
     label: 'Notes',
     icon: FileText,
     match: (pathname) => pathname.startsWith('/notes'),
-    primary: true
+    primary: true,
+    section: 'main'
   },
   {
-    href: '/submissions',
-    label: 'Submissions',
+    href: '/findings',
+    label: 'Findings',
+    icon: ShieldAlert,
+    match: (pathname) => pathname.startsWith('/findings'),
+    primary: true,
+    section: 'main'
+  },
+  {
+    href: '/reports',
+    label: 'Reports',
     icon: Send,
-    match: (pathname) => pathname.startsWith('/submissions') || pathname.startsWith('/income'),
-    primary: true
+    match: (pathname) => pathname.startsWith('/reports') || pathname.startsWith('/submissions'),
+    primary: true,
+    section: 'main'
   },
   {
-    href: '/assets',
-    label: 'Evidence',
-    icon: Network,
-    match: (pathname) => pathname.startsWith('/assets'),
-    primary: false
+    href: '/payouts',
+    label: 'Payouts',
+    icon: CircleDollarSign,
+    match: (pathname) => pathname.startsWith('/payouts') || pathname.startsWith('/income'),
+    primary: true,
+    section: 'main'
   },
   {
-    href: '/bookmarks',
-    label: 'References',
-    icon: BookMarked,
-    match: (pathname) => pathname.startsWith('/bookmarks'),
-    primary: false
-  },
-  {
-    href: '/tools',
-    label: 'Toolkit',
-    icon: Wrench,
-    match: (pathname) => pathname.startsWith('/tools'),
-    primary: false
+    href: '/analytics',
+    label: 'Analytics',
+    icon: BarChart3,
+    match: (pathname) => pathname.startsWith('/analytics') || pathname.startsWith('/stats'),
+    primary: true,
+    section: 'main'
   },
   {
     href: '/settings',
     label: 'Settings',
     icon: Settings,
     match: (pathname) => pathname.startsWith('/settings'),
-    primary: false
+    primary: true,
+    section: 'main'
+  },
+  {
+    href: '/assets',
+    label: 'Evidence',
+    icon: Network,
+    match: (pathname) => pathname.startsWith('/assets'),
+    primary: false,
+    section: 'resources'
+  },
+  {
+    href: '/payloads',
+    label: 'Payloads',
+    icon: Crosshair,
+    match: (pathname) => pathname.startsWith('/payloads'),
+    primary: false,
+    section: 'resources'
+  },
+  {
+    href: '/bookmarks',
+    label: 'References',
+    icon: BookMarked,
+    match: (pathname) => pathname.startsWith('/bookmarks'),
+    primary: false,
+    section: 'resources'
+  },
+  {
+    href: '/tools',
+    label: 'Toolkit',
+    icon: Wrench,
+    match: (pathname) => pathname.startsWith('/tools'),
+    primary: false,
+    section: 'resources'
   }
 ];
 

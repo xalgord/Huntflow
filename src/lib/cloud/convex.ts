@@ -5,7 +5,12 @@ import { anyApi } from 'convex/server';
 
 type ClerkInstance = import('@clerk/clerk-js').Clerk;
 
-const convexUrl = import.meta.env.VITE_CONVEX_URL as string | undefined;
+function cleanEnvValue(value: string | undefined): string | undefined {
+  const cleaned = value?.replace(/\\n/g, '').trim();
+  return cleaned || undefined;
+}
+
+const convexUrl = cleanEnvValue(import.meta.env.VITE_CONVEX_URL as string | undefined);
 
 let client: ConvexClient | null = null;
 let httpClient: ConvexHttpClient | null = null;

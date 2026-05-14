@@ -5,16 +5,14 @@
   import { IS_WEB } from '$lib/buildTarget';
   import { clerkAuthStore, initClerk } from '$lib/cloud/clerk';
   import { startRealtimeSync, stopRealtimeSync } from '$lib/cloud/realtimeSync';
-  import BottomNav from '$lib/components/layout/BottomNav.svelte';
   import CommandPalette from '$lib/components/command/CommandPalette.svelte';
   import KeyboardShortcutsHelp from '$lib/components/KeyboardShortcutsHelp.svelte';
-  import MobileHeader from '$lib/components/layout/MobileHeader.svelte';
   import OnboardingModal from '$lib/components/onboarding/OnboardingModal.svelte';
   import PageTransition from '$lib/components/layout/PageTransition.svelte';
   import QuickCaptureModal from '$lib/components/quick-capture/QuickCaptureModal.svelte';
-  import SideNav from '$lib/components/layout/SideNav.svelte';
   import InstallPrompt from '$lib/components/pwa/InstallPrompt.svelte';
   import OfflineBanner from '$lib/components/pwa/OfflineBanner.svelte';
+  import AppShell from '$lib/components/workspace/AppShell.svelte';
   import { flushAllStores, settingsStore } from '$lib/stores';
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
   import { quickCaptureStore } from '$lib/stores/quickCaptureStore';
@@ -32,9 +30,9 @@
   let welcomeNewHandled = false;
 
   const themeColors = {
-    dark: '#09090b',
+    dark: '#000000',
     light: '#fafafa',
-    system: '#09090b'
+    system: '#000000'
   };
 
   function normalizePathname(path: string): string {
@@ -50,11 +48,16 @@
       navReady = true;
       document.documentElement.dataset.huntflowReady = 'true';
 
-      // Boot Clerk eagerly so the auth state resolves before the user
-      // can interact with any protected route. Without this, clerk only
-      // initializes when /sign-in or settings mount, which would briefly
-      // expose the dashboard to anonymous visitors.
-      void initClerk();
+      // Core HuntFlow routes are local-first and never require sign-in.
+      // Clerk boots only on auth/account surfaces where optional cloud
+      // identity is relevant.
+      if (
+        pathname === '/account' ||
+        pathname.startsWith('/sign-in') ||
+        pathname.startsWith('/sign-up')
+      ) {
+        void initClerk();
+      }
 
       // Drain debounced store writes (500ms timer) before the tab is unloaded
       // so the latest session state, notes, recon edits, etc. always survive
@@ -170,12 +173,10 @@
     pathname.startsWith('/sign-up/');
   $: isLanding = isMarketing;
 
-  // Auth gate. In the hosted web build, app routes require a Clerk
-  // session WHEN Clerk is configured. In the local app build (`IS_APP`),
-  // **every route is open** — sign-in is purely opt-in for cloud sync
-  // and never blocks access. Anonymous users get a fresh local-only
-  // workspace stored in IndexedDB.
-  $: requiresAuth = IS_WEB && !isMarketing;
+  // Core app routes are always open. Sign-in remains an optional account
+  // surface for cloud sync/pro functionality, not a gate in front of the
+  // local IndexedDB workspace.
+  $: requiresAuth = false;
 
   // Detect ?welcome=new injected by the sign-up page after a fresh Clerk
   // account is created. When present, we force onboardingCompleted = false
@@ -265,9 +266,11 @@
 
 <svelte:head>
   <meta name="theme-color" content={themeColors[$settingsStore.theme]} />
-  <link rel="canonical" href={canonicalUrl} />
-  <meta name="robots" content="index,follow" />
-  <meta property="og:url" content={canonicalUrl} />
+  {#if !isLanding}
+    <link rel="canonical" href={canonicalUrl} />
+    <meta name="robots" content="index,follow" />
+    <meta property="og:url" content={canonicalUrl} />
+  {/if}
 </svelte:head>
 
 <OfflineBanner />
@@ -297,25 +300,18 @@
   </main>
 {:else}
   <div class="hf-shell">
-    {#if !isLanding}
-      <SideNav {pathname} bind:collapsed={navCollapsed} />
-      <MobileHeader {pathname} />
-    {/if}
-
-    <main
-      class="relative min-h-screen {isLanding
-        ? ''
-        : `pt-[calc(max(env(safe-area-inset-top),0px)+7.5rem)] transition-[padding] duration-200 lg:pt-0 ${
-            navCollapsed ? 'lg:pl-16' : 'lg:pl-56'
-          }`}"
-    >
-      <PageTransition name={pathname}>
-        <slot />
-      </PageTransition>
-    </main>
-
-    {#if !isLanding}
-      <BottomNav {pathname} />
+    {#if isLanding}
+      <main class="relative min-h-screen">
+        <PageTransition name={pathname}>
+          <slot />
+        </PageTransition>
+      </main>
+    {:else}
+      <AppShell {pathname} bind:collapsed={navCollapsed}>
+        <PageTransition name={pathname}>
+          <slot />
+        </PageTransition>
+      </AppShell>
     {/if}
   </div>
 
@@ -326,13 +322,12 @@
     aria-atomic="true"
   ></div>
 
-  <InstallPrompt />
-
   {#if !isLanding && settingsReady && !$settingsStore.onboardingCompleted}
     <OnboardingModal open isPro={$clerkAuthStore.isPro ?? false} />
   {/if}
 
   {#if !isLanding}
+    <InstallPrompt />
     <CommandPalette />
     <QuickCaptureModal />
     <KeyboardShortcutsHelp />

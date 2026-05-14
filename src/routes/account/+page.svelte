@@ -66,7 +66,7 @@
    * non-transparent background that sneaks through.
    */
   function patchClerkDom(root: HTMLElement): void {
-    const allEls = root.querySelectorAll<HTMLElement>('[class*="cl-"]');
+    const allEls = Array.from(root.querySelectorAll<HTMLElement>('[class*="cl-"]'));
     for (const el of allEls) {
       const cs = getComputedStyle(el);
       const bg = cs.backgroundColor;
@@ -121,7 +121,7 @@
       }
     }
     // Nuke any max-width on cl-internal elements that constrain layout
-    const internals = root.querySelectorAll<HTMLElement>('[class*="cl-internal"]');
+    const internals = Array.from(root.querySelectorAll<HTMLElement>('[class*="cl-internal"]'));
     for (const el of internals) {
       const mw = getComputedStyle(el).maxWidth;
       if (mw && mw !== 'none' && mw !== '100%') {
@@ -130,14 +130,14 @@
       }
     }
     // Remove partial-width border lines from profileSectionTitle elements
-    const sectionTitles = root.querySelectorAll<HTMLElement>('[class*="cl-profileSectionTitle"]');
+    const sectionTitles = Array.from(root.querySelectorAll<HTMLElement>('[class*="cl-profileSectionTitle"]'));
     for (const el of sectionTitles) {
       el.style.setProperty('border', 'none', 'important');
       el.style.setProperty('border-bottom', 'none', 'important');
       el.style.setProperty('border-top', 'none', 'important');
     }
     // Also remove the header divider line under "Profile details"
-    const headerElements = root.querySelectorAll<HTMLElement>('.cl-headerTitle, [class*="cl-header"]');
+    const headerElements = Array.from(root.querySelectorAll<HTMLElement>('.cl-headerTitle, [class*="cl-header"]'));
     for (const el of headerElements) {
       el.style.setProperty('border-bottom', 'none', 'important');
       // Check parent for border too

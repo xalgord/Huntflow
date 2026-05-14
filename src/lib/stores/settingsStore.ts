@@ -39,7 +39,7 @@ function applyTheme(theme: Settings['theme']): void {
 }
 
 const accentPalettes: Record<Settings['accentColor'], { accent: string; hover: string; link: string }> = {
-  green: { accent: '#22c55e', hover: '#16a34a', link: '#4ade80' },
+  green: { accent: '#fafafa', hover: '#ffffff', link: '#e4e4e7' },
   blue: { accent: '#3b82f6', hover: '#2563eb', link: '#60a5fa' },
   orange: { accent: '#f97316', hover: '#ea580c', link: '#fb923c' },
   purple: { accent: '#8b5cf6', hover: '#7c3aed', link: '#a78bfa' }
