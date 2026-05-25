@@ -1,6 +1,7 @@
-import { httpActionGeneric, httpRouter } from 'convex/server';
+import { httpRouter } from 'convex/server';
 import { Webhook } from 'standardwebhooks';
 import { internal } from './_generated/api';
+import { httpAction } from './_generated/server';
 
 /**
  * Dodo Payments webhook receiver.
@@ -193,7 +194,7 @@ function plainResponse(body: string, status: number): Response {
 	});
 }
 
-const dodoWebhook = httpActionGeneric(async (ctx, request) => {
+const dodoWebhook = httpAction(async (ctx, request) => {
 	// Standard Webhooks signs the literal bytes of the body. We must
 	// pass the raw text into `wh.verify` — re-stringifying a JSON.parse
 	// result would change whitespace and break the signature.

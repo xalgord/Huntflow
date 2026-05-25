@@ -1,5 +1,6 @@
-import { internalMutationGeneric, queryGeneric } from 'convex/server';
 import { v } from 'convex/values';
+
+import { internalMutation, query } from './_generated/server';
 
 /**
  * Read the current user's Pro entitlement row. Returns `null` when:
@@ -12,7 +13,7 @@ import { v } from 'convex/values';
  * via `upsertFromWebhook` after verifying the Standard Webhooks
  * signature. The client never writes the entitlement directly.
  */
-export const getMine = queryGeneric({
+export const getMine = query({
 	args: {},
 	handler: async (ctx) => {
 		const identity = await ctx.auth.getUserIdentity();
@@ -36,7 +37,7 @@ export const getMine = queryGeneric({
  * `currentPeriodEnd` and `dodoSubscriptionId` use `null` (not `undefined`)
  * so the schema's `v.union(..., v.null())` columns serialize cleanly.
  */
-export const upsertFromWebhook = internalMutationGeneric({
+export const upsertFromWebhook = internalMutation({
 	args: {
 		uid: v.string(),
 		isPro: v.boolean(),
@@ -87,7 +88,7 @@ export const upsertFromWebhook = internalMutationGeneric({
  * the wipe. The post-cutover storage bucket is also being reset, so
  * orphaned blobs are not a correctness problem.
  */
-export const wipeLegacyOwnerData = internalMutationGeneric({
+export const wipeLegacyOwnerData = internalMutation({
 	args: {},
 	handler: async (ctx) => {
 		let deletedRows = 0;
