@@ -33,6 +33,8 @@ async function requireOwnerId(ctx: { auth: { getUserIdentity: () => Promise<{ su
 
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const MAX_STORAGE_BYTES = 1024 * 1024 * 1024;
+/** Tickets minted by `generateAssetUploadUrl` expire after this many ms. */
+const UPLOAD_TICKET_TTL_MS = 60 * 60 * 1000;
 
 export const getSnapshot = queryGeneric({
   args: {},
@@ -97,13 +99,26 @@ export const upsertSnapshot = mutationGeneric({
 export const generateAssetUploadUrl = mutationGeneric({
   args: {},
   handler: async (ctx) => {
-    await requireOwnerId(ctx);
-    return await ctx.storage.generateUploadUrl();
+    const ownerId = await requireOwnerId(ctx);
+    // Mint a single-use ticket scoped to the caller. The client must
+    // present this ticketId back to `registerAssetFile`, which proves
+    // that the same authenticated user who requested the upload URL is
+    // the one registering the resulting storage object. Without this,
+    // a signed-in user could harvest another user's just-minted upload
+    // URL (e.g. via a side channel) and register storage they control
+    // against an asset id from the victim's workspace.
+    const uploadUrl = await ctx.storage.generateUploadUrl();
+    const ticketId = await ctx.db.insert('assetUploadTickets', {
+      ownerId,
+      createdAt: Date.now()
+    });
+    return { uploadUrl, ticketId };
   }
 });
 
 export const registerAssetFile = mutationGeneric({
   args: {
+    ticketId: v.id('assetUploadTickets'),
     assetId: v.string(),
     storageId: v.string(),
     fileName: v.optional(v.string()),
@@ -114,6 +129,19 @@ export const registerAssetFile = mutationGeneric({
   },
   handler: async (ctx, args) => {
     const ownerId = await requireOwnerId(ctx);
+
+    // Ticket binding: must exist, must belong to the caller, must be
+    // fresh. Anything else, including a forged or replayed ticketId,
+    // is rejected before we touch storage.
+    const ticket = await ctx.db.get(args.ticketId);
+    if (!ticket) throw new Error('Upload ticket not found.');
+    if (ticket.ownerId !== ownerId) throw new Error('Upload ticket does not belong to this user.');
+    if (Date.now() - ticket.createdAt > UPLOAD_TICKET_TTL_MS) {
+      // Best-effort cleanup; the periodic janitor below sweeps the rest.
+      await ctx.db.delete(ticket._id);
+      throw new Error('Upload ticket has expired. Re-upload the evidence file.');
+    }
+
     if (args.size <= 0 || args.size > MAX_FILE_SIZE) {
       throw new Error('Cloud sync supports evidence files up to 100MB.');
     }
@@ -144,6 +172,9 @@ export const registerAssetFile = mutationGeneric({
         size: args.size,
         uploadedAt: args.uploadedAt
       });
+      // Single-use: consume the ticket so it can't be replayed on a
+      // different asset id within the TTL window.
+      await ctx.db.delete(ticket._id);
       return { storageId: args.storageId, usedBytes: usedBytes + args.size };
     }
 
@@ -158,7 +189,33 @@ export const registerAssetFile = mutationGeneric({
       uploadedAt: args.uploadedAt
     });
 
+    // Single-use: consume the ticket on success.
+    await ctx.db.delete(ticket._id);
+
     return { storageId: args.storageId, usedBytes: usedBytes + args.size };
+  }
+});
+
+/**
+ * Janitor: drop expired upload tickets. Convex doesn't have native TTLs,
+ * so we let the client (or a cron, if you wire one up) call this
+ * occasionally. Either way, expired tickets are also rejected at use
+ * time, so the worst case if this never runs is unbounded growth of an
+ * inert table — never a security issue.
+ */
+export const cleanupExpiredUploadTickets = mutationGeneric({
+  args: {},
+  handler: async (ctx) => {
+    await requireOwnerId(ctx);
+    const cutoff = Date.now() - UPLOAD_TICKET_TTL_MS;
+    const expired = await ctx.db
+      .query('assetUploadTickets')
+      .withIndex('by_createdAt', (q) => q.lt('createdAt', cutoff))
+      .collect();
+    for (const ticket of expired) {
+      await ctx.db.delete(ticket._id);
+    }
+    return { cleaned: expired.length };
   }
 });
 

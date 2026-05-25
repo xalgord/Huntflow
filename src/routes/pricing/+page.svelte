@@ -10,6 +10,7 @@
     Crosshair,
     Github,
     Lock,
+    ShieldCheck,
     Smartphone,
     Sparkles,
     Twitter
@@ -234,7 +235,7 @@
        of the full marketing pricing chrome avoids a flash of the
        cloud pitch on private offline installs. -->
   <main
-    class="flex min-h-screen flex-col items-center justify-center gap-3 bg-slate-950 px-4 text-center text-slate-300"
+    class="flex min-h-screen flex-col items-center justify-center gap-3 bg-zinc-950 px-4 text-center text-zinc-300"
     aria-busy="true"
     aria-live="polite"
   >
@@ -243,13 +244,13 @@
     >
       <Crosshair size={22} aria-hidden="true" />
     </span>
-    <p class="text-sm font-medium text-slate-200">Opening your local workspace&hellip;</p>
+    <p class="text-sm font-medium text-zinc-200">Opening your local workspace&hellip;</p>
   </main>
 {:else}
-<div class="pricing-page min-h-screen overflow-hidden text-slate-100">
+<div class="pricing-page min-h-screen overflow-hidden text-zinc-100">
   <header class="pricing-header sticky top-0 z-50 border-b border-white/[0.06] bg-[hsl(140_18%_3%/0.8)] backdrop-blur-xl backdrop-saturate-150">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
-      <a href="/" class="flex min-h-[44px] items-center gap-2.5 text-slate-100 transition-opacity hover:opacity-80">
+      <a href="/" class="flex min-h-[44px] items-center gap-2.5 text-zinc-100 transition-opacity hover:opacity-80">
         <img
           src="/brand/huntflow-mark.jpg"
           alt="HuntFlow"
@@ -262,10 +263,10 @@
         <span class="text-base font-semibold tracking-tight">HuntFlow</span>
       </a>
 
-      <nav class="hidden items-center gap-7 text-sm text-slate-400 md:flex" aria-label="Pricing nav">
-        <a class="transition hover:text-slate-100" href="/#features">Features</a>
-        <a class="transition hover:text-slate-100" href="/#cloud-sync">Cloud Sync</a>
-        <a class="transition hover:text-slate-100" href="/#faq">FAQ</a>
+      <nav class="hidden items-center gap-7 text-sm text-zinc-400 md:flex" aria-label="Pricing nav">
+        <a class="transition hover:text-zinc-100" href="/#features">Features</a>
+        <a class="transition hover:text-zinc-100" href="/#cloud-sync">Cloud Sync</a>
+        <a class="transition hover:text-zinc-100" href="/#faq">FAQ</a>
       </nav>
 
       <div class="flex items-center gap-2">
@@ -280,7 +281,7 @@
         {:else}
           <a
             href="/sign-in"
-            class="hidden min-h-[36px] items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-slate-300 transition hover:text-slate-100 sm:inline-flex"
+            class="hidden min-h-[36px] items-center justify-center rounded-md px-3 py-1.5 text-sm font-medium text-zinc-300 transition hover:text-zinc-100 sm:inline-flex"
           >
             Sign in
           </a>
@@ -297,7 +298,7 @@
 
   <section class="pricing-hero relative isolate border-b border-white/[0.06] px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
     <div class="absolute inset-0 -z-10" aria-hidden="true">
-      <div class="absolute inset-0 bg-slate-950"></div>
+      <div class="absolute inset-0 bg-zinc-950"></div>
       <div class="absolute inset-x-0 top-0 h-[640px] bg-[radial-gradient(ellipse_at_top,_rgba(20,184,166,0.18),_transparent_55%)]"></div>
       <div class="absolute inset-x-0 top-0 h-full bg-[radial-gradient(circle_at_80%_20%,_rgba(96,255,92,0.08),_transparent_40%)]"></div>
       <div class="absolute inset-x-0 bottom-0 h-[320px] bg-[radial-gradient(ellipse_at_bottom,_rgba(96,255,92,0.06),_transparent_60%)]"></div>
@@ -316,7 +317,7 @@
           real-time sync.
         </span>
       </h1>
-      <p class="mx-auto mt-6 max-w-2xl text-pretty text-base leading-7 text-slate-300 sm:text-lg">
+      <p class="mx-auto mt-6 max-w-2xl text-pretty text-base leading-7 text-zinc-300 sm:text-lg">
         Every feature except cloud sync is free, forever, with no account required. Upgrade only when you want
         seamless real-time updates across every device you hunt from.
       </p>
@@ -334,8 +335,8 @@
           <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-primary-500/30 bg-primary-500/15 text-primary-300">
             <Sparkles size={22} aria-hidden="true" />
           </div>
-          <h2 class="mt-4 text-xl font-bold text-slate-100">You&apos;re already on HuntFlow Pro</h2>
-          <p class="mt-2 text-sm leading-6 text-slate-300">
+          <h2 class="mt-4 text-xl font-bold text-zinc-100">You&apos;re already on HuntFlow Pro</h2>
+          <p class="mt-2 text-sm leading-6 text-zinc-300">
             Cloud sync, end-to-end encrypted evidence, and priority support are active on your account.
             Manage your plan, update your payment method, or download invoices below.
           </p>
@@ -351,7 +352,7 @@
             </button>
             <a
               href="/account"
-              class="inline-flex min-h-[44px] items-center gap-2 rounded-md border border-slate-700 bg-slate-800/80 px-5 py-2.5 text-sm font-medium text-slate-200 transition hover:bg-slate-700"
+              class="inline-flex min-h-[44px] items-center gap-2 rounded-md border border-zinc-700 bg-zinc-800/80 px-5 py-2.5 text-sm font-medium text-zinc-200 transition hover:bg-zinc-700"
             >
               Back to the app
               <ArrowRight size={14} aria-hidden="true" />
@@ -368,7 +369,7 @@
           data-unavailable={billingUnavailable}
         ></div>
         {#if billingEnabled && !billingMounted}
-          <div class="mx-auto max-w-md rounded-xl border border-slate-800 bg-slate-900/60 p-6 text-center text-sm text-slate-400" aria-live="polite">
+          <div class="mx-auto max-w-md rounded-xl border border-zinc-800 bg-zinc-900/60 p-6 text-center text-sm text-zinc-400" aria-live="polite">
             Loading live pricing&hellip;
           </div>
         {/if}
@@ -384,35 +385,35 @@
           <div class="absolute inset-0 -z-10 bg-gradient-to-b from-white/[0.02] to-transparent"></div>
           <div class="flex items-baseline justify-between gap-3">
             <div>
-              <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500">The foundation</p>
-              <h2 class="mt-1 text-2xl font-bold text-slate-100">Free</h2>
-              <p class="mt-1.5 text-sm leading-relaxed text-slate-400">Every tool a hunter needs. No account, no limits, no catch.</p>
+              <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">The foundation</p>
+              <h2 class="mt-1 text-2xl font-bold text-zinc-100">Free</h2>
+              <p class="mt-1.5 text-sm leading-relaxed text-zinc-400">Every tool a hunter needs. No account, no limits, no catch.</p>
             </div>
-            <p class="text-4xl font-bold text-slate-200">$0</p>
+            <p class="text-4xl font-bold text-zinc-200">$0</p>
           </div>
-          <ul class="mt-7 flex-1 space-y-3 text-sm text-slate-300">
+          <ul class="mt-7 flex-1 space-y-3 text-sm text-zinc-300">
             {#each freeFeatures as feature}
               <li class="flex items-start gap-3">
-                <Check class="mt-0.5 shrink-0 text-slate-500" size={16} aria-hidden="true" />
+                <Check class="mt-0.5 shrink-0 text-zinc-500" size={16} aria-hidden="true" />
                 <span>{feature}</span>
               </li>
             {/each}
           </ul>
           <a
             href="/account"
-            class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-transparent px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:border-white/[0.16] hover:text-slate-200 hover:bg-white/[0.04]"
+            class="mt-7 inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-transparent px-4 py-2.5 text-sm font-medium text-zinc-400 transition hover:border-white/[0.16] hover:text-zinc-200 hover:bg-white/[0.04]"
           >
             {$clerkAuthStore.signedIn ? 'Back to the app' : 'Start hunting — free'}
           </a>
         </article>
 
         <!-- PRO PLAN — The Upgrade Path -->
-        <article class="plan-card plan-card-pro group relative flex flex-col overflow-hidden rounded-2xl border border-primary-500/30 p-7 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/50 hover:-translate-y-0.5">
+        <article class="plan-card plan-card-pro group relative flex flex-col overflow-hidden rounded-2xl border border-primary-500/30 p-7 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/50 hover:-tranzinc-y-0.5">
           <!-- Ambient glow behind card -->
           <div class="absolute -inset-px -z-10 rounded-2xl bg-gradient-to-b from-primary-500/[0.06] via-transparent to-primary-500/[0.03]" aria-hidden="true"></div>
 
           <!-- Recommended badge -->
-          <span class="absolute -top-3 right-6 inline-flex items-center gap-1.5 rounded-full bg-primary-500 px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-950 shadow-[0_0_12px_rgba(96,255,92,0.3)]">
+          <span class="absolute -top-3 right-6 inline-flex items-center gap-1.5 rounded-full bg-primary-500 px-3.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-zinc-950 shadow-[0_0_12px_rgba(96,255,92,0.3)]">
             <Sparkles size={11} aria-hidden="true" />
             Recommended
           </span>
@@ -421,21 +422,21 @@
             <div>
               <p class="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-400/80">For serious hunters</p>
               <h2 class="mt-1 text-2xl font-bold text-white">Pro</h2>
-              <p class="mt-1.5 text-sm leading-relaxed text-slate-400">Real-time sync, E2E encryption, multi-device.</p>
+              <p class="mt-1.5 text-sm leading-relaxed text-zinc-400">Real-time sync, E2E encryption, multi-device.</p>
             </div>
             <div class="text-right">
-              <p class="text-4xl font-bold text-white">$6<span class="text-base font-medium text-slate-400">/mo</span></p>
+              <p class="text-4xl font-bold text-white">$6<span class="text-base font-medium text-zinc-400">/mo</span></p>
               <p class="mt-0.5 text-xs text-primary-400/70">$60/yr · <span class="font-semibold text-primary-400">save 17%</span></p>
             </div>
           </div>
 
           <!-- Separator with "Everything in Free, plus" anchor -->
           <div class="mt-7 flex items-center gap-3">
-            <span class="text-[11px] font-medium text-slate-500">Everything in Free, plus:</span>
+            <span class="text-[11px] font-medium text-zinc-500">Everything in Free, plus:</span>
             <div class="h-px flex-1 bg-white/[0.06]"></div>
           </div>
 
-          <ul class="mt-4 flex-1 space-y-3 text-sm text-slate-200">
+          <ul class="mt-4 flex-1 space-y-3 text-sm text-zinc-200">
             {#each proFeatures as feature}
               <li class="flex items-start gap-3">
                 <Check class="mt-0.5 shrink-0 text-primary-400" size={16} aria-hidden="true" />
@@ -447,7 +448,7 @@
           {#if $clerkAuthStore.signedIn && !billingUnavailable}
             <button
               type="button"
-              class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-primary-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.2)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-primary-400 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_32px_rgba(96,255,92,0.35)] active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+              class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-primary-500 px-5 py-3 text-sm font-semibold text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.2)] transition-all duration-200 hover:-tranzinc-y-0.5 hover:bg-primary-400 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_32px_rgba(96,255,92,0.35)] active:tranzinc-y-0 disabled:cursor-not-allowed disabled:opacity-60"
               on:click={handleManageSubscription}
               disabled={openingSubscriptions}
             >
@@ -457,7 +458,7 @@
           {:else if $clerkAuthStore.signedIn}
             <a
               href="/account"
-              class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-white/[0.04] px-5 py-3 text-sm font-semibold text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-white/[0.14] hover:bg-white/[0.08]"
+              class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] border border-white/[0.08] bg-white/[0.04] px-5 py-3 text-sm font-semibold text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:border-white/[0.14] hover:bg-white/[0.08]"
             >
               Back to account
               <ArrowRight size={15} aria-hidden="true" />
@@ -465,7 +466,7 @@
           {:else}
             <a
               href="/sign-up"
-              class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-primary-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.2)] transition-all duration-200 hover:bg-primary-400 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_32px_rgba(96,255,92,0.35)] hover:-translate-y-0.5 active:translate-y-0"
+              class="pro-cta mt-7 inline-flex min-h-[48px] items-center justify-center gap-2 rounded-[12px] bg-primary-500 px-5 py-3 text-sm font-semibold text-zinc-950 shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.2)] transition-all duration-200 hover:bg-primary-400 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_32px_rgba(96,255,92,0.35)] hover:-tranzinc-y-0.5 active:tranzinc-y-0"
             >
               Get Pro — start free trial
               <ArrowRight size={15} aria-hidden="true" />
@@ -485,33 +486,33 @@
       <h2 class="mt-2 text-3xl font-bold leading-tight text-white sm:text-4xl">Three things, no fluff.</h2>
 
       <div class="mt-10 grid gap-5 md:grid-cols-3">
-        <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-translate-y-0.5">
+        <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-tranzinc-y-0.5">
           <div class="absolute inset-0 -z-10 bg-gradient-to-br from-primary-500/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
           <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(96,255,92,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(96,255,92,0.15)]">
             <Cloud size={20} aria-hidden="true" />
           </div>
           <h3 class="mt-5 text-lg font-semibold text-white">Real-time sync</h3>
-          <p class="mt-2.5 text-sm leading-6 text-slate-400">
+          <p class="mt-2.5 text-sm leading-6 text-zinc-400">
             Every edit is reflected on every signed-in device in under a second. Same data on laptop, phone, tablet.
           </p>
         </article>
-        <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-translate-y-0.5">
+        <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-tranzinc-y-0.5">
           <div class="absolute inset-0 -z-10 bg-gradient-to-br from-primary-500/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
           <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(96,255,92,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(96,255,92,0.15)]">
             <Lock size={20} aria-hidden="true" />
           </div>
           <h3 class="mt-5 text-lg font-semibold text-white">Encrypted at rest</h3>
-          <p class="mt-2.5 text-sm leading-6 text-slate-400">
+          <p class="mt-2.5 text-sm leading-6 text-zinc-400">
             Notes, evidence and report drafts are encrypted client-side. Even we can't read your findings.
           </p>
         </article>
-        <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-translate-y-0.5">
+        <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-tranzinc-y-0.5">
           <div class="absolute inset-0 -z-10 bg-gradient-to-br from-primary-500/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
           <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(96,255,92,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(96,255,92,0.15)]">
             <Smartphone size={20} aria-hidden="true" />
           </div>
           <h3 class="mt-5 text-lg font-semibold text-white">Mobile-friendly</h3>
-          <p class="mt-2.5 text-sm leading-6 text-slate-400">
+          <p class="mt-2.5 text-sm leading-6 text-zinc-400">
             Capture a finding on your phone the moment you spot it. It is on your laptop before you sit down.
           </p>
         </article>
@@ -524,7 +525,7 @@
     <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(20,184,166,0.08),_transparent_60%)]" aria-hidden="true"></div>
     <div class="mx-auto max-w-3xl text-center">
       <h2 class="text-3xl font-bold leading-tight text-white sm:text-4xl">Stop juggling tabs. Start a hunt.</h2>
-      <p class="mt-3 text-base leading-7 text-slate-400">
+      <p class="mt-3 text-base leading-7 text-zinc-400">
         Install in one command. No login required to start.
       </p>
       <div class="mx-auto mt-6 max-w-xl">
@@ -539,7 +540,7 @@
         </a>
         <a
           href="/sign-up"
-          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-6 py-3 text-sm font-medium text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-white/[0.08] hover:border-white/[0.14]"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] border border-white/[0.08] bg-white/[0.04] px-6 py-3 text-sm font-medium text-zinc-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition hover:bg-white/[0.08] hover:border-white/[0.14]"
         >
           Create an account
         </a>
@@ -551,7 +552,7 @@
   <footer class="relative px-4 py-12 sm:px-6 lg:px-8">
     <div class="mx-auto flex max-w-6xl flex-col gap-8 md:flex-row md:items-start md:justify-between">
       <div class="max-w-md">
-        <div class="flex items-center gap-2.5 text-slate-100">
+        <div class="flex items-center gap-2.5 text-zinc-100">
           <img
             src="/brand/huntflow-mark.jpg"
             alt="HuntFlow"
@@ -563,29 +564,29 @@
           />
           <span class="font-semibold">HuntFlow</span>
         </div>
-        <p class="mt-3 text-sm leading-6 text-slate-500">
+        <p class="mt-3 text-sm leading-6 text-zinc-500">
           The bug bounty workflow OS. Built by hunters, for hunters. Open core, offline-first.
         </p>
       </div>
 
       <div class="grid grid-cols-2 gap-x-12 gap-y-3 text-sm sm:grid-cols-3">
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Product</p>
-          <a class="mt-3 block text-slate-300 hover:text-slate-100" href="/#features">Features</a>
-          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/pricing">Pricing</a>
-          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/#cloud-sync">Cloud sync</a>
-          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/account">Open app</a>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Product</p>
+          <a class="mt-3 block text-zinc-300 hover:text-zinc-100" href="/#features">Features</a>
+          <a class="mt-2 block text-zinc-300 hover:text-zinc-100" href="/pricing">Pricing</a>
+          <a class="mt-2 block text-zinc-300 hover:text-zinc-100" href="/#cloud-sync">Cloud sync</a>
+          <a class="mt-2 block text-zinc-300 hover:text-zinc-100" href="/account">Open app</a>
         </div>
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Account</p>
-          <a class="mt-3 block text-slate-300 hover:text-slate-100" href="/sign-in">Sign in</a>
-          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/sign-up">Sign up</a>
-          <a class="mt-2 block text-slate-300 hover:text-slate-100" href="/#faq">FAQ</a>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Account</p>
+          <a class="mt-3 block text-zinc-300 hover:text-zinc-100" href="/sign-in">Sign in</a>
+          <a class="mt-2 block text-zinc-300 hover:text-zinc-100" href="/sign-up">Sign up</a>
+          <a class="mt-2 block text-zinc-300 hover:text-zinc-100" href="/#faq">FAQ</a>
         </div>
         <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Connect</p>
+          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Connect</p>
           <a
-            class="mt-3 inline-flex items-center gap-2 text-slate-300 hover:text-slate-100"
+            class="mt-3 inline-flex items-center gap-2 text-zinc-300 hover:text-zinc-100"
             href="https://github.com/xalgord/huntflow"
             rel="noreferrer"
           >
@@ -593,7 +594,7 @@
             GitHub
           </a>
           <a
-            class="mt-2 inline-flex items-center gap-2 text-slate-300 hover:text-slate-100"
+            class="mt-2 inline-flex items-center gap-2 text-zinc-300 hover:text-zinc-100"
             href="https://x.com/xalgord"
             rel="noreferrer"
           >
@@ -604,7 +605,7 @@
       </div>
     </div>
 
-    <div class="mx-auto mt-10 max-w-6xl border-t border-white/[0.06] pt-6 text-xs text-slate-600">
+    <div class="mx-auto mt-10 max-w-6xl border-t border-white/[0.06] pt-6 text-xs text-zinc-600">
       &copy; 2026 HuntFlow. All rights reserved.
     </div>
   </footer>

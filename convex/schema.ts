@@ -41,5 +41,20 @@ export default defineSchema({
     uploadedAt: v.number()
   })
     .index('by_owner', ['ownerId'])
-    .index('by_owner_asset', ['ownerId', 'assetId'])
+    .index('by_owner_asset', ['ownerId', 'assetId']),
+  /**
+   * Short-lived tickets that pin an upload URL to the user who minted
+   * it. Without this binding, signed-in user A could request an upload
+   * URL and signed-in user B could register the resulting `storageId`
+   * for an `assetId` they control — an asymmetric upload smuggling
+   * primitive. The ticket id is returned by `generateAssetUploadUrl`
+   * and required by `registerAssetFile`, which consumes it on success.
+   * Tickets expire after 1 hour. See `convex/sync.ts`.
+   */
+  assetUploadTickets: defineTable({
+    ownerId: v.string(),
+    createdAt: v.number()
+  })
+    .index('by_owner', ['ownerId'])
+    .index('by_createdAt', ['createdAt'])
 });

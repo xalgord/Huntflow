@@ -43,9 +43,9 @@
     try {
       const record = await getEvidenceBlob(current.id);
       if (!record) return;
-      // Tolerate both the canonical `blob` field and the legacy `data`
-      // alias so screenshots saved before the schema rename still hydrate.
-      const source = (record.blob ?? record.data) as Blob | undefined;
+      // EvidenceBlobDB normalizes rows to the canonical `blob` field
+      // on read, so callers can rely on it being present.
+      const source = record.blob;
       if (!source) return;
       thumbnailUrl = URL.createObjectURL(source);
     } catch (error) {
@@ -98,7 +98,7 @@
 {:else if thumbnailUrl}
   <a
     href={href}
-    class="inline-flex max-w-full items-stretch gap-2 overflow-hidden rounded-md border border-slate-700 bg-slate-900/80 align-middle text-left transition hover:border-primary-400/50 hover:bg-slate-900"
+    class="inline-flex max-w-full items-stretch gap-2 overflow-hidden rounded-md border border-zinc-700 bg-zinc-900/80 align-middle text-left transition hover:border-primary-400/50 hover:bg-zinc-900"
   >
     <img
       src={thumbnailUrl}
@@ -106,21 +106,21 @@
       class="h-12 w-16 shrink-0 object-cover"
     />
     <span class="flex min-w-0 flex-col justify-center pr-2 py-1">
-      <span class="truncate text-xs font-medium text-slate-100">{title}</span>
-      <span class="text-[10px] uppercase tracking-wide text-slate-500">screenshot</span>
+      <span class="truncate text-xs font-medium text-zinc-100">{title}</span>
+      <span class="text-[10px] uppercase tracking-wide text-zinc-500">screenshot</span>
     </span>
   </a>
 {:else}
   <a
     href={href}
-    class="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-900/70 px-2 py-1.5 align-middle transition hover:border-primary-400/50 hover:bg-slate-900"
+    class="inline-flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-900/70 px-2 py-1.5 align-middle transition hover:border-primary-400/50 hover:bg-zinc-900"
   >
-    <span class="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-slate-800 text-primary-200">
+    <span class="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-zinc-800 text-primary-200">
       <svelte:component this={Icon} size={14} aria-hidden="true" />
     </span>
     <span class="flex min-w-0 flex-col">
-      <span class="max-w-[14rem] truncate text-xs font-medium text-slate-100">{title}</span>
-      <span class="text-[10px] uppercase tracking-wide text-slate-500">{kind.replace('-', ' ')}</span>
+      <span class="max-w-[14rem] truncate text-xs font-medium text-zinc-100">{title}</span>
+      <span class="text-[10px] uppercase tracking-wide text-zinc-500">{kind.replace('-', ' ')}</span>
     </span>
   </a>
 {/if}

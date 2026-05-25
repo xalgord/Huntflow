@@ -56,8 +56,14 @@ export async function uploadEvidenceAssetFile(
   const convex = getConvexClient();
   if (!convex) throw new Error('Convex is not available in this browser.');
 
-  const uploadUrl = await convex.mutation(cloudApi.generateAssetUploadUrl, {});
-  if (typeof uploadUrl !== 'string') throw new Error('Convex did not return an upload URL.');
+  const ticket = await convex.mutation(cloudApi.generateAssetUploadUrl, {});
+  if (!ticket || typeof ticket !== 'object') {
+    throw new Error('Convex did not return an upload ticket.');
+  }
+  const { uploadUrl, ticketId } = ticket as { uploadUrl?: unknown; ticketId?: unknown };
+  if (typeof uploadUrl !== 'string' || !ticketId) {
+    throw new Error('Convex did not return a valid upload URL or ticket id.');
+  }
 
   let upload: Response | undefined;
   const MAX_RETRIES = 3;
@@ -82,6 +88,7 @@ export async function uploadEvidenceAssetFile(
   if (!result.storageId) throw new Error('Evidence upload did not return a storage ID.');
 
   await convex.mutation(cloudApi.registerAssetFile, {
+    ticketId,
     assetId: asset.id,
     storageId: result.storageId,
     fileName: evidenceBlob.fileName ?? asset.fileName,

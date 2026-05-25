@@ -26,11 +26,11 @@
   ];
 </script>
 
-<div class="flex flex-wrap gap-1 border-b border-slate-700 bg-slate-850 p-2" aria-label="Markdown toolbar">
+<div class="flex flex-wrap gap-1 border-b border-zinc-700 bg-zinc-850 p-2" aria-label="Markdown toolbar">
   {#each actions as action}
     <button
       type="button"
-      class="inline-flex h-10 min-h-[40px] w-10 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-800 hover:text-slate-100 active:bg-slate-900"
+      class="inline-flex h-10 min-h-[40px] w-10 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100 active:bg-zinc-900"
       title={action.label}
       aria-label={action.label}
       on:click={() => dispatch('action', action.id)}

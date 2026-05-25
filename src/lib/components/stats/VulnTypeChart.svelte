@@ -75,13 +75,13 @@
 </script>
 
 <section class="hf-card p-4">
-  <h2 class="text-lg font-semibold text-slate-100">Vulnerability Types</h2>
-  <p class="mt-1 text-sm text-slate-400">Completed sessions by selected template.</p>
+  <h2 class="text-lg font-semibold text-zinc-100">Vulnerability Types</h2>
+  <p class="mt-1 text-sm text-zinc-400">Completed sessions by selected template.</p>
   <div class="mt-4 h-72">
     {#if Object.keys(byVulnType).length > 0}
       <canvas bind:this={canvas}></canvas>
     {:else}
-      <div class="flex h-full items-center justify-center rounded-lg border border-dashed border-slate-700 bg-slate-900 text-sm text-slate-500">
+      <div class="flex h-full items-center justify-center rounded-lg border border-dashed border-zinc-700 bg-zinc-900 text-sm text-zinc-500">
         Complete sessions with templates to populate this chart.
       </div>
     {/if}

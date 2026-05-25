@@ -195,58 +195,106 @@ export class EvidenceAssetDB {
 }
 
 export class EvidenceBlobDB {
+  /**
+   * Coerce an incoming blob row to the canonical shape: `blob` is the
+   * binary, `data` (legacy) is dropped. This handles three cases:
+   *   - already-canonical rows: pass-through.
+   *   - legacy rows with only `data`: surface it as `blob`.
+   *   - rows from older code paths that accidentally wrote both: prefer
+   *     `blob` and drop `data`.
+   * Centralizing this here means readers never have to remember to
+   * fall back to `data` themselves.
+   */
+  private normalize(row: EvidenceBlob | undefined): EvidenceBlob | undefined {
+    if (!row) return undefined;
+    // Use a structural cast: rows pulled from IDB may carry the legacy
+    // `data` alias even though the type system no longer advertises it.
+    const candidate = (row as { blob?: Blob; data?: Blob }).blob ?? (row as { data?: Blob }).data;
+    if (!candidate) return undefined;
+    const cloned: Record<string, unknown> = { ...(row as unknown as Record<string, unknown>) };
+    delete cloned.data;
+    cloned.blob = candidate;
+    return cloned as unknown as EvidenceBlob;
+  }
+
+  private prepare(blob: EvidenceBlob): EvidenceBlob {
+    // Same idea on write: refuse to persist the deprecated alias even
+    // if a caller hands it to us. The canonical row never carries
+    // `data`, period.
+    const candidate = (blob as { blob?: Blob; data?: Blob }).blob ?? (blob as { data?: Blob }).data;
+    if (!candidate) {
+      throw new Error('EvidenceBlob requires a `blob` payload.');
+    }
+    const cloned: Record<string, unknown> = { ...(blob as unknown as Record<string, unknown>) };
+    delete cloned.data;
+    cloned.blob = candidate;
+    return cloned as unknown as EvidenceBlob;
+  }
+
   async get(assetId: string): Promise<EvidenceBlob | undefined> {
     const db = await getHuntFlowDB();
-    if (!db) return getMemoryDB().evidenceBlobs.get(assetId);
+    if (!db) return this.normalize(getMemoryDB().evidenceBlobs.get(assetId));
 
     try {
-      return await db.get('evidenceBlobs', assetId);
+      const row = await db.get('evidenceBlobs', assetId);
+      return this.normalize(row);
     } catch (error) {
       enableMemoryFallback(error);
-      return getMemoryDB().evidenceBlobs.get(assetId);
+      return this.normalize(getMemoryDB().evidenceBlobs.get(assetId));
     }
   }
 
   async getAll(): Promise<EvidenceBlob[]> {
     const db = await getHuntFlowDB();
-    if (!db) return Array.from(getMemoryDB().evidenceBlobs.values());
+    if (!db) {
+      return Array.from(getMemoryDB().evidenceBlobs.values())
+        .map((row) => this.normalize(row))
+        .filter((row): row is EvidenceBlob => Boolean(row));
+    }
 
     try {
-      return await db.getAll('evidenceBlobs');
+      const rows = await db.getAll('evidenceBlobs');
+      return rows
+        .map((row) => this.normalize(row))
+        .filter((row): row is EvidenceBlob => Boolean(row));
     } catch (error) {
       enableMemoryFallback(error);
-      return Array.from(getMemoryDB().evidenceBlobs.values());
+      return Array.from(getMemoryDB().evidenceBlobs.values())
+        .map((row) => this.normalize(row))
+        .filter((row): row is EvidenceBlob => Boolean(row));
     }
   }
 
   async put(blob: EvidenceBlob): Promise<void> {
+    const normalized = this.prepare(blob);
     const db = await getHuntFlowDB();
     if (!db) {
-      getMemoryDB().evidenceBlobs.set(blob.assetId, blob);
+      getMemoryDB().evidenceBlobs.set(normalized.assetId, normalized);
       return;
     }
 
     try {
-      await db.put('evidenceBlobs', blob);
+      await db.put('evidenceBlobs', normalized);
     } catch (error) {
       enableMemoryFallback(error);
-      getMemoryDB().evidenceBlobs.set(blob.assetId, blob);
+      getMemoryDB().evidenceBlobs.set(normalized.assetId, normalized);
     }
   }
 
   async putBatch(blobs: EvidenceBlob[]): Promise<void> {
+    const normalized = blobs.map((row) => this.prepare(row));
     const db = await getHuntFlowDB();
     if (!db) {
-      for (const blob of blobs) getMemoryDB().evidenceBlobs.set(blob.assetId, blob);
+      for (const blob of normalized) getMemoryDB().evidenceBlobs.set(blob.assetId, blob);
       return;
     }
 
     try {
       const tx = db.transaction('evidenceBlobs', 'readwrite');
-      await Promise.all([...blobs.map((blob) => tx.store.put(blob)), tx.done]);
+      await Promise.all([...normalized.map((blob) => tx.store.put(blob)), tx.done]);
     } catch (error) {
       enableMemoryFallback(error);
-      for (const blob of blobs) getMemoryDB().evidenceBlobs.set(blob.assetId, blob);
+      for (const blob of normalized) getMemoryDB().evidenceBlobs.set(blob.assetId, blob);
     }
   }
 

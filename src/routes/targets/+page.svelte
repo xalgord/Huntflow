@@ -324,10 +324,10 @@
             <label class="block">
               <span class="hf-label">Priority</span>
               <select bind:value={priority} class="hf-select mt-2">
-                <option value={0}>High</option>
-                <option value={1}>High</option>
-                <option value={2}>Medium</option>
-                <option value={3}>Low</option>
+                <option value={0}>P0 Critical</option>
+                <option value={1}>P1 High</option>
+                <option value={2}>P2 Medium</option>
+                <option value={3}>P3 Low</option>
               </select>
             </label>
             <label class="block">
@@ -412,10 +412,10 @@
           <span class="hf-label">Priority</span>
           <select bind:value={priorityFilter} class="hf-select mt-2">
             <option value="all">All priorities</option>
-            <option value={0}>High</option>
-            <option value={1}>High</option>
-            <option value={2}>Medium</option>
-            <option value={3}>Low</option>
+            <option value={0}>P0 Critical</option>
+            <option value={1}>P1 High</option>
+            <option value={2}>P2 Medium</option>
+            <option value={3}>P3 Low</option>
           </select>
         </label>
         <label class="block">

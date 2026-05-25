@@ -63,7 +63,7 @@
     </button>
   </header>
 
-  <pre class="whitespace-pre-wrap break-all rounded-lg border border-border/60 bg-slate-950/60 p-3 font-mono text-[12.5px] text-slate-200">{payload.payload}</pre>
+  <pre class="whitespace-pre-wrap break-all rounded-lg border border-border/60 bg-zinc-950/60 p-3 font-mono text-[12.5px] text-zinc-200">{payload.payload}</pre>
 
   {#if payload.description}
     <p class="text-sm leading-relaxed text-muted-foreground">{payload.description}</p>

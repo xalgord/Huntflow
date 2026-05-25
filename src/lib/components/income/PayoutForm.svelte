@@ -106,9 +106,9 @@
       <input
         bind:value={program}
         list="income-programs"
-        class="mt-2 w-full rounded-md border bg-slate-850 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.program
+        class="mt-2 w-full rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.program
           ? 'border-red-500 ring-1 ring-red-500/50'
-          : 'border-slate-600'}"
+          : 'border-zinc-600'}"
         placeholder="Example Corp"
       />
       <datalist id="income-programs">
@@ -121,14 +121,14 @@
 
     <label class="block">
       <span class="hf-label">Amount</span>
-      <div class="mt-2 flex rounded-md border bg-slate-850 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50 {errors.amount ? 'border-red-500 ring-1 ring-red-500/50' : 'border-slate-600'}">
-        <span class="inline-flex min-h-[44px] items-center border-r border-slate-700 px-3 text-sm text-slate-500">$</span>
+      <div class="mt-2 flex rounded-md border bg-zinc-850 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50 {errors.amount ? 'border-red-500 ring-1 ring-red-500/50' : 'border-zinc-600'}">
+        <span class="inline-flex min-h-[44px] items-center border-r border-zinc-700 px-3 text-sm text-zinc-500">$</span>
         <input
           bind:value={amount}
           min="0"
           step="0.01"
           type="number"
-          class="w-full rounded-r-md bg-transparent px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+          class="w-full rounded-r-md bg-transparent px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
           placeholder="0.00"
         />
       </div>
@@ -166,9 +166,9 @@
       <input
         bind:value={date}
         type="date"
-        class="mt-2 w-full rounded-md border bg-slate-850 px-3 py-2.5 text-sm text-slate-100 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.date
+        class="mt-2 w-full rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.date
           ? 'border-red-500 ring-1 ring-red-500/50'
-          : 'border-slate-600'}"
+          : 'border-zinc-600'}"
       />
       {#if errors.date}<span class="mt-1 block text-xs text-red-400">{errors.date}</span>{/if}
     </label>
@@ -182,11 +182,11 @@
           type="button"
           class="flex min-h-[44px] items-center justify-between rounded-md border px-3 py-2 text-left text-sm transition {status === item.value
             ? 'border-primary-500/60 bg-primary-500/10 text-primary-300'
-            : 'border-slate-600 bg-slate-850 text-slate-300 hover:bg-slate-700'}"
+            : 'border-zinc-600 bg-zinc-850 text-zinc-300 hover:bg-zinc-700'}"
           on:click={() => (status = item.value)}
         >
           <span>{item.label}</span>
-          <span class="text-xs text-slate-500">{index + 1}</span>
+          <span class="text-xs text-zinc-500">{index + 1}</span>
         </button>
       {/each}
     </div>
@@ -195,7 +195,7 @@
   <div class="flex flex-wrap justify-end gap-3">
     <button
       type="button"
-      class="min-h-[44px] rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600"
+      class="min-h-[44px] rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
       on:click={() => dispatch('cancel')}
     >
       Cancel

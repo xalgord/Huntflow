@@ -47,7 +47,7 @@
   }
 
   function intensity(minutes: number): string {
-    if (minutes <= 0) return 'bg-slate-800';
+    if (minutes <= 0) return 'bg-zinc-800';
     if (minutes <= 15) return 'bg-primary-900/50';
     if (minutes <= 45) return 'bg-primary-800';
     if (minutes <= 90) return 'bg-primary-600';
@@ -76,12 +76,12 @@
 <section class="hf-card p-4">
   <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
     <div>
-      <h2 class="text-lg font-semibold text-slate-100">Streak Calendar</h2>
-      <p class="mt-1 text-sm text-slate-400">Last 12 weeks, colored by completed hunting minutes.</p>
+      <h2 class="text-lg font-semibold text-zinc-100">Streak Calendar</h2>
+      <p class="mt-1 text-sm text-zinc-400">Last 12 weeks, colored by completed hunting minutes.</p>
     </div>
-    <div class="flex items-center gap-2 text-xs text-slate-500">
+    <div class="flex items-center gap-2 text-xs text-zinc-500">
       <span>Less</span>
-      <span class="h-3 w-3 rounded-sm bg-slate-800"></span>
+      <span class="h-3 w-3 rounded-sm bg-zinc-800"></span>
       <span class="h-3 w-3 rounded-sm bg-primary-900/50"></span>
       <span class="h-3 w-3 rounded-sm bg-primary-800"></span>
       <span class="h-3 w-3 rounded-sm bg-primary-600"></span>
@@ -92,7 +92,7 @@
   </div>
 
   <div class="overflow-x-auto pb-2">
-    <div class="mb-2 grid w-fit grid-cols-7 gap-[3px] text-xs text-slate-500">
+    <div class="mb-2 grid w-fit grid-cols-7 gap-[3px] text-xs text-zinc-500">
       {#each weekdays as weekday}
         <span class="w-8 sm:w-10">{weekday}</span>
       {/each}
@@ -113,22 +113,22 @@
   </div>
 
   {#if selectedDate}
-    <div class="mt-4 rounded-lg border border-slate-700 bg-slate-900 p-3">
-      <h3 class="text-sm font-semibold text-slate-100">{formatDay(selectedDate)}</h3>
+    <div class="mt-4 rounded-lg border border-zinc-700 bg-zinc-900 p-3">
+      <h3 class="text-sm font-semibold text-zinc-100">{formatDay(selectedDate)}</h3>
       {#if selectedSessions.length > 0}
-        <div class="mt-3 divide-y divide-slate-800">
+        <div class="mt-3 divide-y divide-zinc-800">
           {#each selectedSessions as session}
             <div class="flex items-center justify-between gap-3 py-2 text-sm">
               <div>
-                <p class="font-medium text-slate-200">{targetName(session.targetId)}</p>
-                <p class="text-xs text-slate-500">{session.status}</p>
+                <p class="font-medium text-zinc-200">{targetName(session.targetId)}</p>
+                <p class="text-xs text-zinc-500">{session.status}</p>
               </div>
-              <span class="text-slate-400">{Math.round(session.durationActual / 60)}m</span>
+              <span class="text-zinc-400">{Math.round(session.durationActual / 60)}m</span>
             </div>
           {/each}
         </div>
       {:else}
-        <p class="mt-2 text-sm text-slate-500">No sessions recorded for this day.</p>
+        <p class="mt-2 text-sm text-zinc-500">No sessions recorded for this day.</p>
       {/if}
     </div>
   {/if}

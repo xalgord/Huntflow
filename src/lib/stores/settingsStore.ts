@@ -71,7 +71,9 @@ async function flush(): Promise<void> {
 function scheduleSave(): void {
   if (!browser || !loaded) return;
   if (saveTimer) clearTimeout(saveTimer);
-  void flush();
+  saveTimer = setTimeout(() => {
+    void flush();
+  }, 500);
 }
 
 async function load(): Promise<Settings> {
@@ -138,4 +140,10 @@ if (browser) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (value.theme === 'system') applyTheme(value.theme);
   });
+  // NOTE: settings flushing on pagehide is handled centrally by
+  // `flushAllStores()` in +layout.svelte. We deliberately don't add a
+  // second pagehide listener here — having two listeners racing the
+  // same write is harmless but wastes a microtask in the unload path,
+  // and it makes the cleanup story confusing for anyone reading this
+  // file in isolation.
 }

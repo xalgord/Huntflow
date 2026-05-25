@@ -47,7 +47,7 @@
       const target = sanitizeTarget($page.url.searchParams.get('go'));
       await goto(target, { replaceState: true });
     } catch (caught) {
-      console.error('[v0] /demo seed failed', caught);
+      console.error('/demo seed failed', caught);
       status = 'error';
       errorMessage = caught instanceof Error ? caught.message : 'Unknown error';
     }
@@ -63,7 +63,7 @@
 </svelte:head>
 
 <main
-  class="flex min-h-screen items-center justify-center bg-slate-950 px-4 text-slate-300"
+  class="flex min-h-screen items-center justify-center bg-zinc-950 px-4 text-zinc-300"
   aria-busy={status === 'loading' || status === 'redirecting'}
   aria-live="polite"
 >
@@ -75,18 +75,18 @@
     </span>
 
     {#if status === 'loading'}
-      <p class="text-sm font-medium text-slate-100">Loading demo workspace…</p>
-      <p class="text-xs text-slate-500">
+      <p class="text-sm font-medium text-zinc-100">Loading demo workspace…</p>
+      <p class="text-xs text-zinc-500">
         Seeding realistic targets, sessions, notes, evidence, and payouts so every screen has data.
       </p>
     {:else if status === 'redirecting'}
-      <p class="text-sm font-medium text-slate-100">Workspace ready. Opening the app…</p>
+      <p class="text-sm font-medium text-zinc-100">Workspace ready. Opening the app…</p>
     {:else}
       <p class="text-sm font-medium text-rose-300">Couldn&apos;t seed the demo workspace.</p>
-      <p class="text-xs text-slate-500">{errorMessage}</p>
+      <p class="text-xs text-zinc-500">{errorMessage}</p>
       <a
         href="/"
-        class="mt-2 inline-flex min-h-[36px] items-center justify-center rounded-md border border-slate-700 bg-slate-900 px-4 py-2 text-xs font-medium text-slate-200 transition hover:bg-slate-800"
+        class="mt-2 inline-flex min-h-[36px] items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 px-4 py-2 text-xs font-medium text-zinc-200 transition hover:bg-zinc-800"
       >
         Back to landing
       </a>

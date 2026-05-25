@@ -78,8 +78,8 @@
 <section class="hf-card p-4">
   <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
     <div>
-      <h2 class="text-lg font-semibold text-slate-100">Tax Export</h2>
-      <p class="mt-1 text-sm text-slate-400">CSV includes date, program, amount, and platform for paid payouts.</p>
+      <h2 class="text-lg font-semibold text-zinc-100">Tax Export</h2>
+      <p class="mt-1 text-sm text-zinc-400">CSV includes date, program, amount, and platform for paid payouts.</p>
     </div>
 
     <div class="flex flex-col gap-3 sm:flex-row">
@@ -96,7 +96,7 @@
       </label>
       <button
         type="button"
-        class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-500"
+        class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
         disabled={exportRows.length === 0}
         on:click={exportCsv}
       >
@@ -107,17 +107,17 @@
   </div>
 
   <dl class="mt-4 grid gap-3 sm:grid-cols-3">
-    <div class="rounded-md border border-slate-700 bg-slate-850 p-3">
-      <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Rows</dt>
-      <dd class="mt-1 text-xl font-bold text-slate-100">{exportRows.length}</dd>
+    <div class="rounded-md border border-zinc-700 bg-zinc-850 p-3">
+      <dt class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Rows</dt>
+      <dd class="mt-1 text-xl font-bold text-zinc-100">{exportRows.length}</dd>
     </div>
-    <div class="rounded-md border border-slate-700 bg-slate-850 p-3">
-      <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Paid Total</dt>
-      <dd class="mt-1 text-xl font-bold text-slate-100">{money(exportTotal)}</dd>
+    <div class="rounded-md border border-zinc-700 bg-zinc-850 p-3">
+      <dt class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Paid Total</dt>
+      <dd class="mt-1 text-xl font-bold text-zinc-100">{money(exportTotal)}</dd>
     </div>
-    <div class="rounded-md border border-slate-700 bg-slate-850 p-3">
-      <dt class="text-xs font-semibold uppercase tracking-wide text-slate-500">Year</dt>
-      <dd class="mt-1 text-xl font-bold text-slate-100">{year}</dd>
+    <div class="rounded-md border border-zinc-700 bg-zinc-850 p-3">
+      <dt class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Year</dt>
+      <dd class="mt-1 text-xl font-bold text-zinc-100">{year}</dd>
     </div>
   </dl>
 </section>

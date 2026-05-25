@@ -47,7 +47,7 @@
   }
 </script>
 
-<div class="rounded-xl border border-slate-800 bg-slate-900/80 p-2 shadow-dark-md backdrop-blur">
+<div class="rounded-xl border border-zinc-800 bg-zinc-900/80 p-2 shadow-dark-md backdrop-blur">
   <div role="tablist" aria-label="Install method" class="flex items-center gap-1 px-1.5 pt-1.5">
     {#each options as option, index}
       <button
@@ -58,8 +58,8 @@
         aria-selected={active === index}
         tabindex={active === index ? 0 : -1}
         class="relative inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition {active === index
-          ? 'bg-slate-800 text-slate-100 shadow-inner-line'
-          : 'text-slate-400 hover:text-slate-200'}"
+          ? 'bg-zinc-800 text-zinc-100 shadow-inner-line'
+          : 'text-zinc-400 hover:text-zinc-200'}"
         on:click={() => (active = index)}
       >
         {option.label}
@@ -71,16 +71,16 @@
     role="tabpanel"
     id="install-panel-{active}"
     aria-labelledby="install-tab-{active}"
-    class="mt-1.5 flex items-center gap-3 rounded-lg bg-slate-950 px-4 py-3.5"
+    class="mt-1.5 flex items-center gap-3 rounded-lg bg-zinc-950 px-4 py-3.5"
   >
     <Terminal size={16} class="shrink-0 text-primary-400" aria-hidden="true" />
     <code
-      class="flex-1 truncate font-mono text-sm text-slate-100"
+      class="flex-1 truncate font-mono text-sm text-zinc-100"
       data-testid="install-command"
     >{options[active].command}</code>
     <button
       type="button"
-      class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-900 text-slate-400 transition hover:border-primary-500/50 hover:text-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
+      class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-zinc-700 bg-zinc-900 text-zinc-400 transition hover:border-primary-500/50 hover:text-primary-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
       aria-label="Copy install command"
       on:click={copyCommand}
     >
@@ -92,5 +92,5 @@
     </button>
   </div>
 
-  <p class="px-3 pb-2.5 pt-2 text-xs text-slate-500">{options[active].note}</p>
+  <p class="px-3 pb-2.5 pt-2 text-xs text-zinc-500">{options[active].note}</p>
 </div>

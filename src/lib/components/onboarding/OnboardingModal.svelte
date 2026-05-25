@@ -151,12 +151,12 @@
 
 <Modal {open} closeOnOverlay={false} title={currentStep.title} on:close={() => finish(false)}>
   <div class="space-y-5" on:touchstart={handleTouchStart} on:touchend={handleTouchEnd}>
-    <div class="rounded-lg border border-slate-700 bg-slate-900 p-5">
+    <div class="rounded-lg border border-zinc-700 bg-zinc-900 p-5">
       <div class="mx-auto flex h-16 w-16 items-center justify-center rounded-xl border {currentStep.accent}">
         <svelte:component this={currentStep.icon} size={30} aria-hidden="true" />
       </div>
 
-      <p class="mt-5 text-center text-sm leading-6 text-slate-400">{currentStep.description}</p>
+      <p class="mt-5 text-center text-sm leading-6 text-zinc-400">{currentStep.description}</p>
 
       {#if isLastStep && IS_WEB}
         <!-- Demo workspace is a hosted-website-only feature. The local
@@ -173,7 +173,7 @@
           <Sparkles size={16} aria-hidden="true" />
           {loadingDemo ? 'Loading sample workspace…' : 'Try with sample data instead'}
         </button>
-        <p class="mt-2 text-center text-xs text-slate-500">
+        <p class="mt-2 text-center text-xs text-zinc-500">
           Loads 3 demo programs, sessions, notes, recon assets, and a paid submission so you can explore every screen.
         </p>
         {#if demoError}
@@ -189,7 +189,7 @@
             type="button"
             class="h-3 min-h-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 {index === stepIndex
               ? 'w-8 bg-primary-500'
-              : 'w-3 bg-slate-600 hover:bg-slate-500'}"
+              : 'w-3 bg-zinc-600 hover:bg-zinc-500'}"
             aria-label={`Go to step ${index + 1}: ${step.title}`}
             aria-current={index === stepIndex ? 'step' : undefined}
             on:click={() => goToStep(index)}
@@ -201,7 +201,7 @@
     <div class="flex items-center justify-between gap-3">
       <button
         type="button"
-        class="inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium text-slate-400 transition hover:bg-slate-700 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+        class="inline-flex min-h-[44px] items-center justify-center rounded-md px-4 py-2.5 text-sm font-medium text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
         on:click={() => finish(false)}
       >
         Skip

@@ -46,7 +46,7 @@
 
 <div class="space-y-2">
   <label class="hf-label" for="note-tags">Tags</label>
-  <div class="rounded-md border border-slate-600 bg-slate-850 p-2 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50">
+  <div class="rounded-md border border-zinc-600 bg-zinc-850 p-2 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50">
     <div class="flex flex-wrap gap-2">
       {#each tags as tag}
         <button
@@ -61,7 +61,7 @@
       <input
         id="note-tags"
         bind:value
-        class="min-h-[32px] flex-1 bg-transparent px-1 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+        class="min-h-[32px] flex-1 bg-transparent px-1 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
         placeholder={tags.length >= 10 ? 'Tag limit reached' : 'Add tags, comma-separated'}
         disabled={tags.length >= 10}
         on:keydown={handleKeydown}
@@ -75,7 +75,7 @@
       {#each normalizedSuggestions as suggestion}
         <button
           type="button"
-          class="min-h-0 rounded-full border border-slate-700 bg-slate-900 px-2 py-1 text-xs text-slate-400 transition hover:border-primary-500/40 hover:text-primary-300"
+          class="min-h-0 rounded-full border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-400 transition hover:border-primary-500/40 hover:text-primary-300"
           on:click={() => addTags(suggestion)}
         >
           #{suggestion}

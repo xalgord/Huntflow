@@ -253,7 +253,7 @@
     <textarea
       bind:value={notes}
       rows={3}
-      class="mt-2 min-h-[96px] w-full resize-y rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
+      class="mt-2 min-h-[96px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
       placeholder="Internal notes, triage timeline observations, dupes..."
     ></textarea>
   </label>

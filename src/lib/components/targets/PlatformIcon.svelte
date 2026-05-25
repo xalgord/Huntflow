@@ -18,7 +18,7 @@
   $: label = labels[platform];
 </script>
 
-<span class="inline-flex items-center gap-1.5 text-slate-400" title={label}>
+<span class="inline-flex items-center gap-1.5 text-zinc-400" title={label}>
   {#if platform === 'hackerone'}
     <Shield {size} aria-hidden="true" />
   {:else if platform === 'bugcrowd'}

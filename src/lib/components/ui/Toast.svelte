@@ -57,7 +57,7 @@
 
 {#if open}
   <section
-    class="fixed inset-x-4 top-4 z-50 animate-slide-up rounded-lg border-l-4 bg-slate-800 px-4 py-3 shadow-dark-lg dark:bg-slate-800 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto sm:w-96 {typeClass[
+    class="fixed inset-x-4 top-4 z-50 animate-slide-up rounded-lg border-l-4 bg-zinc-800 px-4 py-3 shadow-dark-lg dark:bg-zinc-800 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto sm:w-96 {typeClass[
       type ?? 'info'
     ]}"
     role="status"
@@ -66,17 +66,17 @@
       <svelte:component this={icon} size={20} aria-hidden="true" />
       <div class="min-w-0 flex-1">
         {#if title}
-          <h2 class="text-sm font-semibold text-slate-100 dark:text-slate-100">{title}</h2>
+          <h2 class="text-sm font-semibold text-zinc-100 dark:text-zinc-100">{title}</h2>
         {/if}
         {#if message}
-          <p class="mt-1 text-sm leading-5 text-slate-400 dark:text-slate-400">{message}</p>
+          <p class="mt-1 text-sm leading-5 text-zinc-400 dark:text-zinc-400">{message}</p>
         {:else}
           <slot />
         {/if}
       </div>
       <button
         type="button"
-        class="inline-flex h-11 min-h-[44px] w-11 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-700 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+        class="inline-flex h-11 min-h-[44px] w-11 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
         aria-label="Dismiss notification"
         on:click={dismiss}
       >

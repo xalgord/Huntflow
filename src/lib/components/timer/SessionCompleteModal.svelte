@@ -34,9 +34,9 @@
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/80 p-4 backdrop-blur-sm sm:items-center">
+  <div class="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/80 p-4 backdrop-blur-sm sm:items-center">
     <section
-      class="w-full max-w-md rounded-xl border border-slate-700 bg-slate-800 p-6 text-slate-100 shadow-xl animate-scale-in"
+      class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-6 text-zinc-100 shadow-xl animate-scale-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="session-complete-title"
@@ -47,18 +47,18 @@
             <CheckCircle2 size={22} aria-hidden="true" />
           </span>
           <div>
-            <h2 id="session-complete-title" class="text-lg font-semibold text-slate-100">
+            <h2 id="session-complete-title" class="text-lg font-semibold text-zinc-100">
               Session complete
             </h2>
             {#if targetName}
-              <p class="mt-1 text-sm text-slate-400">{targetName}</p>
+              <p class="mt-1 text-sm text-zinc-400">{targetName}</p>
             {/if}
           </div>
         </div>
 
         <button
           type="button"
-          class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-700 hover:text-slate-100"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-100"
           aria-label="Close modal"
           on:click={dismiss}
         >
@@ -70,7 +70,7 @@
         <span class="hf-label">Quick note</span>
         <textarea
           bind:value={quickNote}
-          class="mt-2 min-h-[100px] w-full resize-y rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
+          class="mt-2 min-h-[100px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
           placeholder="What did you find?"
         />
       </label>
@@ -83,7 +83,7 @@
               type="button"
               class="rounded-full border px-2 py-1 text-xs font-medium transition {tags.includes(tag)
                 ? 'border-primary-500/30 bg-primary-500/20 text-primary-400'
-                : 'border-slate-600 bg-slate-700 text-slate-300 hover:bg-slate-600'}"
+                : 'border-zinc-600 bg-zinc-700 text-zinc-300 hover:bg-zinc-600'}"
               on:click={() => toggleTag(tag)}
             >
               #{tag}
@@ -95,7 +95,7 @@
       <div class="mt-6 flex justify-end gap-3">
         <button
           type="button"
-          class="min-h-[44px] rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600"
+          class="min-h-[44px] rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
           on:click={dismiss}
         >
           Cancel

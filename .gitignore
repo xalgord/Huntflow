@@ -6,6 +6,11 @@ coverage/
 playwright-report/
 test-results/
 .vercel/
+# Nova Act / Playwright persistent profile dirs.
+# Cookies and local storage from signed-in dashboards land here so a
+# restarted Nova session doesn't have to re-authenticate. Treat the
+# whole tree as secret.
+.cache/
 
 .env
 .env.*
@@ -22,3 +27,20 @@ pnpm-debug.log*
 .agentMemory
 .agent/
 .vercel
+
+# Local IDE / agent tooling — not part of the project source.
+.codex
+.kilo/
+.kiro/
+.playwright-mcp/
+.vscode/
+speckit/
+
+# Local-only payment provider scratch material. Keep credentials and
+# helper scripts out of the repo so test-mode keys don't leak.
+docs/dodo-payments-test-credentials.md
+scripts/dodo-*
+scripts/read-dodo-clipboard.mjs
+
+# One-off screenshot capture, not used by the build.
+example.png

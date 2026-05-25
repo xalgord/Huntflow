@@ -192,11 +192,11 @@ export interface EvidenceAsset {
 /**
  * Binary payload for an EvidenceAsset.
  *
- * The runtime convention used across the rest of the codebase (assets
- * page, cloud sync, asset preview/download) is `blob:` plus optional
- * `fileName` / `relativePath` / `createdAt`. The earlier `data:` field
- * was kept only for backward compatibility with the very first export
- * format and is now resolved at the call site that needs it.
+ * The canonical field is `blob`. The schema previously also exposed a
+ * `data` alias from when `data:` URI strings were the format on disk;
+ * that alias has been retired. The DB layer normalizes any incoming
+ * `data` to `blob` at write time so older bundles continue to import
+ * cleanly without leaking the legacy field through to readers.
  */
 export interface EvidenceBlob {
   assetId: string;
@@ -207,8 +207,6 @@ export interface EvidenceBlob {
   relativePath?: string;
   createdAt?: number;
   updatedAt: number;
-  /** @deprecated legacy field — newer code uses `blob`. */
-  data?: Blob;
 }
 
 export interface EvidenceLink {
