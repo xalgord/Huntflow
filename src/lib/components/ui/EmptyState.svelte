@@ -23,15 +23,15 @@
   const dispatch = createEventDispatcher<{ action: void }>();
 </script>
 
-<section class="rounded-lg border border-slate-700 bg-slate-800 p-8 text-center shadow-sm dark:border-slate-700 dark:bg-slate-800">
+<section class="rounded-lg border border-zinc-700 bg-zinc-800 p-8 text-center shadow-sm dark:border-zinc-700 dark:bg-zinc-800">
   {#if icon}
-    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 text-slate-600 dark:bg-slate-900 dark:text-slate-600">
+    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-900 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-600">
       <svelte:component this={icon} size={48} aria-hidden="true" />
     </div>
   {/if}
-  <h2 class="mt-4 text-lg font-semibold text-slate-300 dark:text-slate-300">{title}</h2>
+  <h2 class="mt-4 text-lg font-semibold text-zinc-300 dark:text-zinc-300">{title}</h2>
   {#if description}
-    <p class="mt-2 text-sm text-slate-500 dark:text-slate-500">{description}</p>
+    <p class="mt-2 text-sm text-zinc-500 dark:text-zinc-500">{description}</p>
   {/if}
   {#if actionLabel}
     <div class="mt-5">

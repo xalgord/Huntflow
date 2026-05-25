@@ -33,6 +33,18 @@ function isDocumentRequest(request: Request): boolean {
   return request.mode === 'navigate' || request.headers.get('accept')?.includes('text/html') === true;
 }
 
+/**
+ * Files that change shape between releases without their URL changing —
+ * the PWA manifest is the canonical example. We deliberately use a
+ * network-first strategy for them so a freshly-deployed app picks up
+ * theme color, icon, or shortcut changes on the next reload instead of
+ * being pinned to whatever shipped with the very first install.
+ */
+function isMutableStaticAsset(request: Request): boolean {
+  const url = new URL(request.url);
+  return url.pathname === '/manifest.json' || url.pathname === '/manifest.webmanifest';
+}
+
 async function networkFirst(request: Request): Promise<Response> {
   try {
     const response = await fetch(request);
@@ -83,5 +95,9 @@ sw.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (new URL(request.url).origin !== sw.location.origin) return;
 
-  event.respondWith(isDocumentRequest(request) ? networkFirst(request) : cacheFirst(request));
+  if (isDocumentRequest(request) || isMutableStaticAsset(request)) {
+    event.respondWith(networkFirst(request));
+  } else {
+    event.respondWith(cacheFirst(request));
+  }
 });

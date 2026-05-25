@@ -122,8 +122,8 @@
   let base64Decoded = '';
 </script>
 
-<div class="flex flex-wrap items-center gap-2 border-b border-slate-700 bg-slate-900/40 px-3 py-2">
-  <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Hunter</span>
+<div class="flex flex-wrap items-center gap-2 border-b border-zinc-700 bg-zinc-900/40 px-3 py-2">
+  <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Hunter</span>
 
   <button
     type="button"
@@ -174,7 +174,7 @@
   {/if}
 
   <span class="ml-auto flex flex-wrap items-center gap-1.5">
-    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">Severity</span>
+    <span class="text-[10px] font-semibold uppercase tracking-[0.16em] text-zinc-500">Severity</span>
     <button
       type="button"
       class="rounded-md border px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.08em] transition {severity ===
@@ -314,7 +314,7 @@
 </Modal>
 
 {#if severity && cvssVector}
-  <div class="border-b border-slate-700 bg-slate-900/40 px-3 py-1.5 text-[11px]">
+  <div class="border-b border-zinc-700 bg-zinc-900/40 px-3 py-1.5 text-[11px]">
     <span class="op-mono inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2 py-0.5 text-muted-foreground">
   <span class="font-semibold uppercase tracking-[0.08em] {severityClass} rounded px-1.5 py-0.5"
         >{severity}</span

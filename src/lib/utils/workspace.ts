@@ -22,10 +22,10 @@ export const platformLabels: Record<Platform, string> = {
 };
 
 export const priorityLabels: Record<Priority, string> = {
-  0: 'High',
-  1: 'High',
-  2: 'Medium',
-  3: 'Low'
+  0: 'P0 Critical',
+  1: 'P1 High',
+  2: 'P2 Medium',
+  3: 'P3 Low'
 };
 
 export const targetStatusLabels: Record<TargetStatus, string> = {

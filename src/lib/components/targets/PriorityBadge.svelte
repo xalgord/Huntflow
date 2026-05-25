@@ -19,7 +19,7 @@
         ? 'border-orange-500/30 bg-orange-500/20 text-orange-400'
         : priority === 2
           ? 'border-yellow-500/30 bg-yellow-500/20 text-yellow-400'
-          : 'border-slate-500/30 bg-slate-700 text-slate-300';
+          : 'border-zinc-500/30 bg-zinc-700 text-zinc-300';
 </script>
 
 <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium {classes}">

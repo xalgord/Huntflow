@@ -58,12 +58,12 @@
   }
 </script>
 
-<section id="faq" class="border-b border-slate-800 bg-slate-950 px-4 py-20 sm:px-6 lg:px-8">
+<section id="faq" class="border-b border-zinc-800 bg-zinc-950 px-4 py-20 sm:px-6 lg:px-8">
   <div class="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.7fr_1.3fr]">
     <div>
       <p class="hf-eyebrow">FAQ</p>
-      <h2 class="mt-2 text-3xl font-bold leading-tight text-slate-100 sm:text-4xl">Things people ask before they install.</h2>
-      <p class="mt-3 text-sm leading-6 text-slate-400">
+      <h2 class="mt-2 text-3xl font-bold leading-tight text-zinc-100 sm:text-4xl">Things people ask before they install.</h2>
+      <p class="mt-3 text-sm leading-6 text-zinc-400">
         Still have questions? Use the
         <a href="#contact" class="text-primary-300 underline-offset-4 hover:underline">contact form below</a>
         or email
@@ -71,26 +71,26 @@
       </p>
     </div>
 
-    <ul class="divide-y divide-slate-800 rounded-xl border border-slate-800 bg-slate-900/60">
+    <ul class="divide-y divide-zinc-800 rounded-xl border border-zinc-800 bg-zinc-900/60">
       {#each faqs as faq, index}
         {@const isOpen = openIndex === index}
         <li>
           <button
             type="button"
-            class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-slate-900"
+            class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-zinc-900"
             aria-expanded={isOpen}
             aria-controls="faq-panel-{index}"
             on:click={() => toggle(index)}
           >
-            <span class="text-sm font-medium text-slate-100 sm:text-base">{faq.question}</span>
+            <span class="text-sm font-medium text-zinc-100 sm:text-base">{faq.question}</span>
             <ChevronDown
               size={18}
-              class="shrink-0 text-slate-500 transition-transform duration-200 {isOpen ? 'rotate-180 text-primary-300' : ''}"
+              class="shrink-0 text-zinc-500 transition-transform duration-200 {isOpen ? 'rotate-180 text-primary-300' : ''}"
               aria-hidden="true"
             />
           </button>
           {#if isOpen}
-            <div id="faq-panel-{index}" class="px-5 pb-5 text-sm leading-6 text-slate-400">
+            <div id="faq-panel-{index}" class="px-5 pb-5 text-sm leading-6 text-zinc-400">
               <!-- Answers are author-controlled (no user input) so HTML is safe to render. -->
               {@html faq.answer}
             </div>

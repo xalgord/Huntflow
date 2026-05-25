@@ -44,6 +44,18 @@ import type {
 import { get } from 'svelte/store';
 import { clerkAuthStore, refreshProEntitlement } from './clerk';
 import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient, getClerkToken } from './convex';
+// Pure merge primitives live in `syncMerge.ts` so they can be unit-tested
+// without dragging IndexedDB and Convex into the test environment.
+// We re-export them so existing call sites stay untouched.
+import {
+  KNOWN_COLLECTIONS,
+  mergeItems,
+  normalizeRemoteItem,
+  type SyncCollection,
+  type SyncItem
+} from './syncMerge';
+export { KNOWN_COLLECTIONS, mergeItems, normalizeRemoteItem };
+export type { SyncCollection, SyncItem };
 
 // Thrown when a signed-in but non-Pro user tries to sync. The settings UI
 // catches this and renders a paywall instead of an error toast.
@@ -53,21 +65,6 @@ export class ProRequiredError extends Error {
     this.name = 'ProRequiredError';
   }
 }
-
-export type SyncCollection =
-  | 'sessions'
-  | 'notes'
-  | 'targets'
-  | 'payouts'
-  | 'evidenceAssets'
-  | 'evidenceLinks'
-  | 'evidenceCanvasViews'
-  | 'reconAssets'
-  | 'payloads'
-  | 'checklistTemplates'
-  | 'checklistInstances'
-  | 'submissions'
-  | 'bookmarks';
 
 type SyncPayload =
   | Session
@@ -83,15 +80,6 @@ type SyncPayload =
   | ChecklistInstance
   | Submission
   | Bookmark;
-
-export interface SyncItem {
-  collection: SyncCollection;
-  localId: string;
-  payload: SyncPayload;
-  updatedAt: number;
-  /** Set when the item was soft-deleted. Propagates deletions across devices. */
-  deletedAt?: number;
-}
 
 // ---------------------------------------------------------------------------
 // Tombstone management — localStorage-backed deletion markers
@@ -189,46 +177,17 @@ export function toSyncItem(collection: SyncCollection, item: SyncPayload): SyncI
   return {
     collection,
     localId: item.id,
-    payload: item,
+    // Cast through unknown: SyncPayload is a discriminated union of typed
+    // entity shapes, while SyncItem.payload is the looser
+    // `{ id: string } & Record<string, unknown>` shape that lives in
+    // syncMerge.ts. The looser type lets the merge kernel stay
+    // entity-agnostic and unit-testable.
+    payload: item as unknown as SyncItem['payload'],
     updatedAt
   };
 }
 
-export const KNOWN_COLLECTIONS: SyncCollection[] = [
-  'sessions',
-  'notes',
-  'targets',
-  'payouts',
-  'evidenceAssets',
-  'evidenceLinks',
-  'evidenceCanvasViews',
-  'reconAssets',
-  'payloads',
-  'checklistTemplates',
-  'checklistInstances',
-  'submissions',
-  'bookmarks'
-];
-
 // isRecord is now imported at the top of this file
-
-export function normalizeRemoteItem(value: unknown): SyncItem | null {
-  if (!isRecord(value)) return null;
-  const { collection, localId, payload, updatedAt, deletedAt } = value;
-  if (typeof collection !== 'string' || !KNOWN_COLLECTIONS.includes(collection as SyncCollection)) {
-    return null;
-  }
-  if (typeof localId !== 'string' || !isRecord(payload) || typeof updatedAt !== 'number') return null;
-  if (payload.id !== localId) return null;
-
-  return {
-    collection: collection as SyncCollection,
-    localId,
-    payload: payload as unknown as SyncItem['payload'],
-    updatedAt,
-    ...(typeof deletedAt === 'number' ? { deletedAt } : {})
-  };
-}
 
 export async function getLocalItems(): Promise<SyncItem[]> {
   const [
@@ -283,7 +242,7 @@ export async function getLocalItems(): Promise<SyncItem[]> {
     localId: t.localId,
     // Stub payload — the real data is gone. Only the id field is needed
     // so normalizeRemoteItem() can validate `payload.id === localId`.
-    payload: { id: t.localId } as unknown as SyncPayload,
+    payload: { id: t.localId } as unknown as SyncItem['payload'],
     updatedAt: t.deletedAt,
     deletedAt: t.deletedAt
   }));
@@ -324,29 +283,6 @@ export async function uploadPendingEvidenceFiles(): Promise<void> {
       });
     }
   }
-}
-
-export function mergeItems(localItems: SyncItem[], remoteItems: SyncItem[]): SyncItem[] {
-  const merged = new Map<string, SyncItem>();
-
-  for (const item of [...localItems, ...remoteItems]) {
-    const key = `${item.collection}:${item.localId}`;
-    const existing = merged.get(key);
-    if (!existing) {
-      merged.set(key, item);
-      continue;
-    }
-
-    // Last-writer-wins: compare the effective timestamp of each side.
-    // For soft-deleted items, deletedAt IS the effective timestamp.
-    const existingTs = existing.deletedAt ?? existing.updatedAt;
-    const incomingTs = item.deletedAt ?? item.updatedAt;
-    if (incomingTs >= existingTs) {
-      merged.set(key, item);
-    }
-  }
-
-  return Array.from(merged.values());
 }
 
 export async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {

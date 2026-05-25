@@ -94,13 +94,13 @@
   {#if $clerkAuthStore.configured}
     <div bind:this={mountNode} class="hf-clerk-mount" data-mounted={mounted}></div>
     {#if !mounted}
-      <div class="flex items-center justify-center py-12 text-sm text-slate-500" aria-live="polite">
+      <div class="flex items-center justify-center py-12 text-sm text-zinc-500" aria-live="polite">
         Loading sign-in&hellip;
       </div>
     {/if}
   {:else}
     <!-- Local-mode placeholder; the onMount above redirects to /account. -->
-    <div class="flex items-center justify-center py-12 text-sm text-slate-500" aria-live="polite">
+    <div class="flex items-center justify-center py-12 text-sm text-zinc-500" aria-live="polite">
       Opening your local workspace&hellip;
     </div>
   {/if}

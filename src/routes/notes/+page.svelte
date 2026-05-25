@@ -70,11 +70,11 @@
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_180px]">
         <label class="block">
           <span class="hf-label">Search</span>
-          <div class="mt-2 flex items-center gap-2 rounded-md border border-slate-600 bg-slate-850 px-3 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50">
-            <Search size={18} class="text-slate-500" aria-hidden="true" />
+          <div class="mt-2 flex items-center gap-2 rounded-md border border-zinc-600 bg-zinc-850 px-3 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50">
+            <Search size={18} class="text-zinc-500" aria-hidden="true" />
             <input
               bind:value={query}
-              class="min-h-[44px] w-full bg-transparent text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none"
+              class="min-h-[44px] w-full bg-transparent text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none"
               placeholder="Search notes, content, tags"
             />
           </div>
@@ -121,17 +121,17 @@
       </section>
     {:else}
       <section class="hf-card p-8 text-center">
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 text-slate-600">
+        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-900 text-zinc-600">
           <FileText size={48} aria-hidden="true" />
         </div>
-        <h2 class="mt-4 text-lg font-semibold text-slate-300">
+        <h2 class="mt-4 text-lg font-semibold text-zinc-300">
           {#if $noteStore.length === 0}
             No notes yet
           {:else}
             No notes match the filters
           {/if}
         </h2>
-        <p class="mt-2 text-sm text-slate-500">
+        <p class="mt-2 text-sm text-zinc-500">
           {#if $noteStore.length === 0}
             Write your first note to preserve findings while the details are fresh.
           {:else}

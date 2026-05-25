@@ -212,17 +212,17 @@
 </script>
 
 <section class="space-y-5">
-  <div class="rounded-lg border border-slate-700 bg-slate-800 shadow-dark-sm">
-    <div class="flex flex-col gap-4 border-b border-slate-700 p-4 lg:flex-row lg:items-center lg:justify-between">
+  <div class="rounded-lg border border-zinc-700 bg-zinc-800 shadow-dark-sm">
+    <div class="flex flex-col gap-4 border-b border-zinc-700 p-4 lg:flex-row lg:items-center lg:justify-between">
       <div>
         <p class="text-xs font-semibold uppercase tracking-wide text-primary-400">Reports</p>
-        <h1 class="mt-1 text-2xl font-bold leading-tight text-slate-100">Report Builder</h1>
+        <h1 class="mt-1 text-2xl font-bold leading-tight text-zinc-100">Report Builder</h1>
       </div>
 
       <div class="flex flex-col gap-2 sm:flex-row">
         <button
           type="button"
-          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
           disabled={!markdown.trim()}
           on:click={copyMarkdown}
         >
@@ -231,7 +231,7 @@
         </button>
         <button
           type="button"
-          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
           disabled={!markdown.trim()}
           on:click={exportMarkdown}
         >
@@ -240,7 +240,7 @@
         </button>
         <button
           type="button"
-          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-500"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
           disabled={!markdown.trim()}
           on:click={exportPdf}
         >
@@ -284,7 +284,7 @@
 
       <button
         type="button"
-        class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500"
+        class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-800 disabled:text-zinc-500"
         disabled={!activeNote}
         on:click={refreshFromNote}
       >
@@ -311,9 +311,9 @@
   {/if}
 
   <div class="grid gap-5 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-    <section class="rounded-lg border border-slate-700 bg-slate-800 shadow-dark-sm">
-      <div class="border-b border-slate-700 px-4 py-3">
-        <h2 class="text-sm font-semibold text-slate-200">{activeTemplate.name}</h2>
+    <section class="rounded-lg border border-zinc-700 bg-zinc-800 shadow-dark-sm">
+      <div class="border-b border-zinc-700 px-4 py-3">
+        <h2 class="text-sm font-semibold text-zinc-200">{activeTemplate.name}</h2>
       </div>
 
       <div class="space-y-5 p-4">
@@ -341,7 +341,7 @@
               {/each}
             </select>
             {#if severitySuggestion}
-              <span class="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+              <span class="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-400">
                 Suggested from tags: {severityLabel(severitySuggestion)}
                 {#if fields.severity !== severitySuggestion}
                   <button
@@ -367,10 +367,10 @@
           </label>
         </div>
 
-        <div class="rounded-lg border border-slate-700 bg-slate-850/60">
+        <div class="rounded-lg border border-zinc-700 bg-zinc-850/60">
           <button
             type="button"
-            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-100 transition hover:bg-slate-700/40"
+            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-zinc-100 transition hover:bg-zinc-700/40"
             on:click={() => (cvssOpen = !cvssOpen)}
             aria-expanded={cvssOpen}
           >
@@ -387,7 +387,7 @@
             <span class="text-xs text-muted-foreground">{cvssOpen ? 'Hide' : 'Open'}</span>
           </button>
           {#if cvssOpen}
-            <div class="border-t border-slate-700 p-4">
+            <div class="border-t border-zinc-700 p-4">
               <CvssCalculator
                 vector={fields.cvssVector ?? ''}
                 compact
@@ -412,7 +412,7 @@
           <textarea
             bind:value={fields.summary}
             rows={4}
-            class="mt-2 min-h-[120px] w-full resize-y rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
+            class="mt-2 min-h-[120px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
             placeholder="Short description of the vulnerability"
             on:input={handleFieldInput}
           ></textarea>
@@ -423,7 +423,7 @@
           <textarea
             bind:value={fields.reproductionSteps}
             rows={7}
-            class="mt-2 min-h-[180px] w-full resize-y rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 font-mono text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
+            class="mt-2 min-h-[180px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 font-mono text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
             placeholder="1. Authenticate as...
 2. Send request to...
 3. Observe..."
@@ -436,7 +436,7 @@
           <textarea
             bind:value={fields.impact}
             rows={4}
-            class="mt-2 min-h-[120px] w-full resize-y rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
+            class="mt-2 min-h-[120px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
             placeholder="Security impact and business risk"
             on:input={handleFieldInput}
           ></textarea>
@@ -447,16 +447,16 @@
           <textarea
             bind:value={fields.proofOfConcept}
             rows={5}
-            class="mt-2 min-h-[140px] w-full resize-y rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 font-mono text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
+            class="mt-2 min-h-[140px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 font-mono text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
             placeholder="Requests, responses, payloads, screenshots, or links"
             on:input={handleFieldInput}
           ></textarea>
         </label>
 
-        <div class="rounded-lg border border-slate-700 bg-slate-850/60">
+        <div class="rounded-lg border border-zinc-700 bg-zinc-850/60">
           <button
             type="button"
-            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-slate-100 transition hover:bg-slate-700/40"
+            class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-zinc-100 transition hover:bg-zinc-700/40"
             on:click={() => (httpOpen = !httpOpen)}
             aria-expanded={httpOpen}
           >
@@ -467,7 +467,7 @@
             <span class="text-xs text-muted-foreground">{httpOpen ? 'Hide' : 'Open'}</span>
           </button>
           {#if httpOpen}
-            <div class="border-t border-slate-700 p-4">
+            <div class="border-t border-zinc-700 p-4">
               <HttpRequestEditor allowInsert on:insert={handleHttpInsert} />
             </div>
           {/if}
@@ -478,7 +478,7 @@
           <textarea
             bind:value={fields.remediation}
             rows={4}
-            class="mt-2 min-h-[120px] w-full resize-y rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
+            class="mt-2 min-h-[120px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
             placeholder="Recommended fix or mitigation"
             on:input={handleFieldInput}
           ></textarea>
@@ -489,7 +489,7 @@
           <textarea
             bind:value={fields.references}
             rows={3}
-            class="mt-2 min-h-[96px] w-full resize-y rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
+            class="mt-2 min-h-[96px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
             placeholder="CWE, docs, advisories, or related writeups"
             on:input={handleFieldInput}
           ></textarea>

@@ -16,10 +16,10 @@
       case 'within':
         return 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300';
       case 'completed':
-        return 'border-slate-500/30 bg-slate-700/30 text-slate-300';
+        return 'border-zinc-500/30 bg-zinc-700/30 text-zinc-300';
       case 'pending':
       default:
-        return 'border-slate-600/40 bg-slate-800/40 text-slate-400';
+        return 'border-zinc-600/40 bg-zinc-800/40 text-zinc-400';
     }
   }
 

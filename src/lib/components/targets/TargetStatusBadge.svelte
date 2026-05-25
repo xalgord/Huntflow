@@ -22,8 +22,8 @@
           : status === 'paid'
             ? 'border-green-500/30 bg-green-500/20 text-green-400'
             : status === 'closed'
-              ? 'border-slate-500/30 bg-slate-700 text-slate-300'
-              : 'border-slate-600/40 bg-slate-800 text-slate-400';
+              ? 'border-zinc-500/30 bg-zinc-700 text-zinc-300'
+              : 'border-zinc-600/40 bg-zinc-800 text-zinc-400';
 </script>
 
 <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium {classes}">

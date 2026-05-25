@@ -8,7 +8,7 @@
    * profile widget (profile fields, security, sessions, connected
    * accounts, 2FA, billing tab) is embedded via `mountClerkUserProfile`
    * — this is the same widget that powers Clerk's dashboard, themed
-   * to slot into HuntFlow's slate-950 chrome.
+   * to slot into HuntFlow's zinc-950 chrome.
    *
    * Why `/account` and `/settings` are separate:
    *   - `/account`  → identity, security, subscription. Owned by Clerk.

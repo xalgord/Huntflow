@@ -32,8 +32,8 @@
       <button
         type="button"
         class="flex min-h-[44px] items-center gap-2 rounded-md border px-3 py-2.5 text-sm font-medium transition {value === color.id
-          ? 'border-primary-500 bg-slate-750 text-slate-100'
-          : 'border-slate-600 bg-slate-850 text-slate-300 hover:bg-slate-800'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+          ? 'border-primary-500 bg-zinc-750 text-zinc-100'
+          : 'border-zinc-600 bg-zinc-850 text-zinc-300 hover:bg-zinc-800'} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
         aria-pressed={value === color.id}
         on:click={() => select(color.id)}
       >

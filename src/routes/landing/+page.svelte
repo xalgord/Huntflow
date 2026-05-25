@@ -19,9 +19,9 @@
   <link rel="canonical" href="https://huntflow.xalgorix.com/" />
 </svelte:head>
 
-<main class="flex min-h-screen items-center justify-center bg-slate-950 px-6 text-center text-slate-200">
+<main class="flex min-h-screen items-center justify-center bg-zinc-950 px-6 text-center text-zinc-200">
   <div class="max-w-sm">
-    <p class="text-sm text-slate-400">Redirecting to the new home page&hellip;</p>
+    <p class="text-sm text-zinc-400">Redirecting to the new home page&hellip;</p>
     <a class="mt-3 inline-block text-sm font-medium text-primary-300 underline-offset-4 hover:underline" href="/">
       Continue to HuntFlow
     </a>

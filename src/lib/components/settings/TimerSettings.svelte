@@ -15,7 +15,7 @@
 </script>
 
 <section class="hf-card p-4">
-  <h2 class="text-lg font-semibold text-slate-100">Timer</h2>
+  <h2 class="text-lg font-semibold text-zinc-100">Timer</h2>
   <div class="mt-4 grid gap-4 lg:grid-cols-2">
     <label class="block">
       <span class="hf-label">Default session duration</span>

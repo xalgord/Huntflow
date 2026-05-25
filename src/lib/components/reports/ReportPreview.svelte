@@ -7,17 +7,17 @@
   $: rendered = renderMarkdownToHtml(markdown);
 </script>
 
-<section class="overflow-hidden rounded-lg border border-slate-700 bg-slate-800 shadow-dark-sm">
-  <div class="flex min-h-[52px] items-center justify-between border-b border-slate-700 px-4">
-    <h2 class="text-sm font-semibold text-slate-200">{title}</h2>
-    <span class="text-xs font-medium uppercase tracking-wide text-slate-500">Markdown</span>
+<section class="overflow-hidden rounded-lg border border-zinc-700 bg-zinc-800 shadow-dark-sm">
+  <div class="flex min-h-[52px] items-center justify-between border-b border-zinc-700 px-4">
+    <h2 class="text-sm font-semibold text-zinc-200">{title}</h2>
+    <span class="text-xs font-medium uppercase tracking-wide text-zinc-500">Markdown</span>
   </div>
 
-  <article class="report-preview min-h-[32rem] overflow-auto bg-slate-850 p-5 text-slate-100">
+  <article class="report-preview min-h-[32rem] overflow-auto bg-zinc-850 p-5 text-zinc-100">
     {#if markdown.trim()}
       {@html rendered}
     {:else}
-      <p class="text-sm text-slate-500">Nothing to preview yet.</p>
+      <p class="text-sm text-zinc-500">Nothing to preview yet.</p>
     {/if}
   </article>
 </section>

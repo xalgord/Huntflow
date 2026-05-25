@@ -85,19 +85,19 @@
   ];
 </script>
 
-<section id="features" class="border-y border-slate-800 bg-slate-950 px-4 py-20 sm:px-6 lg:px-8">
+<section id="features" class="border-y border-zinc-800 bg-zinc-950 px-4 py-20 sm:px-6 lg:px-8">
   <div class="mx-auto max-w-6xl">
     <div class="max-w-2xl">
       <p class="hf-eyebrow">Features</p>
-      <h2 class="mt-2 text-3xl font-bold leading-tight text-slate-100 sm:text-4xl">Built around how hunters actually work.</h2>
-      <p class="mt-3 text-base leading-7 text-slate-400">
+      <h2 class="mt-2 text-3xl font-bold leading-tight text-zinc-100 sm:text-4xl">Built around how hunters actually work.</h2>
+      <p class="mt-3 text-base leading-7 text-zinc-400">
         Ten focused tools that talk to each other, instead of ten browser tabs that don't.
       </p>
     </div>
 
     <div class="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
       {#each features as feature}
-        <article class="relative flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-900/70 p-5 transition hover:border-slate-700 hover:bg-slate-900">
+        <article class="relative flex flex-col gap-3 rounded-xl border border-zinc-800 bg-zinc-900/70 p-5 transition hover:border-zinc-700 hover:bg-zinc-900">
           <div class="flex items-start justify-between">
             <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-primary-500/10 text-primary-300">
               <svelte:component this={feature.icon} size={20} aria-hidden="true" />
@@ -109,8 +109,8 @@
             {/if}
           </div>
           <div>
-            <h3 class="text-base font-semibold text-slate-100">{feature.title}</h3>
-            <p class="mt-1 text-sm leading-6 text-slate-400">{feature.description}</p>
+            <h3 class="text-base font-semibold text-zinc-100">{feature.title}</h3>
+            <p class="mt-1 text-sm leading-6 text-zinc-400">{feature.description}</p>
           </div>
         </article>
       {/each}

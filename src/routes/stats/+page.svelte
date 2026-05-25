@@ -1,7 +1,7 @@
 <script lang="ts">
   import ActivityChart from '$lib/components/stats/ActivityChart.svelte';
   import InsightCard from '$lib/components/stats/InsightCard.svelte';
-  import StatCard from '$lib/components/stats/StatCard.svelte';
+  import MetricCard from '$lib/components/workspace/MetricCard.svelte';
   import StreakCalendar from '$lib/components/stats/StreakCalendar.svelte';
   import TodaySummary from '$lib/components/stats/TodaySummary.svelte';
   import VulnTypeChart from '$lib/components/stats/VulnTypeChart.svelte';
@@ -21,8 +21,6 @@
   import { onMount } from 'svelte';
 
   let templates: NoteTemplate[] = [];
-  // weekTrend is derived from the reactive block below — no top-level `let`
-  // needed; Svelte will infer the binding from the `$:` assignment.
 
   function localDateKey(date: Date): string {
     const year = date.getFullYear();
@@ -115,7 +113,6 @@
     }, {});
   $: topTemplate = Object.entries(templateTime).sort((a, b) => b[1] - a[1])[0];
   $: inactiveDays = daysSinceLastCompleted($sessionStore);
-  $: weekTrend = (weekSeconds > previousWeekSeconds ? 'up' : weekSeconds < previousWeekSeconds ? 'down' : 'flat') as 'up' | 'down' | 'flat';
 </script>
 
 <svelte:head>
@@ -150,17 +147,17 @@
     />
 
     <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <StatCard icon={Clock} value={formatDuration($userStatsStore.totalTimeSeconds)} label="Total hunting time" trend={`${formatDuration(monthSeconds)} this month`} tone="primary" />
-      <StatCard icon={BarChart3} value={formatDuration(weekSeconds)} label="This week" trend={`${formatDuration(previousWeekSeconds)} prev`} trendDirection={weekTrend} tone="blue" />
-      <StatCard icon={Timer} value={formatDuration($avgSessionLengthStore)} label="Average session length" trend={`${$userStatsStore.completedSessions} completed`} tone="amber" />
-      <StatCard icon={Target} value={`${activeTargets}/${$targetStore.length}`} label="Active targets" trend={`${completedTargets} completed, ${archivedTargets} archived`} tone="violet" />
+      <MetricCard icon={Clock} label="Total hunting time" value={formatDuration($userStatsStore.totalTimeSeconds)} detail={`${formatDuration(monthSeconds)} this month`} href="/analytics" />
+      <MetricCard icon={BarChart3} label="This week" value={formatDuration(weekSeconds)} detail={`${formatDuration(previousWeekSeconds)} prev`} href="/analytics" tone="info" />
+      <MetricCard icon={Timer} label="Average session length" value={formatDuration($avgSessionLengthStore)} detail={`${$userStatsStore.completedSessions} completed`} href="/analytics" tone="warning" />
+      <MetricCard icon={Target} label="Active targets" value={`${activeTargets}/${$targetStore.length}`} detail={`${completedTargets} completed, ${archivedTargets} archived`} href="/targets" />
     </section>
 
     <section class="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
       <StreakCalendar sessions={$sessionStore} targets={$targetStore} />
       <section class="space-y-4">
-        <StatCard icon={Flame} value={`${$streakStore}d`} label="Current streak" trend={`${$bestStreakStore}d best`} tone="amber" />
-        <StatCard icon={Trophy} value={mostActive} label="Most active time" trend="by completed sessions" tone="violet" />
+        <MetricCard icon={Flame} label="Current streak" value={`${$streakStore}d`} detail={`${$bestStreakStore}d best`} tone="warning" />
+        <MetricCard icon={Trophy} label="Most active time" value={mostActive} detail="by completed sessions" />
       </section>
     </section>
 
@@ -170,7 +167,7 @@
     </section>
 
     <section>
-      <h2 class="mb-4 text-lg font-semibold text-slate-100">Insights</h2>
+      <h2 class="mb-4 text-lg font-semibold text-zinc-100">Insights</h2>
       <div class="grid gap-4 lg:grid-cols-3">
         {#if $streakStore > 2}
           <InsightCard icon={Flame} title={`${$streakStore} days in a row`} detail="Your current consistency is compounding. Keep one session per day on the board." tone="amber" />

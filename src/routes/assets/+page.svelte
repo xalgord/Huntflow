@@ -1005,7 +1005,7 @@
               <label class="relative space-y-1.5">
                 <span class="hf-label">Search</span>
                 <div class="relative">
-                  <Search class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} aria-hidden="true" />
+                  <Search class="pointer-events-none absolute left-3 top-1/2 -tranzinc-y-1/2 text-muted-foreground" size={16} aria-hidden="true" />
                   <input bind:value={search} class="hf-input pl-9" placeholder="Title, folder, tag, URL" />
                 </div>
               </label>
@@ -1135,7 +1135,7 @@
               {:else if selectedAsset.kind === 'http-exchange' && selectedAsset.httpExchange}
                 <HttpExchangeInspector asset={selectedAsset} />
               {:else if previewText}
-                <pre class="max-h-[420px] overflow-auto whitespace-pre-wrap p-4 text-xs leading-5 text-slate-200">{previewText}</pre>
+                <pre class="max-h-[420px] overflow-auto whitespace-pre-wrap p-4 text-xs leading-5 text-zinc-200">{previewText}</pre>
               {:else}
                 <div class="flex min-h-[260px] items-center justify-center px-6 text-center text-sm text-muted-foreground">
                   Preview is not available for this file type.

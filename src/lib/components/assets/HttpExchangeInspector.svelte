@@ -245,7 +245,7 @@
   </div>
 {:else if asset.textContent}
   <!-- Fallback: raw text when no structured httpExchange metadata -->
-  <pre class="max-h-[420px] overflow-auto whitespace-pre-wrap p-4 text-xs leading-5 text-slate-200">{asset.textContent}</pre>
+  <pre class="max-h-[420px] overflow-auto whitespace-pre-wrap p-4 text-xs leading-5 text-zinc-200">{asset.textContent}</pre>
 {/if}
 
 <style>

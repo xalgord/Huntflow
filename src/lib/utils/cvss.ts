@@ -189,5 +189,5 @@ export function severityColorClass(severity: CvssBaseSeverity): string {
   if (severity === 'high') return 'border-orange-500/30 bg-orange-500/15 text-orange-300';
   if (severity === 'medium') return 'border-yellow-500/30 bg-yellow-500/15 text-yellow-300';
   if (severity === 'low') return 'border-sky-500/30 bg-sky-500/15 text-sky-300';
-  return 'border-slate-500/30 bg-slate-700/30 text-slate-300';
+  return 'border-zinc-500/30 bg-zinc-700/30 text-zinc-300';
 }

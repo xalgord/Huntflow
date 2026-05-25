@@ -94,8 +94,8 @@ export async function encryptBackup(
   passphrase: string,
   meta: BackupMeta
 ): Promise<EncryptedBackup> {
-  if (!passphrase || passphrase.length < 6) {
-    throw new Error('Passphrase must be at least 6 characters.');
+  if (!passphrase || passphrase.length < 12) {
+    throw new Error('Passphrase must be at least 12 characters.');
   }
   const salt = crypto.getRandomValues(new Uint8Array(SALT_BYTES));
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));

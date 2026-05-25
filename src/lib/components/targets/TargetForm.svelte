@@ -90,9 +90,9 @@
       <span class="hf-label">Name</span>
       <input
         bind:value={name}
-        class="mt-2 w-full rounded-md border bg-slate-850 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.name
+        class="mt-2 w-full rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.name
           ? 'border-red-500 ring-1 ring-red-500/50'
-          : 'border-slate-600'}"
+          : 'border-zinc-600'}"
         placeholder="Example Corp"
       />
       {#if errors.name}<span class="mt-1 block text-xs text-red-400">{errors.name}</span>{/if}
@@ -116,9 +116,9 @@
       <span class="hf-label">Program URL</span>
       <input
         bind:value={programUrl}
-        class="mt-2 w-full rounded-md border bg-slate-850 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.programUrl
+        class="mt-2 w-full rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.programUrl
           ? 'border-red-500 ring-1 ring-red-500/50'
-          : 'border-slate-600'}"
+          : 'border-zinc-600'}"
         placeholder="https://hackerone.com/example"
       />
       {#if errors.programUrl}<span class="mt-1 block text-xs text-red-400">{errors.programUrl}</span>{/if}
@@ -142,9 +142,9 @@
     <span class="hf-label">Scope</span>
     <textarea
       bind:value={scope}
-      class="mt-2 min-h-[120px] w-full resize-y rounded-md border bg-slate-850 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.scope
+      class="mt-2 min-h-[120px] w-full resize-y rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.scope
         ? 'border-red-500 ring-1 ring-red-500/50'
-        : 'border-slate-600'}"
+        : 'border-zinc-600'}"
       placeholder="*.example.com&#10;api.example.com"
     />
     {#if errors.scope}<span class="mt-1 block text-xs text-red-400">{errors.scope}</span>{/if}
@@ -154,9 +154,9 @@
     <span class="hf-label">Notes</span>
     <textarea
       bind:value={notes}
-      class="mt-2 min-h-[120px] w-full resize-y rounded-md border bg-slate-850 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.notes
+      class="mt-2 min-h-[120px] w-full resize-y rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.notes
         ? 'border-red-500 ring-1 ring-red-500/50'
-        : 'border-slate-600'}"
+        : 'border-zinc-600'}"
       placeholder="Program notes"
     />
     {#if errors.notes}<span class="mt-1 block text-xs text-red-400">{errors.notes}</span>{/if}
@@ -165,7 +165,7 @@
   <div class="flex flex-wrap justify-end gap-3">
     <button
       type="button"
-      class="min-h-[44px] rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600"
+      class="min-h-[44px] rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
       on:click={() => dispatch('cancel')}
     >
       Cancel

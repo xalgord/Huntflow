@@ -3,7 +3,8 @@
   import PayoutForm from '$lib/components/income/PayoutForm.svelte';
   import TaxExport from '$lib/components/income/TaxExport.svelte';
   import PlatformIcon from '$lib/components/targets/PlatformIcon.svelte';
-  import StatCard from '$lib/components/stats/StatCard.svelte';
+  import MetricCard from '$lib/components/workspace/MetricCard.svelte';
+  import EmptyState from '$lib/components/workspace/EmptyState.svelte';
   import { payoutStore, submissionStore, targetStore } from '$lib/stores';
   import type { Payout, PayoutSeverity, PayoutStatus, Platform } from '$lib/types';
   import { buildSubmissionFromPayout } from '$lib/utils/migrations';
@@ -131,7 +132,7 @@
     if (value === 'critical') return 'border-red-500/30 bg-red-500/20 text-red-400';
     if (value === 'high') return 'border-orange-500/30 bg-orange-500/20 text-orange-400';
     if (value === 'medium') return 'border-yellow-500/30 bg-yellow-500/20 text-yellow-400';
-    if (value === 'low') return 'border-slate-500/30 bg-slate-700 text-slate-300';
+    if (value === 'low') return 'border-zinc-500/30 bg-zinc-800 text-zinc-300';
     return 'border-blue-500/30 bg-blue-500/20 text-blue-400';
   }
 
@@ -219,15 +220,15 @@
     </header>
 
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <StatCard icon={DollarSign} value={money(paidTotal)} label="Total paid" trend={`${paidPayouts.length} paid payouts`} tone="primary" />
-      <StatCard icon={TrendingUp} value={money(yearPaidTotal)} label={`${currentYear} paid`} trend="tax year view" tone="blue" />
-      <StatCard icon={Banknote} value={money(pendingTotal)} label="Pipeline value" trend="pending + triaged" tone="amber" />
-      <StatCard icon={Receipt} value={money(averagePaid)} label="Average paid payout" trend="paid only" tone="violet" />
+      <MetricCard icon={DollarSign} label="Total paid" value={money(paidTotal)} detail={`${paidPayouts.length} paid payouts`} href="/payouts" />
+      <MetricCard icon={TrendingUp} label={`${currentYear} paid`} value={money(yearPaidTotal)} detail="tax year view" href="/payouts" tone="info" />
+      <MetricCard icon={Banknote} label="Pipeline value" value={money(pendingTotal)} detail="pending + triaged" href="/payouts" tone="warning" />
+      <MetricCard icon={Receipt} label="Average paid payout" value={money(averagePaid)} detail="paid only" />
     </section>
 
     {#if showForm}
       <section class="hf-card p-4">
-        <h2 class="mb-4 text-lg font-semibold text-slate-100">{editingPayout ? 'Edit Payout' : 'New Payout'}</h2>
+        <h2 class="mb-4 text-lg font-semibold text-zinc-100">{editingPayout ? 'Edit Payout' : 'New Payout'}</h2>
         <PayoutForm
           payout={editingPayout}
           targets={$targetStore}
@@ -299,8 +300,8 @@
     </section>
 
     {#if filteredPayouts.length > 0}
-      <section class="overflow-hidden rounded-lg border border-slate-700 bg-slate-800 shadow-dark-sm">
-        <div class="hidden grid-cols-[minmax(180px,1fr)_150px_130px_120px_120px_220px] gap-4 border-b border-slate-700 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500 lg:grid">
+      <section class="hf-card overflow-hidden">
+        <div class="hidden grid-cols-[minmax(180px,1fr)_150px_130px_120px_120px_220px] gap-4 border-b border-zinc-800 px-4 py-3 text-xs font-medium text-zinc-500 lg:grid">
           <span>Program</span>
           <span>Platform</span>
           <span>Severity</span>
@@ -309,14 +310,14 @@
           <span>Status</span>
         </div>
 
-        <div class="divide-y divide-slate-700">
+        <div class="divide-y divide-zinc-900">
           {#each filteredPayouts as payout (payout.id)}
             {@const submissionExists =
               payout.submissionId != null && existingSubmissionIds.has(payout.submissionId)}
-            <article class="grid gap-3 p-4 lg:grid-cols-[minmax(180px,1fr)_150px_130px_120px_120px_220px] lg:items-center">
+            <article class="grid gap-3 px-4 py-4 transition hover:bg-zinc-950 lg:grid-cols-[minmax(180px,1fr)_150px_130px_120px_120px_220px] lg:items-center">
               <div>
-                <h2 class="font-semibold text-slate-100">{payout.program}</h2>
-                <p class="mt-1 flex items-center gap-1 text-xs text-slate-500 lg:hidden">
+                <h2 class="font-semibold text-zinc-100">{payout.program}</h2>
+                <p class="mt-1 flex items-center gap-1 text-xs text-zinc-500 lg:hidden">
                   <CalendarDays size={14} aria-hidden="true" />
                   {formatDate(payout.date)}
                 </p>
@@ -328,9 +329,9 @@
                 {severityLabel(payout.severity)}
               </span>
 
-              <span class="font-semibold text-slate-100">{money(payout.amount)}</span>
+              <span class="font-semibold text-zinc-100">{money(payout.amount)}</span>
 
-              <span class="hidden text-sm text-slate-400 lg:block">{formatDate(payout.date)}</span>
+              <span class="hidden text-sm text-zinc-400 lg:block">{formatDate(payout.date)}</span>
 
               <div class="flex flex-wrap items-center gap-2">
                 <span class="inline-flex rounded-full border px-2 py-0.5 text-xs font-medium {statusClass(payout.status)}">
@@ -340,7 +341,7 @@
                 {#if nextStatus(payout.status)}
                   <button
                     type="button"
-                    class="min-h-[36px] rounded-md border border-slate-600 bg-slate-850 px-3 py-1.5 text-xs font-medium text-slate-200 transition hover:bg-slate-700"
+                    class="hf-button-secondary min-h-[36px] px-3 py-1.5 text-xs"
                     on:click={() => advancePayout(payout)}
                   >
                     Mark {statusLabel(nextStatus(payout.status) ?? payout.status)}
@@ -351,7 +352,7 @@
                   type="button"
                   class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md transition {submissionExists
                     ? 'text-primary hover:bg-primary/10'
-                    : 'text-slate-400 hover:bg-primary/10 hover:text-primary'}"
+                    : 'text-zinc-400 hover:bg-primary/10 hover:text-primary'}"
                   aria-label={submissionExists ? 'View linked submission' : 'Promote to submission'}
                   title={submissionExists ? 'View linked submission' : 'Promote to submission'}
                   on:click={() => promoteToSubmission(payout)}
@@ -361,7 +362,7 @@
 
                 <button
                   type="button"
-                  class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-700 hover:text-slate-100"
+                  class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
                   aria-label="Edit payout"
                   on:click={() => startEdit(payout)}
                 >
@@ -370,7 +371,7 @@
 
                 <button
                   type="button"
-                  class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-500/10 hover:text-red-300"
+                  class="inline-flex h-9 min-h-0 w-9 items-center justify-center rounded-md text-zinc-400 transition hover:bg-red-500/10 hover:text-red-300"
                   aria-label="Delete payout"
                   on:click={() => deletePayout(payout)}
                 >
@@ -382,35 +383,13 @@
         </div>
       </section>
     {:else}
-      <section class="hf-card p-8 text-center">
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 text-slate-600">
-          <DollarSign size={48} aria-hidden="true" />
-        </div>
-        <h2 class="mt-4 text-lg font-semibold text-slate-300">
-          {#if $payoutStore.length === 0}
-            No payouts logged
-          {:else}
-            No payouts match the filters
-          {/if}
-        </h2>
-        <p class="mt-2 text-sm text-slate-500">
-          {#if $payoutStore.length === 0}
-            Add payouts as reports move from pending to triaged to paid.
-          {:else}
-            Adjust filters to widen the payout list.
-          {/if}
-        </p>
-        {#if $payoutStore.length === 0}
-          <button
-            type="button"
-            class="mt-5 hf-button-primary"
-            on:click={startCreate}
-          >
-            <Plus size={20} aria-hidden="true" />
-            Add Payout
-          </button>
-        {/if}
-      </section>
+      <EmptyState
+        icon={DollarSign}
+        title={$payoutStore.length === 0 ? 'No payouts logged' : 'No payouts match the filters'}
+        description={$payoutStore.length === 0
+          ? 'Add payouts as reports move from pending to triaged to paid.'
+          : 'Adjust filters to widen the payout list.'}
+      />
     {/if}
   </div>
 </main>

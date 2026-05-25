@@ -44,7 +44,7 @@
   {/if}
   <span class="relative mt-2 block">
     {#if icon}
-      <span class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+      <span class="pointer-events-none absolute left-3 top-1/2 -tranzinc-y-1/2 text-muted-foreground">
         <svelte:component this={icon} size={18} aria-hidden="true" />
       </span>
     {/if}

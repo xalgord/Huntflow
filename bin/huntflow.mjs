@@ -166,17 +166,24 @@ If running from source, run 'npm run build' first.
       if (serveFile(res, filePath + '.html')) return;
     }
 
-    // SPA fallback: serve the adapter-static fallback for client-side routing.
-    // `index.html` is allowed to be a prerendered public/home page, so prefer
-    // 200.html when present.
-    const fallbackPath = join(BUILD_DIR, '200.html');
-    if (existsSync(fallbackPath)) {
-      if (serveFile(res, fallbackPath)) return;
-    }
-
-    const legacyFallbackPath = join(BUILD_DIR, 'index.html');
-    if (existsSync(legacyFallbackPath)) {
-      if (serveFile(res, legacyFallbackPath)) return;
+    // SPA fallback: only fall through to the static-adapter shell when
+    // the request actually wants HTML. Otherwise we'd return an HTML
+    // body for a missing /icons/foo.png with a 200 status, which would
+    // poison the service-worker cache and break image rendering.
+    const acceptHeader = req.headers['accept'] ?? '';
+    const wantsHtml =
+      typeof acceptHeader === 'string' && acceptHeader.includes('text/html');
+    if (wantsHtml) {
+      // Prefer the adapter-static fallback (200.html) when present, then
+      // fall back to a prerendered index.html for older builds.
+      const fallbackPath = join(BUILD_DIR, '200.html');
+      if (existsSync(fallbackPath)) {
+        if (serveFile(res, fallbackPath)) return;
+      }
+      const legacyFallbackPath = join(BUILD_DIR, 'index.html');
+      if (existsSync(legacyFallbackPath)) {
+        if (serveFile(res, legacyFallbackPath)) return;
+      }
     }
 
     // 404

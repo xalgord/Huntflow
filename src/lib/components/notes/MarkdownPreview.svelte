@@ -228,11 +228,11 @@
   });
 </script>
 
-<div bind:this={host} class="markdown-preview min-h-[28rem] rounded-b-lg bg-slate-850 p-4 text-slate-100">
+<div bind:this={host} class="markdown-preview min-h-[28rem] rounded-b-lg bg-zinc-850 p-4 text-zinc-100">
   {#if content.trim()}
     {@html rendered}
   {:else}
-    <p class="text-sm text-slate-500">Nothing to preview yet.</p>
+    <p class="text-sm text-zinc-500">Nothing to preview yet.</p>
   {/if}
 </div>
 

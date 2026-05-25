@@ -3,7 +3,7 @@
   import SubmissionForm from '$lib/components/submissions/SubmissionForm.svelte';
   import WeeklyRecap from '$lib/components/submissions/WeeklyRecap.svelte';
   import PlatformIcon from '$lib/components/targets/PlatformIcon.svelte';
-  import StatCard from '$lib/components/stats/StatCard.svelte';
+  import MetricCard from '$lib/components/workspace/MetricCard.svelte';
   import {
     noteStore,
     payoutStore,
@@ -190,10 +190,10 @@
     if (value === 'accepted' || value === 'triaged')
       return 'border-blue-500/30 bg-blue-500/15 text-blue-300';
     if (value === 'duplicate' || value === 'informational' || value === 'not-applicable')
-      return 'border-slate-500/30 bg-slate-700/30 text-slate-300';
-    if (value === 'closed') return 'border-slate-600/40 bg-slate-800 text-slate-400';
+      return 'border-zinc-500/30 bg-zinc-700/30 text-zinc-300';
+    if (value === 'closed') return 'border-zinc-600/40 bg-zinc-800 text-zinc-400';
     if (value === 'submitted') return 'border-amber-500/30 bg-amber-500/15 text-amber-300';
-    return 'border-slate-600/40 bg-slate-800 text-slate-400';
+    return 'border-zinc-600/40 bg-zinc-800 text-zinc-400';
   }
 
   function severityClass(value: PayoutSeverity): string {
@@ -201,7 +201,7 @@
     if (value === 'high') return 'border-orange-500/30 bg-orange-500/15 text-orange-300';
     if (value === 'medium') return 'border-yellow-500/30 bg-yellow-500/15 text-yellow-300';
     if (value === 'low') return 'border-sky-500/30 bg-sky-500/15 text-sky-300';
-    return 'border-slate-500/30 bg-slate-700/30 text-slate-300';
+    return 'border-zinc-500/30 bg-zinc-700/30 text-zinc-300';
   }
 
   function startCreate(): void {
@@ -253,15 +253,16 @@
     </header>
 
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <StatCard icon={Send} value={String(submissionsCount)} label="Reports" trend="all submissions" tone="primary" />
-      <StatCard icon={Clock} value={String(pendingCount)} label="In triage" trend="awaiting decision" tone="amber" />
-      <StatCard icon={Award} value={String(rewardedCount)} label="Resolved" trend="incl. rewarded" tone="blue" />
-      <StatCard
+      <MetricCard icon={Send} label="Reports" value={String(submissionsCount)} detail="all submissions" href="/findings" />
+      <MetricCard icon={Clock} label="In triage" value={String(pendingCount)} detail="awaiting decision" href="/findings" tone="warning" />
+      <MetricCard icon={Award} label="Resolved" value={String(rewardedCount)} detail="incl. rewarded" href="/findings" tone="info" />
+      <MetricCard
         icon={DollarSign}
-        value={money(totalBounty)}
         label="Total bounty"
-        trend={avgTimeToReward > 0 ? `${avgTimeToReward}d avg to reward` : 'all-time'}
-        tone="violet"
+        value={money(totalBounty)}
+        detail={avgTimeToReward > 0 ? `${avgTimeToReward}d avg to reward` : 'all-time'}
+        href="/payouts"
+        tone="success"
       />
     </section>
 
@@ -270,7 +271,7 @@
     {#if showForm}
       <section class="hf-card p-4">
         <div class="mb-4 flex flex-wrap items-center gap-2">
-          <h2 class="text-lg font-semibold text-slate-100">
+          <h2 class="text-lg font-semibold text-zinc-100">
             {#if fromNoteId}
               New Submission
             {:else if editing}
@@ -345,7 +346,7 @@
             <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
               <div class="min-w-0 flex-1 space-y-2">
                 <div class="flex flex-wrap items-center gap-2">
-                  <h2 class="text-base font-semibold text-slate-100">{submission.title}</h2>
+                  <h2 class="text-base font-semibold text-zinc-100">{submission.title}</h2>
                   <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium {statusClass(submission.status)}">
                     {statusLabel(submission.status)}
                   </span>
@@ -359,14 +360,14 @@
                   {/if}
                 </div>
 
-                <div class="flex flex-wrap items-center gap-3 text-xs text-slate-400">
+                <div class="flex flex-wrap items-center gap-3 text-xs text-zinc-400">
                   <span class="inline-flex items-center gap-1.5">
                     <PlatformIcon platform={submission.platform} />
                   </span>
                   {#if target}
                     <a
                       href={`/targets/${target.id}`}
-                      class="inline-flex items-center gap-1 text-slate-300 hover:text-primary"
+                      class="inline-flex items-center gap-1 text-zinc-300 hover:text-primary"
                     >
                       <TargetIcon size={12} aria-hidden="true" />
                       {target.name}
@@ -389,13 +390,13 @@
                 </div>
 
                 {#if submission.notes}
-                  <p class="text-sm text-slate-400 line-clamp-2">{submission.notes}</p>
+                  <p class="text-sm text-zinc-400 line-clamp-2">{submission.notes}</p>
                 {/if}
 
                 {#if (submission.tags ?? []).length > 0}
                   <div class="flex flex-wrap gap-1">
                     {#each submission.tags ?? [] as tag}
-                      <span class="rounded-md border border-slate-700 bg-slate-850 px-1.5 py-0.5 text-[11px] text-slate-400">{tag}</span>
+                      <span class="rounded-md border border-zinc-700 bg-zinc-850 px-1.5 py-0.5 text-[11px] text-zinc-400">{tag}</span>
                     {/each}
                   </div>
                 {/if}
@@ -404,7 +405,7 @@
               <div class="flex shrink-0 items-center gap-1">
                 {#if submission.reportUrl}
                   <a
-                    class="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-700 hover:text-primary"
+                    class="inline-flex h-9 w-9 items-center justify-center rounded-md text-zinc-400 transition hover:bg-zinc-700 hover:text-primary"
                     href={submission.reportUrl}
                     target="_blank"
                     rel="noreferrer"
@@ -415,7 +416,7 @@
                 {/if}
                 <button
                   type="button"
-                  class="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-700 hover:text-slate-100"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-md text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-100"
                   aria-label="Edit"
                   on:click={() => startEdit(submission)}
                 >
@@ -423,7 +424,7 @@
                 </button>
                 <button
                   type="button"
-                  class="inline-flex h-9 w-9 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-500/10 hover:text-red-300"
+                  class="inline-flex h-9 w-9 items-center justify-center rounded-md text-zinc-400 transition hover:bg-red-500/10 hover:text-red-300"
                   aria-label="Delete"
                   on:click={() => deleteSubmission(submission)}
                 >
@@ -436,13 +437,13 @@
       </section>
     {:else}
       <section class="hf-card p-8 text-center">
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 text-slate-600">
+        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-900 text-zinc-600">
           <Send size={28} aria-hidden="true" />
         </div>
-        <h2 class="mt-4 text-lg font-semibold text-slate-300">
+        <h2 class="mt-4 text-lg font-semibold text-zinc-300">
           {#if $submissionStore.length === 0}No submissions yet{:else}No submissions match{/if}
         </h2>
-        <p class="mt-2 text-sm text-slate-500">
+        <p class="mt-2 text-sm text-zinc-500">
           {#if $submissionStore.length === 0}
             Track every report from draft through to bounty. Link payouts when they land.
           {:else}

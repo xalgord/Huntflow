@@ -152,13 +152,13 @@
   aria-roledescription="carousel"
   aria-label="Product screenshots"
 >
-  <div class="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-dark-xl">
+  <div class="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900 shadow-dark-xl">
     <!-- Window chrome makes the slide feel like a real product frame. -->
-    <div class="flex items-center gap-2 border-b border-slate-800 bg-slate-900/95 px-4 py-3">
+    <div class="flex items-center gap-2 border-b border-zinc-800 bg-zinc-900/95 px-4 py-3">
       <span class="h-2.5 w-2.5 rounded-full bg-rose-500/70" aria-hidden="true"></span>
       <span class="h-2.5 w-2.5 rounded-full bg-amber-400/70" aria-hidden="true"></span>
       <span class="h-2.5 w-2.5 rounded-full bg-emerald-500/70" aria-hidden="true"></span>
-      <div class="ml-3 hidden truncate font-mono text-xs text-slate-500 sm:block">
+      <div class="ml-3 hidden truncate font-mono text-xs text-zinc-500 sm:block">
         huntflow.xalgorix.com/{activeShot.id}
       </div>
     </div>
@@ -170,7 +170,7 @@
          right-most cards, etc.) even if a future capture has a slightly
          different ratio. The CSS-mockup fallbacks use the same frame so
          layout never jumps when an image fails to load. -->
-    <div class="relative aspect-[1903/854] overflow-hidden bg-slate-950">
+    <div class="relative aspect-[1903/854] overflow-hidden bg-zinc-950">
       {#each shots as shot, index}
         <div
           class="absolute inset-0 transition-opacity duration-700 {active === index
@@ -201,8 +201,8 @@
       <p class="text-xs font-semibold uppercase tracking-[0.2em] text-primary-300">
         {String(active + 1).padStart(2, '0')} / {String(shots.length).padStart(2, '0')}
       </p>
-      <h3 class="mt-1.5 text-xl font-semibold text-slate-100">{activeShot.title}</h3>
-      <p class="mt-1.5 text-sm leading-6 text-slate-400">{activeShot.description}</p>
+      <h3 class="mt-1.5 text-xl font-semibold text-zinc-100">{activeShot.title}</h3>
+      <p class="mt-1.5 text-sm leading-6 text-zinc-400">{activeShot.description}</p>
     </div>
 
     <div role="tablist" aria-label="Choose screenshot" class="flex flex-wrap gap-1.5">
@@ -215,7 +215,7 @@
           tabindex={active === index ? 0 : -1}
           class="rounded-md border px-3 py-1.5 text-xs font-medium transition {active === index
             ? 'border-primary-500/40 bg-primary-500/10 text-primary-200'
-            : 'border-slate-800 bg-slate-900 text-slate-400 hover:border-slate-700 hover:text-slate-200'}"
+            : 'border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-zinc-700 hover:text-zinc-200'}"
           on:click={() => {
             active = index;
             startCarousel();

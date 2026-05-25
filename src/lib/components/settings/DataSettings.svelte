@@ -191,11 +191,11 @@
 <section class="hf-card p-4">
   <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
     <div>
-      <h2 class="text-lg font-semibold text-slate-100">Data</h2>
-      <p class="mt-1 text-sm text-slate-400">Export, import, and manage local IndexedDB storage.</p>
+      <h2 class="text-lg font-semibold text-zinc-100">Data</h2>
+      <p class="mt-1 text-sm text-zinc-400">Export, import, and manage local IndexedDB storage.</p>
     </div>
-    <div class="rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-400">
-      Storage: <span class="text-slate-200">{storageText}</span>
+    <div class="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-400">
+      Storage: <span class="text-zinc-200">{storageText}</span>
     </div>
   </div>
 
@@ -220,7 +220,7 @@
       </select>
     </label>
 
-    <label class="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600">
+    <label class="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600">
       <Upload size={20} aria-hidden="true" />
       Import JSON
       <input class="sr-only" type="file" accept="application/json,.json" on:change={handleImport} />
@@ -236,11 +236,11 @@
     <div class="mt-4 rounded-lg border border-primary-500/20 bg-primary-500/5 p-4">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-100">
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-zinc-100">
             <Sparkles size={16} aria-hidden="true" />
             Sample workspace
           </h3>
-          <p class="mt-1 text-sm text-slate-400">
+          <p class="mt-1 text-sm text-zinc-400">
             Adds 3 demo programs, sessions across two weeks, recon assets, notes, and a paid submission so you can explore every screen.
           </p>
         </div>
@@ -256,7 +256,7 @@
           </button>
           <button
             type="button"
-            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600"
+            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
             on:click={relaunchTour}
           >
             <RotateCcw size={16} aria-hidden="true" />
@@ -271,27 +271,27 @@
         <p class="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{demoError}</p>
       {/if}
       {#if tourStatus}
-        <p class="mt-3 rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-300">{tourStatus}</p>
+        <p class="mt-3 rounded-md border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-zinc-300">{tourStatus}</p>
       {/if}
     </div>
   {:else}
     <!-- App-mode: the "Replay tour" affordance survives standalone so
          users can re-trigger the onboarding modal from settings. The
          demo seeder is intentionally absent. -->
-    <div class="mt-4 rounded-lg border border-slate-700 bg-slate-900/40 p-4">
+    <div class="mt-4 rounded-lg border border-zinc-700 bg-zinc-900/40 p-4">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h3 class="flex items-center gap-2 text-sm font-semibold text-slate-100">
+          <h3 class="flex items-center gap-2 text-sm font-semibold text-zinc-100">
             <RotateCcw size={16} aria-hidden="true" />
             Onboarding tour
           </h3>
-          <p class="mt-1 text-sm text-slate-400">
+          <p class="mt-1 text-sm text-zinc-400">
             Replay the welcome tour the next time you load the app.
           </p>
         </div>
         <button
           type="button"
-          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
           on:click={relaunchTour}
         >
           <RotateCcw size={16} aria-hidden="true" />
@@ -299,7 +299,7 @@
         </button>
       </div>
       {#if tourStatus}
-        <p class="mt-3 rounded-md border border-slate-600 bg-slate-800 px-3 py-2 text-sm text-slate-300">{tourStatus}</p>
+        <p class="mt-3 rounded-md border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-zinc-300">{tourStatus}</p>
       {/if}
     </div>
   {/if}
@@ -330,21 +330,21 @@
 </section>
 
 {#if showClearModal}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 px-4">
-    <section class="w-full max-w-md rounded-lg border border-red-500/30 bg-slate-800 p-4 shadow-dark-xl">
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 px-4">
+    <section class="w-full max-w-md rounded-lg border border-red-500/30 bg-zinc-800 p-4 shadow-dark-xl">
       <h2 class="text-lg font-semibold text-red-300">Clear all local data?</h2>
-      <p class="mt-2 text-sm leading-6 text-slate-400">
+      <p class="mt-2 text-sm leading-6 text-zinc-400">
         This cannot be undone. Type <span class="font-mono text-red-300">CLEAR</span> to confirm.
       </p>
       <input
         bind:value={clearConfirm}
-        class="mt-4 w-full rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/50"
+        class="mt-4 w-full rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/50"
         placeholder="CLEAR"
       />
       <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
         <button
           type="button"
-          class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-slate-600 bg-slate-700 px-4 py-2.5 text-sm font-medium text-slate-100 transition hover:bg-slate-600"
+          class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
           on:click={() => {
             showClearModal = false;
             clearConfirm = '';
@@ -354,7 +354,7 @@
         </button>
         <button
           type="button"
-          class="inline-flex min-h-[44px] items-center justify-center rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-500"
+          class="inline-flex min-h-[44px] items-center justify-center rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
           disabled={clearConfirm !== 'CLEAR'}
           on:click={confirmClear}
         >

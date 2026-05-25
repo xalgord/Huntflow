@@ -34,7 +34,7 @@
   function deltaTone(value: number): string {
     if (value > 0) return 'text-emerald-300';
     if (value < 0) return 'text-red-300';
-    return 'text-slate-400';
+    return 'text-zinc-400';
   }
 
   function formatRange(start: number): string {

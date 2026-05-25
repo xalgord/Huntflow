@@ -83,28 +83,28 @@
 
 <section
   id="contact"
-  class="border-b border-slate-800 bg-slate-900 px-4 py-20 sm:px-6 lg:px-8"
+  class="border-b border-zinc-800 bg-zinc-900 px-4 py-20 sm:px-6 lg:px-8"
 >
   <div class="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.7fr_1.3fr]">
     <div>
       <p class="hf-eyebrow">Contact</p>
-      <h2 class="mt-2 text-3xl font-bold leading-tight text-slate-100 sm:text-4xl">
+      <h2 class="mt-2 text-3xl font-bold leading-tight text-zinc-100 sm:text-4xl">
         Talk to a human at HuntFlow.
       </h2>
-      <p class="mt-3 text-sm leading-6 text-slate-400">
+      <p class="mt-3 text-sm leading-6 text-zinc-400">
         Sales questions, self-host enquiries, bug reports, or just feedback. We read
         everything and reply fast.
       </p>
       <a
         href="mailto:huntflow@xalgorix.com"
-        class="mt-5 inline-flex items-center gap-2 rounded-md border border-slate-800 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-slate-700 hover:text-slate-100"
+        class="mt-5 inline-flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs font-medium text-zinc-300 transition hover:border-zinc-700 hover:text-zinc-100"
       >
         <Mail size={14} aria-hidden="true" />
         huntflow@xalgorix.com
       </a>
     </div>
 
-    <div class="rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-dark-sm sm:p-8">
+    <div class="rounded-2xl border border-zinc-800 bg-zinc-950 p-6 shadow-dark-sm sm:p-8">
       {#if status === 'success'}
         <div
           role="status"
@@ -115,8 +115,8 @@
             <Mail size={18} aria-hidden="true" />
           </div>
           <div>
-            <p class="text-base font-semibold text-slate-100">Message sent.</p>
-            <p class="mt-1 text-sm leading-6 text-slate-400">
+            <p class="text-base font-semibold text-zinc-100">Message sent.</p>
+            <p class="mt-1 text-sm leading-6 text-zinc-400">
               Thanks for reaching out. We&apos;ll reply to your inbox shortly &mdash; usually
               within one business day.
             </p>
@@ -124,7 +124,7 @@
           <button
             type="button"
             on:click={reset}
-            class="inline-flex min-h-[40px] items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-800"
+            class="inline-flex min-h-[40px] items-center gap-2 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-200 transition hover:bg-zinc-800"
           >
             Send another message
           </button>
@@ -152,7 +152,7 @@
 
           <div class="grid gap-4 sm:grid-cols-2">
             <div class="grid gap-1.5">
-              <label for="contact-name" class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              <label for="contact-name" class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
                 Name
               </label>
               <input
@@ -164,12 +164,12 @@
                 maxlength="120"
                 bind:value={name}
                 disabled={status === 'submitting'}
-                class="min-h-[44px] rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500/60 focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:opacity-60"
+                class="min-h-[44px] rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500/60 focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:opacity-60"
                 placeholder="Your name"
               />
             </div>
             <div class="grid gap-1.5">
-              <label for="contact-email" class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+              <label for="contact-email" class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
                 Email
               </label>
               <input
@@ -181,15 +181,15 @@
                 maxlength="254"
                 bind:value={email}
                 disabled={status === 'submitting'}
-                class="min-h-[44px] rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500/60 focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:opacity-60"
+                class="min-h-[44px] rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500/60 focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:opacity-60"
                 placeholder="you@example.com"
               />
             </div>
           </div>
 
           <div class="grid gap-1.5">
-            <label for="contact-subject" class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Subject <span class="font-normal normal-case tracking-normal text-slate-500">(optional)</span>
+            <label for="contact-subject" class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
+              Subject <span class="font-normal normal-case tracking-normal text-zinc-500">(optional)</span>
             </label>
             <input
               id="contact-subject"
@@ -198,13 +198,13 @@
               maxlength="200"
               bind:value={subject}
               disabled={status === 'submitting'}
-              class="min-h-[44px] rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-primary-500/60 focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:opacity-60"
+              class="min-h-[44px] rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500/60 focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:opacity-60"
               placeholder="Self-host access, billing, bug report..."
             />
           </div>
 
           <div class="grid gap-1.5">
-            <label for="contact-message" class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">
+            <label for="contact-message" class="text-xs font-semibold uppercase tracking-[0.18em] text-zinc-400">
               Message
             </label>
             <textarea
@@ -215,7 +215,7 @@
               rows="6"
               bind:value={message}
               disabled={status === 'submitting'}
-              class="min-h-[140px] resize-y rounded-md border border-slate-800 bg-slate-900 px-3 py-2 text-sm leading-6 text-slate-100 placeholder:text-slate-500 focus:border-primary-500/60 focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:opacity-60"
+              class="min-h-[140px] resize-y rounded-md border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500/60 focus:outline-none focus:ring-2 focus:ring-primary-500/30 disabled:opacity-60"
               placeholder="Tell us what you&apos;re trying to do, or what went wrong."
             ></textarea>
           </div>
@@ -230,13 +230,13 @@
           {/if}
 
           <div class="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p class="text-xs leading-5 text-slate-500">
+            <p class="text-xs leading-5 text-zinc-500">
               We use your email only to reply. No newsletters, no tracking pixels.
             </p>
             <button
               type="submit"
               disabled={status === 'submitting'}
-              class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:cursor-not-allowed disabled:opacity-70"
+              class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {#if status === 'submitting'}
                 <Loader2 size={16} class="animate-spin" aria-hidden="true" />

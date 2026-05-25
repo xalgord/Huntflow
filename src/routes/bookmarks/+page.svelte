@@ -99,7 +99,7 @@
       cve: 'border-red-500/30 bg-red-500/15 text-red-300',
       tool: 'border-blue-500/30 bg-blue-500/15 text-blue-300',
       tools: 'border-blue-500/30 bg-blue-500/15 text-blue-300',
-      docs: 'border-slate-500/30 bg-slate-700/30 text-slate-300',
+      docs: 'border-zinc-500/30 bg-zinc-700/30 text-zinc-300',
       cheatsheet: 'border-yellow-500/30 bg-yellow-500/15 text-yellow-300',
       video: 'border-orange-500/30 bg-orange-500/15 text-orange-300',
       paper: 'border-purple-500/30 bg-purple-500/15 text-purple-300',
@@ -119,8 +119,8 @@
       oauth: 'border-sky-500/30 bg-sky-500/15 text-sky-300',
       graphql: 'border-pink-600/30 bg-pink-600/15 text-pink-400',
       mobile: 'border-teal-600/30 bg-teal-600/15 text-teal-400',
-      general: 'border-slate-500/30 bg-slate-700/30 text-slate-300',
-      other: 'border-slate-500/30 bg-slate-700/30 text-slate-300'
+      general: 'border-zinc-500/30 bg-zinc-700/30 text-zinc-300',
+      other: 'border-zinc-500/30 bg-zinc-700/30 text-zinc-300'
     };
     return map[category] ?? map.other;
   }
@@ -232,7 +232,7 @@
       <label class="block flex-1">
         <span class="hf-label">Search</span>
         <span class="relative mt-2 block">
-          <Search size={16} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" aria-hidden="true" />
+          <Search size={16} class="pointer-events-none absolute left-3 top-1/2 -tranzinc-y-1/2 text-zinc-500" aria-hidden="true" />
           <input bind:value={query} class="hf-input pl-9" placeholder="Title, URL, tag, vuln class" />
         </span>
       </label>
@@ -242,7 +242,7 @@
           type="button"
           class="rounded-full border px-3 py-1.5 text-xs font-medium transition {categoryFilter === 'all'
             ? 'border-primary/40 bg-primary/10 text-primary'
-            : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600'}"
+            : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600'}"
           on:click={() => (categoryFilter = 'all')}
         >
           All ({counts.all ?? 0})
@@ -252,7 +252,7 @@
             type="button"
             class="rounded-full border px-3 py-1.5 text-xs font-medium transition {categoryFilter === option.value
               ? 'border-primary/40 bg-primary/10 text-primary'
-              : 'border-slate-700 bg-slate-800 text-slate-300 hover:border-slate-600'}"
+              : 'border-zinc-700 bg-zinc-800 text-zinc-300 hover:border-zinc-600'}"
             on:click={() => (categoryFilter = option.value)}
           >
             {option.label} ({counts[option.value] ?? 0})
@@ -264,10 +264,10 @@
     {#if showForm}
       <section class="hf-card p-4">
         <div class="mb-4 flex items-center justify-between">
-          <h2 class="text-lg font-semibold text-slate-100">{editing ? 'Edit Bookmark' : 'New Bookmark'}</h2>
+          <h2 class="text-lg font-semibold text-zinc-100">{editing ? 'Edit Bookmark' : 'New Bookmark'}</h2>
           <button
             type="button"
-            class="text-slate-400 hover:text-slate-100"
+            class="text-zinc-400 hover:text-zinc-100"
             on:click={() => (showForm = false)}
             aria-label="Close form"
           >
@@ -317,7 +317,7 @@
             <textarea
               bind:value={formDescription}
               rows={2}
-              class="mt-2 min-h-[80px] w-full resize-y rounded-md border border-slate-600 bg-slate-850 px-3 py-2.5 text-sm text-slate-100 focus:border-primary-500 focus:outline-none"
+              class="mt-2 min-h-[80px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 focus:border-primary-500 focus:outline-none"
             ></textarea>
           </label>
 
@@ -346,7 +346,7 @@
                   href={bookmark.url}
                   target="_blank"
                   rel="noreferrer"
-                  class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-700 hover:text-primary"
+                  class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 transition hover:bg-zinc-700 hover:text-primary"
                   aria-label="Open"
                 >
                   <ExternalLink size={14} aria-hidden="true" />
@@ -354,7 +354,7 @@
                 {#if !bookmark.isBuiltIn}
                   <button
                     type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-slate-700 hover:text-slate-100"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-100"
                     aria-label="Edit"
                     on:click={() => startEdit(bookmark)}
                   >
@@ -362,7 +362,7 @@
                   </button>
                   <button
                     type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-slate-400 transition hover:bg-red-500/10 hover:text-red-300"
+                    class="inline-flex h-8 w-8 items-center justify-center rounded-md text-zinc-400 transition hover:bg-red-500/10 hover:text-red-300"
                     aria-label="Delete"
                     on:click={() => deleteBookmark(bookmark)}
                   >
@@ -376,15 +376,15 @@
               href={bookmark.url}
               target="_blank"
               rel="noreferrer"
-              class="block text-sm font-semibold text-slate-100 transition hover:text-primary"
+              class="block text-sm font-semibold text-zinc-100 transition hover:text-primary"
             >
               {bookmark.title}
             </a>
 
-            <p class="truncate text-xs text-slate-500" title={bookmark.url}>{hostname(bookmark.url)}</p>
+            <p class="truncate text-xs text-zinc-500" title={bookmark.url}>{hostname(bookmark.url)}</p>
 
             {#if bookmark.description}
-              <p class="text-xs text-slate-400 line-clamp-3">{bookmark.description}</p>
+              <p class="text-xs text-zinc-400 line-clamp-3">{bookmark.description}</p>
             {/if}
 
             {#if bookmark.tags.length > 0 || bookmark.vulnClass}
@@ -395,7 +395,7 @@
                   </span>
                 {/if}
                 {#each bookmark.tags as tag}
-                  <span class="rounded-md border border-slate-700 bg-slate-850 px-1.5 py-0.5 text-[11px] text-slate-400">{tag}</span>
+                  <span class="rounded-md border border-zinc-700 bg-zinc-850 px-1.5 py-0.5 text-[11px] text-zinc-400">{tag}</span>
                 {/each}
               </div>
             {/if}
@@ -404,11 +404,11 @@
       </section>
     {:else}
       <section class="hf-card p-8 text-center">
-        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-slate-900 text-slate-600">
+        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-zinc-900 text-zinc-600">
           <BookOpen size={28} aria-hidden="true" />
         </div>
-        <h2 class="mt-4 text-lg font-semibold text-slate-300">No bookmarks match</h2>
-        <p class="mt-2 text-sm text-slate-500">Adjust the filter or add a new bookmark.</p>
+        <h2 class="mt-4 text-lg font-semibold text-zinc-300">No bookmarks match</h2>
+        <p class="mt-2 text-sm text-zinc-500">Adjust the filter or add a new bookmark.</p>
         <button type="button" class="mt-5 hf-button-primary" on:click={startCreate}>
           <BookmarkPlus size={20} aria-hidden="true" />
           Add Bookmark

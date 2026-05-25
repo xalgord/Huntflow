@@ -1,11 +1,13 @@
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
 // Type-only import — the runtime instance is loaded from Clerk's CDN below.
-// This avoids Vite's chunk-splitting of clerk-js@6, which silently drops the
-// side-effect that registers `componentControls` onto the Clerk instance
-// when UI components load as separate chunks. With the CDN approach, a
-// single self-contained bundle (including UI) is served from the Frontend
-// API host, so `mountSignIn/mountSignUp/mountPricingTable` always work.
+// We intentionally pin both the npm dep AND the CDN script tag to clerk-js
+// v5; under Vite's chunk-splitting, v6's UI bundle silently drops the
+// side-effect that registers `componentControls` on the Clerk instance,
+// which in turn breaks `mountSignIn / mountSignUp / mountPricingTable`
+// when those components load as separate chunks. Keeping types and runtime
+// on the same major closes the drift gap that this comment used to warn
+// about. Bump both together when v6 is provably stable for our use.
 import type { Clerk as ClerkClass } from '@clerk/clerk-js';
 import { configureConvexAuth } from './convex';
 
@@ -316,7 +318,7 @@ export async function signOutFromClerk(opts: { redirectUrl?: string } = {}): Pro
 }
 
 // Shared dark theme so every embedded Clerk component (sign-in, sign-up,
-// pricing table, user button) blends into HuntFlow's slate-950 chrome
+// pricing table, user button) blends into HuntFlow's zinc-950 chrome
 // without restyling each call site.
 export const huntflowClerkAppearance = {
   variables: {

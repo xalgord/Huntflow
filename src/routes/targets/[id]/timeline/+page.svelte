@@ -304,18 +304,18 @@
   <div class="hf-page-inner space-y-6">
     <a
       href={target ? `/targets/${target.id}` : '/targets'}
-      class="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition hover:text-slate-100"
+      class="inline-flex items-center gap-2 text-sm font-medium text-zinc-300 transition hover:text-zinc-100"
     >
       <ArrowLeft size={16} aria-hidden="true" />
       Back to target
     </a>
 
     {#if !loaded}
-      <p class="text-sm text-slate-400">Loading timeline…</p>
+      <p class="text-sm text-zinc-400">Loading timeline…</p>
     {:else if !target}
       <section class="hf-card p-6">
-        <h1 class="text-lg font-semibold text-slate-100">Target not found</h1>
-        <p class="mt-2 text-sm text-slate-400">It may have been deleted. <a href="/targets" class="text-primary-300 hover:text-primary-200">Return to targets</a>.</p>
+        <h1 class="text-lg font-semibold text-zinc-100">Target not found</h1>
+        <p class="mt-2 text-sm text-zinc-400">It may have been deleted. <a href="/targets" class="text-primary-300 hover:text-primary-200">Return to targets</a>.</p>
       </section>
     {:else}
       <header class="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
@@ -334,24 +334,24 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-          <div class="inline-flex items-center rounded-md border border-slate-700 bg-slate-800 p-0.5 text-xs">
+          <div class="inline-flex items-center rounded-md border border-zinc-700 bg-zinc-800 p-0.5 text-xs">
             <button
               type="button"
-              class="rounded-[5px] px-3 py-1.5 font-medium transition {view === 'flat' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'}"
+              class="rounded-[5px] px-3 py-1.5 font-medium transition {view === 'flat' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'}"
               on:click={() => (view = 'flat')}
             >
               Chronological
             </button>
             <button
               type="button"
-              class="rounded-[5px] px-3 py-1.5 font-medium transition {view === 'sessions' ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'}"
+              class="rounded-[5px] px-3 py-1.5 font-medium transition {view === 'sessions' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-400 hover:text-zinc-200'}"
               on:click={() => (view = 'sessions')}
             >
               By session
             </button>
           </div>
 
-          <label class="inline-flex items-center gap-2 rounded-md border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-xs text-slate-300">
+          <label class="inline-flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-800 px-2.5 py-1.5 text-xs text-zinc-300">
             <Filter size={14} aria-hidden="true" />
             <select bind:value={filterKind} class="bg-transparent text-xs font-medium focus:outline-none">
               <option value="all">All types</option>
@@ -366,7 +366,7 @@
 
       {#if entries.length === 0}
         <section class="hf-card p-8 text-center">
-          <p class="text-sm text-slate-400">
+          <p class="text-sm text-zinc-400">
             Nothing to show yet. Start a session, capture a screenshot, or jot a note —
             it all lands here in order.
           </p>
@@ -375,16 +375,16 @@
         <section class="space-y-6">
           {#each dayGroups as day (day.dayKey)}
             <article class="hf-card p-4 sm:p-6">
-              <header class="mb-4 flex items-baseline justify-between gap-2 border-b border-slate-700 pb-2">
-                <h2 class="text-sm font-semibold uppercase tracking-[0.12em] text-slate-400">{day.label}</h2>
-                <span class="text-xs text-slate-500">{day.entries.length} event{day.entries.length === 1 ? '' : 's'}</span>
+              <header class="mb-4 flex items-baseline justify-between gap-2 border-b border-zinc-700 pb-2">
+                <h2 class="text-sm font-semibold uppercase tracking-[0.12em] text-zinc-400">{day.label}</h2>
+                <span class="text-xs text-zinc-500">{day.entries.length} event{day.entries.length === 1 ? '' : 's'}</span>
               </header>
 
-              <ol class="relative space-y-3 border-l border-slate-700 pl-5">
+              <ol class="relative space-y-3 border-l border-zinc-700 pl-5">
                 {#each day.entries as entry (entry.id)}
                   <li class="relative">
                     <span
-                      class="absolute -left-[27px] top-1 grid h-5 w-5 place-items-center rounded-full border bg-slate-900 {entryColor(entry.kind)}"
+                      class="absolute -left-[27px] top-1 grid h-5 w-5 place-items-center rounded-full border bg-zinc-900 {entryColor(entry.kind)}"
                       aria-hidden="true"
                     >
                       {#if entry.kind === 'session'}
@@ -408,28 +408,28 @@
 
                     {#if entry.kind === 'session'}
                       <div class="flex flex-wrap items-center gap-2 text-sm">
-                        <span class="text-xs font-mono text-slate-500">{formatTime(entry.at)}</span>
+                        <span class="text-xs font-mono text-zinc-500">{formatTime(entry.at)}</span>
                         <span class="rounded-md border border-primary-500/30 bg-primary-500/10 px-2 py-0.5 text-[11px] font-medium uppercase tracking-wide text-primary-200">
                           Session {entry.phase}
                         </span>
                         {#if entry.phase === 'completed'}
-                          <span class="text-xs text-slate-400">
+                          <span class="text-xs text-zinc-400">
                             Focused {formatDuration(entry.session.durationActual)}
                           </span>
                         {:else}
-                          <span class="text-xs text-slate-400">
+                          <span class="text-xs text-zinc-400">
                             Planned {Math.round(entry.session.durationPlanned / 60)}m
                           </span>
                         {/if}
                         {#if entry.session.quickNote}
-                          <span class="ml-2 text-xs italic text-slate-500">"{entry.session.quickNote}"</span>
+                          <span class="ml-2 text-xs italic text-zinc-500">"{entry.session.quickNote}"</span>
                         {/if}
                       </div>
                     {:else if entry.kind === 'note'}
-                      <a href={`/notes/${entry.note.id}`} class="block rounded-md border border-transparent px-2 py-1.5 transition hover:border-slate-700 hover:bg-slate-800/60">
+                      <a href={`/notes/${entry.note.id}`} class="block rounded-md border border-transparent px-2 py-1.5 transition hover:border-zinc-700 hover:bg-zinc-800/60">
                         <div class="flex flex-wrap items-center gap-2 text-sm">
-                          <span class="text-xs font-mono text-slate-500">{formatTime(entry.at)}</span>
-                          <span class="font-medium text-slate-100">{entry.note.title || 'Untitled note'}</span>
+                          <span class="text-xs font-mono text-zinc-500">{formatTime(entry.at)}</span>
+                          <span class="font-medium text-zinc-100">{entry.note.title || 'Untitled note'}</span>
                           {#if entry.note.severity}
                             <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium {severityClassFor(entry.note.severity)}">
                               <ShieldAlert size={11} aria-hidden="true" />
@@ -440,28 +440,28 @@
                             </span>
                           {/if}
                           {#each entry.note.tags.slice(0, 3) as tag (tag)}
-                            <span class="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">#{tag}</span>
+                            <span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] text-zinc-400">#{tag}</span>
                           {/each}
                         </div>
                       </a>
                     {:else if entry.kind === 'evidence'}
-                      <a href={`/assets?asset=${entry.asset.id}`} class="block rounded-md border border-transparent px-2 py-1.5 transition hover:border-slate-700 hover:bg-slate-800/60">
+                      <a href={`/assets?asset=${entry.asset.id}`} class="block rounded-md border border-transparent px-2 py-1.5 transition hover:border-zinc-700 hover:bg-zinc-800/60">
                         <div class="flex flex-wrap items-center gap-2 text-sm">
-                          <span class="text-xs font-mono text-slate-500">{formatTime(entry.at)}</span>
-                          <span class="font-medium text-slate-100 truncate max-w-[24rem]">{entry.asset.title}</span>
+                          <span class="text-xs font-mono text-zinc-500">{formatTime(entry.at)}</span>
+                          <span class="font-medium text-zinc-100 truncate max-w-[24rem]">{entry.asset.title}</span>
                           <span class="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium uppercase tracking-wide text-emerald-200">
                             {entry.asset.kind.replace('-', ' ')}
                           </span>
                           {#each entry.asset.tags.slice(0, 3) as tag (tag)}
-                            <span class="rounded bg-slate-800 px-1.5 py-0.5 text-[11px] text-slate-400">#{tag}</span>
+                            <span class="rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] text-zinc-400">#{tag}</span>
                           {/each}
                         </div>
                       </a>
                     {:else}
-                      <a href={`/submissions?target=${entry.submission.targetId}`} class="block rounded-md border border-transparent px-2 py-1.5 transition hover:border-slate-700 hover:bg-slate-800/60">
+                      <a href={`/submissions?target=${entry.submission.targetId}`} class="block rounded-md border border-transparent px-2 py-1.5 transition hover:border-zinc-700 hover:bg-zinc-800/60">
                         <div class="flex flex-wrap items-center gap-2 text-sm">
-                          <span class="text-xs font-mono text-slate-500">{formatTime(entry.at)}</span>
-                          <span class="font-medium text-slate-100">{entry.submission.title}</span>
+                          <span class="text-xs font-mono text-zinc-500">{formatTime(entry.at)}</span>
+                          <span class="font-medium text-zinc-100">{entry.submission.title}</span>
                           <span class="inline-flex items-center gap-1 rounded-md border px-1.5 py-0.5 text-[11px] font-medium {severityClassFor(entry.submission.severity)}">
                             <span class="capitalize">{entry.submission.severity}</span>
                             {#if typeof entry.submission.cvssScore === 'number'}
@@ -487,13 +487,13 @@
               <header class="mb-3 flex flex-wrap items-center justify-between gap-2">
                 {#if group.session}
                   <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Session</p>
-                    <h2 class="text-base font-semibold text-slate-100">
+                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Session</p>
+                    <h2 class="text-base font-semibold text-zinc-100">
                       {formatDayLabel(group.session.startedAt)} · {formatTime(group.session.startedAt)}
                     </h2>
                   </div>
-                  <div class="flex items-center gap-2 text-xs text-slate-400">
-                    <span class="rounded-md border border-slate-700 bg-slate-800 px-2 py-1 capitalize">
+                  <div class="flex items-center gap-2 text-xs text-zinc-400">
+                    <span class="rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1 capitalize">
                       {group.session.status}
                     </span>
                     {#if group.session.status === 'completed'}
@@ -502,17 +502,17 @@
                   </div>
                 {:else}
                   <div>
-                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Outside sessions</p>
-                    <h2 class="text-base font-semibold text-slate-100">
+                    <p class="text-xs font-semibold uppercase tracking-[0.12em] text-zinc-500">Outside sessions</p>
+                    <h2 class="text-base font-semibold text-zinc-100">
                       Captures without a focus session
                     </h2>
                   </div>
-                  <span class="text-xs text-slate-500">{group.entries.length} item{group.entries.length === 1 ? '' : 's'}</span>
+                  <span class="text-xs text-zinc-500">{group.entries.length} item{group.entries.length === 1 ? '' : 's'}</span>
                 {/if}
               </header>
 
               {#if group.entries.length === 0}
-                <p class="text-sm text-slate-500">Empty session — nothing was captured.</p>
+                <p class="text-sm text-zinc-500">Empty session — nothing was captured.</p>
               {:else}
                 <ul class="space-y-1.5">
                   {#each group.entries as entry (entry.id)}
@@ -528,11 +528,11 @@
                           <Send size={11} />
                         {/if}
                       </span>
-                      <span class="text-xs font-mono text-slate-500">{formatTime(entry.at)}</span>
+                      <span class="text-xs font-mono text-zinc-500">{formatTime(entry.at)}</span>
                       {#if entry.kind === 'session'}
-                        <span class="text-slate-300">Session {entry.phase}</span>
+                        <span class="text-zinc-300">Session {entry.phase}</span>
                       {:else if entry.kind === 'note'}
-                        <a href={`/notes/${entry.note.id}`} class="font-medium text-slate-100 hover:text-primary-300">
+                        <a href={`/notes/${entry.note.id}`} class="font-medium text-zinc-100 hover:text-primary-300">
                           {entry.note.title || 'Untitled note'}
                         </a>
                         {#if entry.note.severity}
@@ -541,15 +541,15 @@
                           </span>
                         {/if}
                       {:else if entry.kind === 'evidence'}
-                        <a href={`/assets?asset=${entry.asset.id}`} class="truncate font-medium text-slate-100 hover:text-primary-300">
+                        <a href={`/assets?asset=${entry.asset.id}`} class="truncate font-medium text-zinc-100 hover:text-primary-300">
                           {entry.asset.title}
                         </a>
-                        <span class="text-[11px] uppercase tracking-wide text-slate-500">{entry.asset.kind.replace('-', ' ')}</span>
+                        <span class="text-[11px] uppercase tracking-wide text-zinc-500">{entry.asset.kind.replace('-', ' ')}</span>
                       {:else}
-                        <a href={`/submissions?target=${entry.submission.targetId}`} class="font-medium text-slate-100 hover:text-primary-300">
+                        <a href={`/submissions?target=${entry.submission.targetId}`} class="font-medium text-zinc-100 hover:text-primary-300">
                           {entry.submission.title}
                         </a>
-                        <span class="text-[11px] uppercase tracking-wide text-slate-500">{entry.submission.status}</span>
+                        <span class="text-[11px] uppercase tracking-wide text-zinc-500">{entry.submission.status}</span>
                       {/if}
                     </li>
                   {/each}

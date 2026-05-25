@@ -75,7 +75,7 @@
         // overflow the ~5MB origin budget. We swallow it so the editor
         // stays usable; the explicit `Save` button still writes to
         // IndexedDB which has gigabytes of headroom.
-        console.warn('[v0] note draft autosave skipped:', error);
+        console.warn('note draft autosave skipped:', error);
       }
     }, 3000);
   }
@@ -133,7 +133,7 @@
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <a
         href="/notes"
-        class="inline-flex min-h-[44px] w-fit items-center gap-2 rounded-md px-2 text-sm font-medium text-slate-400 transition hover:bg-slate-800 hover:text-slate-100"
+        class="inline-flex min-h-[44px] w-fit items-center gap-2 rounded-md px-2 text-sm font-medium text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-100"
       >
         <ArrowLeft size={18} aria-hidden="true" />
         Back to notes
@@ -166,8 +166,8 @@
         <section class="hf-card p-4">
           <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 class="text-lg font-semibold text-slate-100">Attached Evidence</h2>
-              <p class="mt-1 text-sm text-slate-400">Proof files, URLs, and request traces linked to this note.</p>
+              <h2 class="text-lg font-semibold text-zinc-100">Attached Evidence</h2>
+              <p class="mt-1 text-sm text-zinc-400">Proof files, URLs, and request traces linked to this note.</p>
             </div>
             <a href={`/assets?target=${workingNote.targetId}&note=${workingNote.id}`} class="hf-button-secondary">
               <Network size={18} aria-hidden="true" />
@@ -185,17 +185,17 @@
               {/each}
             </div>
           {:else}
-            <div class="mt-4 rounded-lg border border-dashed border-slate-700 bg-slate-900 p-6 text-center">
-              <p class="text-sm font-medium text-slate-300">No evidence attached</p>
-              <p class="mt-1 text-sm text-slate-500">Attach proof from the Evidence workspace.</p>
+            <div class="mt-4 rounded-lg border border-dashed border-zinc-700 bg-zinc-900 p-6 text-center">
+              <p class="text-sm font-medium text-zinc-300">No evidence attached</p>
+              <p class="mt-1 text-sm text-zinc-500">Attach proof from the Evidence workspace.</p>
             </div>
           {/if}
         </section>
       {/if}
     {:else if loaded}
       <section class="hf-card p-8 text-center">
-        <h1 class="text-lg font-semibold text-slate-300">Note not found</h1>
-        <p class="mt-2 text-sm text-slate-500">The note may have been deleted elsewhere.</p>
+        <h1 class="text-lg font-semibold text-zinc-300">Note not found</h1>
+        <p class="mt-2 text-sm text-zinc-500">The note may have been deleted elsewhere.</p>
         <a
           href="/notes"
           class="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700"

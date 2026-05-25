@@ -1,21 +1,27 @@
 /**
  * Real-time cloud sync engine for HuntFlow Pro users.
  *
- * Uses a dual-channel strategy to keep devices in sync:
- *   - **Subscription**: Convex `onUpdate` for near-instant pushes (~200ms).
- *   - **Polling**: A 10-second interval that actively queries the latest
- *     snapshot, guaranteeing eventual consistency even when the WebSocket
- *     drops, the browser throttles background tabs, or the Convex client
- *     caches stale results.
+ * Strategy:
+ *   - **Subscription** (primary): Convex `onUpdate` keeps every device
+ *     converged within ~200ms whenever the WebSocket is healthy.
+ *     We trust this channel and don't try to second-guess it.
+ *   - **Event-driven recovery**: instead of polling on a fixed cadence,
+ *     we kick a single bidirectional sync cycle whenever something
+ *     plausibly broke convergence:
+ *       · the user came back to the tab (`visibilitychange` → visible),
+ *       · the Convex WebSocket finished reconnecting after a drop,
+ *       · we just signed back in.
+ *   - **Safety net** (last resort): a 60s interval that runs one cycle
+ *     to catch the rare case where every event-driven trigger missed.
+ *     This is a 6× reduction from the previous 10s cadence and removes
+ *     the `suppressSubscription` hack that the tight loop required.
  *
- * Local edits are pushed to Convex after each store flush (debounced 1.5s)
- * so the round-trip feels snappy without hammering the backend on rapid typing.
+ * Push behaviour (debounced 1.5s after store flush) is unchanged. We
+ * still upload pending evidence files first so storageIds are current
+ * in every snapshot.
  *
- * Lifecycle:
- *   1. Root layout calls `startRealtimeSync()` when a Pro user is detected.
- *   2. The engine opens a Convex `onUpdate` subscription and wires
- *      `onFlush` callbacks into every persisted store.
- *   3. `stopRealtimeSync()` tears down the subscription and callbacks.
+ * Lifecycle: root layout calls `startRealtimeSync()` when a Pro user is
+ * detected. `stopRealtimeSync()` tears everything down.
  */
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
@@ -27,7 +33,6 @@ import {
   normalizeRemoteItem,
   purgeStaleTombstones,
   saveTombstone,
-  toSyncItem,
   uploadPendingEvidenceFiles,
   type SyncCollection,
   type SyncItem
@@ -81,22 +86,22 @@ export const realtimeSyncStore = writable<RealtimeSyncState>(initialState);
 // ---------------------------------------------------------------------------
 
 let unsubscribeConvex: (() => void) | null = null;
-let pollInterval: ReturnType<typeof setInterval> | null = null;
+let unsubscribeConnectionState: (() => void) | null = null;
+let safetyInterval: ReturnType<typeof setInterval> | null = null;
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let pushPending = false;
-let polling = false;
+let recoveryInFlight = false;
 const PUSH_DEBOUNCE_MS = 1500;
-const POLL_INTERVAL_MS = 10_000; // 10 seconds
-const LAST_SYNC_KEY = 'huntflow-cloud-last-sync-at';
-
 /**
- * When the poll cycle pushes merged data via `upsertSnapshot`, the Convex
- * `onUpdate` subscription fires with the data we just wrote. Setting this
- * flag lets the subscription callback skip the redundant apply, avoiding
- * wasted IndexedDB reads and potential UI flicker from store resets racing
- * with the poll's own `applyLocalSnapshot` call.
+ * Last-resort safety-net cadence. The Convex subscription should keep
+ * every device converged on its own — this exists only to catch the
+ * rare case where the subscription silently stops delivering updates
+ * (browser bug, intermediate proxy, etc.) and the visibility/connection
+ * triggers also missed. 60s is intentionally far longer than the
+ * previous 10s loop; we trust the live channel by default.
  */
-let suppressSubscription = false;
+const SAFETY_NET_MS = 60_000;
+const LAST_SYNC_KEY = 'huntflow-cloud-last-sync-at';
 
 // Map collection names → their persisted stores so the onFlush hook can
 // determine which collection changed and push only the delta.
@@ -183,16 +188,24 @@ function schedulePush(): void {
   }, PUSH_DEBOUNCE_MS);
 }
 
-// NOTE: per-collection flush handlers are created by makeFlushHandler().
-// The old generic handleStoreFlush is replaced so each store's deletions
-// are correctly attributed to the right collection.
-
 // ---------------------------------------------------------------------------
 // Pull: process incoming Convex snapshot update
 // ---------------------------------------------------------------------------
 
+/**
+ * Live channel handler. Convex calls this whenever the `getSnapshot`
+ * subscription transitions to a new value. We merge against local state
+ * to honor any edits that happened locally between the last server
+ * timestamp and now (last-writer-wins on `updatedAt`/`deletedAt`),
+ * apply the result, and stop.
+ *
+ * We deliberately do NOT push here: any local-only changes from the
+ * merge are already on disk via `applyLocalSnapshot`, and the next
+ * onFlush will pick them up. The previous design pushed eagerly on
+ * every subscription event and needed a `suppressSubscription` flag
+ * to break the resulting feedback loop.
+ */
 async function handleRemoteUpdate(rawRemote: unknown): Promise<void> {
-  if (suppressSubscription) return; // poll just pushed — data is already local
   if (!Array.isArray(rawRemote)) return;
 
   const remoteItems = rawRemote
@@ -222,54 +235,43 @@ async function handleRemoteUpdate(rawRemote: unknown): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Polling: 10-second interval to guarantee cross-device sync
+// Recovery cycle: HTTP-based pull-merge-push, fired on real events
 // ---------------------------------------------------------------------------
 
 /**
- * Bidirectional sync cycle that runs every 10 seconds.
+ * Bidirectional sync cycle used as the recovery primitive. Runs at
+ * most one at a time (`recoveryInFlight` gate). Fired by:
+ *   - `visibilitychange` → visible (catch up after a backgrounded tab)
+ *   - WebSocket reconnect (recover from a temporary outage)
+ *   - 60s safety net (last-resort, in case the live channel silently
+ *     stopped delivering updates)
  *
- * 1. Pull the remote snapshot from Convex.
- * 2. Read all local items from IndexedDB.
- * 3. Merge (last-writer-wins by `updatedAt`).
- * 4. Apply the merged set locally (IndexedDB + Svelte stores).
- * 5. Push the merged set back to Convex so other devices converge.
- *
- * This guarantees that within ≤10 seconds, every device has the same
- * data — regardless of whether the Convex subscription fired or the
- * event-driven push succeeded.
+ * Uses the cache-free HTTP client for the pull so we never read a
+ * stale value from the WebSocket client's optimistic cache.
  */
-async function pollRemote(): Promise<void> {
-  if (polling) return; // guard against overlapping cycles
+async function recoverNow(reason: string): Promise<void> {
+  if (recoveryInFlight) return;
   const convex = getConvexClient();
   if (!convex) return;
 
-  polling = true;
+  recoveryInFlight = true;
   try {
     realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Syncing…' }));
 
-    // Upload any pending evidence files so storageIds are current.
     await uploadPendingEvidenceFiles();
 
-    // --- Authenticate the HTTP client with a fresh Clerk JWT ---
     const httpClient = getConvexHttpClient();
     const token = await getClerkToken();
     if (!httpClient || !token) {
-      console.warn('[realtimeSync] poll skipped: no HTTP client or Clerk token');
+      console.warn(`[realtimeSync] recovery skipped (${reason}): no HTTP client or Clerk token`);
       return;
     }
     httpClient.setAuth(token);
 
-    // Pull remote via HTTP (cache-free!) + read local in parallel.
     const [localItems, rawRemote] = await Promise.all([
       getLocalItems(),
       httpClient.query(cloudApi.getSnapshot, {})
     ]);
-
-    console.debug(
-      '[realtimeSync] HTTP poll fetched',
-      Array.isArray(rawRemote) ? rawRemote.length : 0,
-      'remote items'
-    );
 
     const remoteItems = Array.isArray(rawRemote)
       ? rawRemote.map(normalizeRemoteItem).filter((item): item is SyncItem => Boolean(item))
@@ -277,20 +279,13 @@ async function pollRemote(): Promise<void> {
 
     const merged = mergeItems(localItems, remoteItems);
 
-    // Apply merged snapshot locally (updates IndexedDB + Svelte stores).
-    // This goes through store.refresh() → source.set(), which does NOT
-    // trigger onFlush, so no circular push-back occurs.
+    // Apply merged snapshot locally. As in handleRemoteUpdate(), this
+    // refreshes stores via source.set rather than put/putBatch, so it
+    // can't trigger an onFlush feedback loop.
     await applyLocalSnapshot(merged);
 
-    // Push merged snapshot back to Convex so other devices get our changes.
-    // We use the WebSocket-based client for mutations (faster, auth is
-    // already configured via setAuth callback).
-    //
-    // Suppress the subscription callback while pushing — the mutation will
-    // trigger onUpdate with the data we just wrote, but we've already
-    // applied it locally. Without this, the callback would re-read all 13
-    // collections from IndexedDB and re-set every Svelte store for nothing.
-    suppressSubscription = true;
+    // Push merged snapshot back so other devices receive any local-only
+    // changes without waiting for the user's next edit.
     await convex.mutation(cloudApi.upsertSnapshot, {
       items: merged.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
         collection,
@@ -300,10 +295,6 @@ async function pollRemote(): Promise<void> {
         ...(deletedAt ? { deletedAt } : {})
       }))
     });
-    // Clear the flag after a short delay so legitimate remote updates
-    // (from other devices) still get processed. The subscription callback
-    // typically fires within a few hundred ms of the mutation completing.
-    setTimeout(() => { suppressSubscription = false; }, 2_000);
 
     const now = Date.now();
     localStorage.setItem(LAST_SYNC_KEY, String(now));
@@ -314,38 +305,42 @@ async function pollRemote(): Promise<void> {
       pullCount: s.pullCount + 1,
       pushCount: s.pushCount + 1
     }));
+    console.debug(`[realtimeSync] recovery cycle completed (${reason})`);
   } catch (err) {
-    console.error('[realtimeSync] sync cycle failed:', err);
+    console.error(`[realtimeSync] recovery cycle failed (${reason}):`, err);
     realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Sync error' }));
   } finally {
-    polling = false;
+    recoveryInFlight = false;
   }
 }
 
-function startPolling(): void {
-  stopPolling();
-  // Poll immediately on start to catch anything missed while offline/sleeping.
-  void pollRemote();
-  pollInterval = setInterval(() => {
-    void pollRemote();
-  }, POLL_INTERVAL_MS);
-}
+// ---------------------------------------------------------------------------
+// Event hooks
+// ---------------------------------------------------------------------------
 
-function stopPolling(): void {
-  if (pollInterval) {
-    clearInterval(pollInterval);
-    pollInterval = null;
+/** Catch up immediately when the user returns to a backgrounded tab. */
+function handleVisibilityForSync(): void {
+  if (document.visibilityState === 'visible') {
+    void recoverNow('tab-visible');
   }
 }
+
+let wasConnected = true;
 
 /**
- * When the user returns to the tab, poll immediately so stale data from
- * a background-throttled tab is refreshed without waiting the full 10s.
+ * Run a recovery cycle on the falling/rising edge of the WebSocket
+ * connection. We trigger on the rising edge (reconnect) so we catch up
+ * any updates the server delivered during the outage. The falling edge
+ * just updates the status label.
  */
-function handleVisibilityForSync(): void {
-  if (document.visibilityState === 'visible' && unsubscribeConvex) {
-    void pollRemote();
+function handleConnectionStateChange(state: { isWebSocketConnected: boolean }): void {
+  const nowConnected = state.isWebSocketConnected;
+  if (!wasConnected && nowConnected) {
+    void recoverNow('ws-reconnect');
+  } else if (wasConnected && !nowConnected) {
+    realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Offline' }));
   }
+  wasConnected = nowConnected;
 }
 
 // ---------------------------------------------------------------------------
@@ -367,7 +362,7 @@ export function startRealtimeSync(): void {
     entry.store.setOnFlush(makeFlushHandler(entry.collection));
   }
 
-  // Subscribe to Convex live query (near-instant channel).
+  // Subscribe to Convex live query (the primary channel).
   unsubscribeConvex = convex.onUpdate(
     cloudApi.getSnapshot,
     {},
@@ -376,11 +371,22 @@ export function startRealtimeSync(): void {
     }
   );
 
-  // Start 10-second polling (guaranteed-consistency channel).
-  startPolling();
+  // Subscribe to connection state so reconnects fire a single recovery
+  // cycle instead of needing a fixed-cadence poll to notice we missed
+  // updates while disconnected.
+  const initialConnState = convex.connectionState();
+  wasConnected = initialConnState.isWebSocketConnected;
+  unsubscribeConnectionState = convex.subscribeToConnectionState(handleConnectionStateChange);
 
-  // Poll immediately when the tab regains focus after being backgrounded.
+  // Visibility-driven catch-up for backgrounded tabs.
   document.addEventListener('visibilitychange', handleVisibilityForSync);
+
+  // Safety-net interval: long enough to be cheap, short enough to
+  // still feel "real-time" if the live channel ever falls silent.
+  if (safetyInterval) clearInterval(safetyInterval);
+  safetyInterval = setInterval(() => {
+    void recoverNow('safety-net');
+  }, SAFETY_NET_MS);
 
   const lastSync = Number(localStorage.getItem(LAST_SYNC_KEY)) || null;
   realtimeSyncStore.set({
@@ -391,22 +397,29 @@ export function startRealtimeSync(): void {
     pullCount: 0
   });
 
-  // Do an initial push so any offline edits land immediately.
+  // Initial reconciliation so any offline edits are pushed and any
+  // remote updates from before this session are pulled.
+  void recoverNow('start');
   schedulePush();
 
-  console.debug('[realtimeSync] started (subscription + 10s polling)');
+  console.debug('[realtimeSync] started (subscription + event-driven recovery + 60s safety net)');
 }
 
 export function stopRealtimeSync(): void {
-  // Tear down the polling channel.
-  stopPolling();
   document.removeEventListener('visibilitychange', handleVisibilityForSync);
 
   if (unsubscribeConvex) {
     unsubscribeConvex();
     unsubscribeConvex = null;
   }
-
+  if (unsubscribeConnectionState) {
+    unsubscribeConnectionState();
+    unsubscribeConnectionState = null;
+  }
+  if (safetyInterval) {
+    clearInterval(safetyInterval);
+    safetyInterval = null;
+  }
   if (pushTimer) {
     clearTimeout(pushTimer);
     pushTimer = null;

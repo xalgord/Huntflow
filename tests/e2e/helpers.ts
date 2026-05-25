@@ -1,7 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 
 const DB_NAME = 'huntflow';
-const DB_VERSION = 3;
+const DB_VERSION = 5;
 export const seedIds = {
   target: '11111111-1111-4111-8111-111111111111',
   session: '22222222-2222-4222-8222-222222222222',
@@ -267,6 +267,7 @@ async function seedIndexedDB(
               store.createIndex('by-severity', 'severity', { unique: false });
               store.createIndex('by-status', 'status', { unique: false });
               store.createIndex('by-date', 'date', { unique: false });
+              store.createIndex('by-target', 'targetId', { unique: false });
               store.createIndex('by-updated', 'updatedAt', { unique: false });
             }
             if (!db.objectStoreNames.contains('evidenceAssets')) {
@@ -304,6 +305,44 @@ async function seedIndexedDB(
             if (!db.objectStoreNames.contains('settings')) {
               db.createObjectStore('settings', { keyPath: 'key' });
             }
+            if (!db.objectStoreNames.contains('reconAssets')) {
+              const store = db.createObjectStore('reconAssets', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-status', 'status', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('payloads')) {
+              const store = db.createObjectStore('payloads', { keyPath: 'id' });
+              store.createIndex('by-category', 'category', { unique: false });
+              store.createIndex('by-tags', 'tags', { unique: false, multiEntry: true });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('checklistTemplates')) {
+              const store = db.createObjectStore('checklistTemplates', { keyPath: 'id' });
+              store.createIndex('by-kind', 'kind', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('checklistInstances')) {
+              const store = db.createObjectStore('checklistInstances', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-template', 'templateId', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('submissions')) {
+              const store = db.createObjectStore('submissions', { keyPath: 'id' });
+              store.createIndex('by-target', 'targetId', { unique: false });
+              store.createIndex('by-status', 'status', { unique: false });
+              store.createIndex('by-platform', 'platform', { unique: false });
+              store.createIndex('by-severity', 'severity', { unique: false });
+              store.createIndex('by-submittedAt', 'submittedAt', { unique: false });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
+            if (!db.objectStoreNames.contains('bookmarks')) {
+              const store = db.createObjectStore('bookmarks', { keyPath: 'id' });
+              store.createIndex('by-category', 'category', { unique: false });
+              store.createIndex('by-tags', 'tags', { unique: false, multiEntry: true });
+              store.createIndex('by-updated', 'updatedAt', { unique: false });
+            }
           };
 
           request.onsuccess = () => resolve(request.result);
@@ -328,7 +367,7 @@ async function seedIndexedDB(
       const db = await openDatabase();
       await new Promise<void>((resolve, reject) => {
         const tx = db.transaction(
-          ['sessions', 'notes', 'targets', 'payouts', 'evidenceAssets', 'evidenceBlobs', 'evidenceLinks', 'evidenceCanvasViews', 'templates', 'settings'],
+          ['sessions', 'notes', 'targets', 'payouts', 'evidenceAssets', 'evidenceBlobs', 'evidenceLinks', 'evidenceCanvasViews', 'templates', 'reconAssets', 'payloads', 'checklistTemplates', 'checklistInstances', 'submissions', 'bookmarks', 'settings'],
           'readwrite'
         );
 
@@ -341,6 +380,12 @@ async function seedIndexedDB(
         tx.objectStore('evidenceLinks').clear();
         tx.objectStore('evidenceCanvasViews').clear();
         tx.objectStore('templates').clear();
+        tx.objectStore('reconAssets').clear();
+        tx.objectStore('payloads').clear();
+        tx.objectStore('checklistTemplates').clear();
+        tx.objectStore('checklistInstances').clear();
+        tx.objectStore('submissions').clear();
+        tx.objectStore('bookmarks').clear();
         tx.objectStore('settings').clear();
 
         for (const item of seed.sessions) tx.objectStore('sessions').put(item);
