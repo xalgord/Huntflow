@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { clerkAuthStore } from '$lib/cloud/clerk';
+  import { authStore } from '$lib/cloud/firebase';
   import { BarChart3, UserRound } from 'lucide-svelte';
   import BrandMark from '$lib/components/brand/BrandMark.svelte';
   import { navItems } from './navItems';
@@ -11,9 +11,9 @@
 
   // Two-letter initials fallback for the mobile header avatar — mirrors
   // the same logic used on /account and in SideNav so all three places
-  // show the same letters before Clerk resolves an image URL.
+  // show the same letters before the auth provider resolves a photo URL.
   $: mobileInitials = (() => {
-    const name = $clerkAuthStore.displayName?.trim() ?? '';
+    const name = $authStore.displayName?.trim() ?? '';
     if (!name) return '';
     const parts = name.split(/\s+/).filter(Boolean);
     if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
@@ -41,19 +41,19 @@
         <BarChart3 size={20} aria-hidden="true" />
       </a>
       <!--
-        Account link. Renders the user's Clerk avatar when available,
-        a two-letter initials chip when signed in but image not yet
-        resolved, and the generic UserRound icon when signed out (the
-        auth gate will redirect to /sign-in on tap).
+        Account link. Renders the user's avatar when available, a
+        two-letter initials chip when signed in but the photo URL
+        hasn't resolved yet, and the generic UserRound icon when
+        signed out (the auth gate will redirect to /sign-in on tap).
       -->
       <a
         href="/account"
         class="inline-flex h-11 min-h-[44px] w-11 items-center justify-center rounded-[14px] text-muted-foreground transition hover:bg-muted/70 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
         aria-label="Open account"
       >
-        {#if $clerkAuthStore.signedIn && $clerkAuthStore.imageUrl}
+        {#if $authStore.signedIn && $authStore.photoURL}
           <img
-            src={$clerkAuthStore.imageUrl}
+            src={$authStore.photoURL}
             alt=""
             width="32"
             height="32"
@@ -62,7 +62,7 @@
             loading="lazy"
             decoding="async"
           />
-        {:else if $clerkAuthStore.signedIn && mobileInitials}
+        {:else if $authStore.signedIn && mobileInitials}
           <span
             class="flex h-8 w-8 items-center justify-center rounded-full border border-primary/30 bg-primary/10 text-[11px] font-semibold text-primary"
             aria-hidden="true"

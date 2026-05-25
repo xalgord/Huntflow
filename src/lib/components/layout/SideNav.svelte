@@ -1,6 +1,6 @@
 <script lang="ts">
   import { Keyboard, PanelLeftClose, PanelLeftOpen, Search, UserRound } from 'lucide-svelte';
-  import { clerkAuthStore } from '$lib/cloud/clerk';
+  import { authStore } from '$lib/cloud/firebase';
   import { cloudConfigured } from '$lib/cloud/convex';
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
   import { shortcutsHelpStore } from '$lib/utils/shortcuts';
@@ -17,16 +17,16 @@
     /Mac|iPhone|iPod|iPad/.test(navigator.platform || navigator.userAgent || '');
 
   // Pro when signed in with an active subscription.
-  $: isPro = $clerkAuthStore.signedIn && $clerkAuthStore.isPro;
+  $: isPro = $authStore.signedIn && $authStore.isPro;
   $: workspaceLabel = isPro ? 'Pro workspace' : 'Local workspace';
-  $: displayName = $clerkAuthStore.displayName?.trim() || 'Local hunter';
+  $: displayName = $authStore.displayName?.trim() || 'Local hunter';
   // Binary subtitle: Pro → Synced, otherwise → Subscribe to sync.
   $: userSubtitle = isPro ? 'Synced' : 'Subscribe to sync';
 
   // Two-letter avatar fallback for the SideNav user pill — renders
-  // when Clerk has resolved a user but not yet returned an image URL
-  // (fresh signup, slow CDN). Mirrors the avatarInitials() helper on
-  // the /account page so both surfaces show the same letters.
+  // when the auth provider has resolved a user but not yet returned a
+  // photo URL (fresh signup, slow CDN). Mirrors the avatarInitials()
+  // helper on the /account page so both surfaces show the same letters.
   $: initials = (() => {
     const name = displayName.trim();
     if (!name || name === 'Local hunter') return '';
@@ -140,7 +140,7 @@
       <!--
         User pill in the SideNav footer. Links to /account (identity +
         subscription), NOT /settings (app preferences). Renders the
-        Clerk avatar when available, two-letter initials fallback
+        user avatar when available, two-letter initials fallback
         otherwise so the pill never shows a generic icon for a
         signed-in user.
       -->
@@ -151,9 +151,9 @@
         aria-current={pathname === '/account' ? 'page' : undefined}
       >
         <div class="flex items-center gap-3">
-          {#if $clerkAuthStore.signedIn && $clerkAuthStore.imageUrl}
+          {#if $authStore.signedIn && $authStore.photoURL}
             <img
-              src={$clerkAuthStore.imageUrl}
+              src={$authStore.photoURL}
               alt=""
               width="40"
               height="40"
@@ -162,7 +162,7 @@
               loading="lazy"
               decoding="async"
             />
-          {:else if $clerkAuthStore.signedIn && initials}
+          {:else if $authStore.signedIn && initials}
             <span
               class="flex h-10 w-10 items-center justify-center rounded-[14px] border {isPro
                 ? 'border-primary/30 bg-primary/10 text-primary'

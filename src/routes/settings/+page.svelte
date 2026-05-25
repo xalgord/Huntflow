@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { clerkAuthStore } from '$lib/cloud/clerk';
+  import { authStore } from '$lib/cloud/firebase';
   import AboutSection from '$lib/components/settings/AboutSection.svelte';
   import AppearanceSettings from '$lib/components/settings/AppearanceSettings.svelte';
   import BackupRestore from '$lib/components/settings/BackupRestore.svelte';
@@ -13,9 +13,9 @@
     void settingsStore.load();
   });
 
-  $: isPro = $clerkAuthStore.isPro;
-  $: signedIn = $clerkAuthStore.signedIn;
-  $: displayName = $clerkAuthStore.displayName?.trim() || '';
+  $: isPro = $authStore.isPro;
+  $: signedIn = $authStore.signedIn;
+  $: displayName = $authStore.displayName?.trim() || '';
 </script>
 
 <svelte:head>

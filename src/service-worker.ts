@@ -12,7 +12,7 @@ type HuntFlowServiceWorker = ServiceWorkerGlobalScope & {
 };
 
 const sw = self as unknown as HuntFlowServiceWorker;
-const CACHE = 'huntflow-command-center-v2';
+const CACHE = 'huntflow-command-center-v3';
 const INJECTED_ASSETS = ((self as unknown as HuntFlowServiceWorker).__WB_MANIFEST || []).map(
   (asset) => asset.url
 );

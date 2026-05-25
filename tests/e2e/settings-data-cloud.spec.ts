@@ -12,7 +12,7 @@ test.describe('settings, data management, cloud sync, and PWA surfaces', () => {
     await expect(
       page
         .getByText(
-          /Add VITE_CLERK_PUBLISHABLE_KEY|Sign in to connect|Initializing Clerk|Clerk failed|Signed in|Convex auth/i
+          /Add VITE_FIREBASE_API_KEY|Sign in to connect|Initializing auth|Auth failed|Signed in|Convex auth/i
         )
         .first()
     ).toBeVisible();

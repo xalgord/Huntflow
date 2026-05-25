@@ -25,7 +25,8 @@
  */
 import { browser } from '$app/environment';
 import { writable } from 'svelte/store';
-import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient, getClerkToken } from './convex';
+import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient } from './convex';
+import { getFirebaseIdToken } from './firebase';
 import {
   applyLocalSnapshot,
   getLocalItems,
@@ -261,9 +262,9 @@ async function recoverNow(reason: string): Promise<void> {
     await uploadPendingEvidenceFiles();
 
     const httpClient = getConvexHttpClient();
-    const token = await getClerkToken();
+    const token = await getFirebaseIdToken();
     if (!httpClient || !token) {
-      console.warn(`[realtimeSync] recovery skipped (${reason}): no HTTP client or Clerk token`);
+      console.warn(`[realtimeSync] recovery skipped (${reason}): no HTTP client or Firebase ID token`);
       return;
     }
     httpClient.setAuth(token);

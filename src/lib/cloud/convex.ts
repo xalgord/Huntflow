@@ -3,8 +3,6 @@ import { ConvexClient } from 'convex/browser';
 import { ConvexHttpClient } from 'convex/browser';
 import { anyApi } from 'convex/server';
 
-type ClerkInstance = import('@clerk/clerk-js').Clerk;
-
 function cleanEnvValue(value: string | undefined): string | undefined {
   const cleaned = value?.replace(/\\n/g, '').trim();
   return cleaned || undefined;
@@ -35,27 +33,29 @@ export function getConvexClient(): ConvexClient | null {
   return client;
 }
 
+/**
+ * Wire the ConvexClient's auth callback to a provider-agnostic token
+ * getter. The shape of `getToken` matches Convex's own `setAuth`
+ * contract exactly, so the getter is forwarded as-is.
+ *
+ * `firebase.ts` is the canonical token source; it passes
+ * `getFirebaseIdToken` here. Tests can pass any function with the
+ * same signature without depending on a concrete auth provider.
+ */
 export function configureConvexAuth(
-  clerk: ClerkInstance,
+  getToken: (opts: { forceRefreshToken: boolean }) => Promise<string | null>,
   onChange: (isAuthenticated: boolean) => void
 ): void {
   const convex = getConvexClient();
   if (!convex || authConfigured) return;
 
-  convex.setAuth(
-    async ({ forceRefreshToken }) =>
-      clerk.session?.getToken({
-        template: 'convex',
-        skipCache: forceRefreshToken
-      }) ?? null,
-    onChange
-  );
+  convex.setAuth(getToken, onChange);
   authConfigured = true;
 }
 
 /**
  * Reset the auth flag so that the next `configureConvexAuth` call
- * will re-bind the Convex client to the new Clerk session.
+ * will re-bind the Convex client to a new session.
  * Must be called on sign-out.
  */
 export function resetConvexAuth(): void {
@@ -70,19 +70,4 @@ export function getConvexHttpClient(): ConvexHttpClient | null {
   if (!browser || !convexUrl) return null;
   httpClient ??= new ConvexHttpClient(convexUrl);
   return httpClient;
-}
-
-/**
- * Retrieve a fresh Clerk JWT for authenticating the ConvexHttpClient.
- * Returns null if the session isn't available.
- */
-export async function getClerkToken(): Promise<string | null> {
-  const clerk = window.Clerk;
-  if (!clerk?.session) return null;
-  try {
-    return await clerk.session.getToken({ template: 'convex', skipCache: true }) ?? null;
-  } catch (err) {
-    console.warn('[convex] Failed to get Clerk token for HTTP client:', err);
-    return null;
-  }
 }

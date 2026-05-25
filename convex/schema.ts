@@ -56,5 +56,22 @@ export default defineSchema({
     createdAt: v.number()
   })
     .index('by_owner', ['ownerId'])
-    .index('by_createdAt', ['createdAt'])
+    .index('by_createdAt', ['createdAt']),
+  /**
+   * Pro entitlement source of truth. Keyed by Firebase `uid` (the
+   * `sub` claim on the validated ID token). Written exclusively by
+   * the Dodo Payments webhook handler in `convex/http.ts` via the
+   * internal `entitlements.upsertFromWebhook` mutation. Read by the
+   * client through `entitlements.getMine`. Adding this table is
+   * purely additive: rolling back the migration leaves it dormant
+   * without breaking existing tables.
+   */
+  entitlements: defineTable({
+    uid: v.string(), // Firebase uid (claim sub)
+    isPro: v.boolean(),
+    dodoCustomerId: v.string(), // empty string if unknown
+    dodoSubscriptionId: v.union(v.string(), v.null()),
+    currentPeriodEnd: v.union(v.number(), v.null()), // ms epoch
+    updatedAt: v.number() // ms epoch
+  }).index('by_uid', ['uid'])
 });

@@ -1,109 +1,48 @@
 <script lang="ts">
+  /**
+   * Sign-in page.
+   *
+   * Renders `AuthForm mode="signIn"` inside the shared `AuthShell`
+   * chrome. Watches `$authStore.signedIn`; once Firebase reports a
+   * signed-in user, the user is redirected to `/dashboard` (with
+   * `replaceState: true` so the back button doesn't bounce them
+   * back here).
+   *
+   * Also handles `?reset=success` from the password-reset confirm
+   * flow by rendering a non-branded success banner above the form.
+   *
+   * Feature: firebase-auth-migration
+   * Validates: Requirements 1.1, 2.1, 2.2, 10.3
+   */
+
   import { browser } from '$app/environment';
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
-  import { IS_APP } from '$lib/buildTarget';
+  import { authStore } from '$lib/cloud/firebase';
+  import AuthForm from '$lib/components/auth/AuthForm.svelte';
   import AuthShell from '$lib/components/landing/AuthShell.svelte';
-  import { clerkAuthStore, mountClerkSignIn } from '$lib/cloud/clerk';
-  import { onDestroy, onMount } from 'svelte';
 
-  let mountNode: HTMLDivElement | null = null;
-  let unmount: (() => void) | null = null;
-  let mounted = false;
-  // Default redirect after sign-in. In the app build the user is already
-  // working in their local workspace and just signed in to enable cloud
-  // sync, so we send them straight to /dashboard. On the website the
-  // canonical post-sign-in destination is /account.
-  let target = IS_APP ? '/dashboard' : '/account';
-  // Guard for the safety-net redirect below — without this declaration
-  // Svelte's strict-mode reactive block would throw `redirected is not
-  // defined`, leaving the user stuck on /sign-in after Clerk reports a
-  // session and triggering the loop where the landing page bounces back
-  // here.
+  // Guard so the redirect only fires once per signed-in transition.
+  // Without it, the reactive block below would re-fire on every
+  // store update during the post-sign-in entitlement refresh.
   let redirected = false;
 
-  // The auth gate in +layout.svelte sends anonymous visitors here with
-  // ?redirect=<originalPath>. Sanitize it (must be a same-origin absolute
-  // path) before handing it to Clerk so we never bounce to an external URL.
-  // App-mode default lands users at /dashboard; web-mode default is /account.
-  function sanitizeRedirect(raw: string | null): string {
-    const fallback = IS_APP ? '/dashboard' : '/account';
-    if (!raw) return fallback;
-    if (!raw.startsWith('/') || raw.startsWith('//')) return fallback;
-    return raw;
-  }
+  $: showResetSuccess = $page.url.searchParams.get('reset') === 'success';
 
-  onMount(async () => {
-    if (!browser) return;
-
-    // Local-mode short-circuit. Without a Clerk publishable key in the
-    // build, this app is running privately on the user's machine
-    // (npx/npm install). Sign-in doesn't apply — bounce to /account,
-    // which renders a local-workspace view in that mode.
-    if (!$clerkAuthStore.configured) {
-      redirected = true;
-      try {
-        await goto('/account', { replaceState: true });
-      } catch {
-        /* fall through */
-      }
-      if (browser && window.location.pathname.startsWith('/sign-in')) {
-        window.location.replace('/account');
-      }
-      return;
-    }
-
-    if (!mountNode) return;
-    target = sanitizeRedirect($page.url.searchParams.get('redirect'));
-    // Forward the redirect param across the sign-in <-> sign-up swap so
-    // the user keeps their original destination if they switch flows.
-    // The bare /sign-up link is fine when the target is the build-mode
-    // default (the sign-up page falls back to the same default).
-    const defaultTarget = IS_APP ? '/dashboard' : '/account';
-    const signUpUrl = target === defaultTarget
-      ? '/sign-up'
-      : `/sign-up?redirect=${encodeURIComponent(target)}`;
-    // Path-based routing: Clerk's multi-step flow (factor-one,
-    // sso-callback, verify-email) navigates to real URLs that hit our
-    // catch-all `/sign-in/[...rest]/+page.svelte` route. Virtual mode
-    // (the previous default here) leaves OAuth callbacks stranded on
-    // `/sign-in/sso-callback` with no widget to resume them, so Clerk
-    // falls back to its hosted "after sign-in URL" — typically `/`,
-    // the marketing landing. Path routing keeps the flow inside our
-    // chrome and honors `forceRedirectUrl: target`.
-    unmount = await mountClerkSignIn(mountNode, {
-      signUpUrl,
-      routing: 'path',
-      path: '/sign-in',
-      forceRedirectUrl: target,
-      fallbackRedirectUrl: target
-    });
-    mounted = true;
-  });
-
-  onDestroy(() => {
-    unmount?.();
-  });
-
-  /**
-   * Safety-net redirect. Mirror of the equivalent guard on /sign-up.
-   * Clerk's embedded mount honors `forceRedirectUrl` for credential
-   * sign-ins, but multi-factor flows that bounce through the hosted
-   * Frontend API (e.g. magic-link sign-in or social-account first-
-   * connect) don't always honor it. Watching the shared auth store
-   * means the page navigates the moment Clerk reports a session,
-   * regardless of which flow finalized it.
-   */
-  $: if (browser && !redirected && $clerkAuthStore.signedIn) {
+  // Watch the auth store: as soon as Firebase reports a signed-in
+  // user, send them to the dashboard. `replaceState: true` keeps the
+  // sign-in page out of history so the back button works as expected.
+  $: if (browser && !redirected && $authStore.signedIn) {
     redirected = true;
     void (async () => {
       try {
-        await goto(target, { replaceState: true });
+        await goto('/dashboard', { replaceState: true });
       } catch {
-        /* fall through to hard replace below */
+        // Fall through to a hard replace if the SvelteKit nav fails
+        // (e.g. during a partial hydration race).
       }
       if (browser && window.location.pathname.startsWith('/sign-in')) {
-        window.location.replace(target);
+        window.location.replace('/dashboard');
       }
     })();
   }
@@ -111,61 +50,27 @@
 
 <svelte:head>
   <title>Sign in &middot; HuntFlow</title>
-  <meta name="description" content="Sign in to HuntFlow to enable real-time cloud sync across all your devices." />
+  <meta
+    name="description"
+    content="Sign in to HuntFlow to sync your hunts, notes, evidence and reports across every device."
+  />
   <meta name="robots" content="noindex" />
 </svelte:head>
 
 <AuthShell
   title="Welcome back"
-  subtitle={IS_APP
-    ? 'Sign in to enable cloud sync. Your local workspace stays on this device either way.'
-    : 'Sign in to sync your hunts, notes, evidence and reports across every device.'}
+  subtitle="Sign in to sync your hunts, notes, evidence and reports across every device."
   footer="sign-in"
 >
-  {#if !$clerkAuthStore.configured}
-    <!-- Local-mode placeholder. The onMount above is already navigating
-         the user to /account; this just keeps the visual frame stable
-         during the brief bounce so they don't see a flash of error UI. -->
-    <div class="flex items-center justify-center py-12 text-sm text-zinc-500" aria-live="polite">
-      Opening your local workspace&hellip;
+  {#if showResetSuccess}
+    <div
+      role="status"
+      aria-live="polite"
+      class="mb-4 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2.5 text-sm text-emerald-100"
+    >
+      Password updated. Sign in with your new credentials.
     </div>
-  {:else if $clerkAuthStore.error}
-    <!-- Surface real Clerk failure modes (invalid publishable key, paused
-         instance, origin not allowlisted, network blocked) instead of
-         hanging on an indefinite spinner. -->
-    <div class="space-y-3 rounded-md border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-100">
-      <p class="font-medium">Sign-in couldn&apos;t load.</p>
-      <p class="text-rose-100/80">{$clerkAuthStore.error}</p>
-      <button
-        type="button"
-        class="inline-flex h-9 items-center rounded-md border border-rose-300/30 bg-rose-500/10 px-3 text-xs font-medium text-rose-100 transition hover:border-rose-200/50 hover:bg-rose-500/20"
-        on:click={() => (browser ? window.location.reload() : null)}
-      >
-        Retry
-      </button>
-    </div>
-  {:else}
-    <div bind:this={mountNode} class="hf-clerk-mount" data-mounted={mounted}></div>
-    {#if !mounted}
-      <div class="flex items-center justify-center py-12 text-sm text-zinc-500" aria-live="polite">
-        Loading sign-in&hellip;
-      </div>
-    {/if}
   {/if}
-</AuthShell>
 
-<style>
-  /* Make sure embedded Clerk components fill the AuthShell card and don't
-     re-introduce their own background */
-  :global(.hf-clerk-mount) {
-    width: 100%;
-  }
-  :global(.hf-clerk-mount .cl-rootBox),
-  :global(.hf-clerk-mount .cl-card) {
-    background: transparent !important;
-    box-shadow: none !important;
-    border: none !important;
-    padding: 0 !important;
-    width: 100% !important;
-  }
-</style>
+  <AuthForm mode="signIn" />
+</AuthShell>
