@@ -37,6 +37,17 @@ export default defineConfig({
     })
   ],
   test: {
-    include: ['src/**/*.{test,spec}.{js,ts}']
+    include: [
+      'src/**/*.{test,spec}.{js,ts}',
+      'convex/**/*.{test,spec}.{js,ts}'
+    ],
+    setupFiles: ['./vitest.setup.ts'],
+    // Component tests use `@testing-library/svelte`, which renders into
+    // a real DOM. We default the environment to `node` and let
+    // individual test files opt into `jsdom` via the `// @vitest-environment`
+    // pragma so non-DOM tests stay fast.
+    environmentMatchGlobs: [
+      ['src/lib/components/**', 'jsdom']
+    ]
   }
 });

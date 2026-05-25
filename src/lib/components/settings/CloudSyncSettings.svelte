@@ -1,6 +1,7 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
   import { IS_WEB } from '$lib/buildTarget';
-  import { clerkAuthStore, initClerk, signOutFromClerk } from '$lib/cloud/clerk';
+  import { authStore, initFirebase, signOut } from '$lib/cloud/firebase';
   import { cloudConfigured } from '$lib/cloud/convex';
   import {
     clearCloudData,
@@ -19,16 +20,28 @@
   let error = '';
   let lastSyncAt: number | null = null;
 
-  $: configured = $clerkAuthStore.configured && cloudConfigured;
+  $: configured = $authStore.configured && cloudConfigured;
   $: canSync =
     configured &&
-    $clerkAuthStore.signedIn &&
-    $clerkAuthStore.isPro &&
+    $authStore.signedIn &&
+    $authStore.isPro &&
     !syncing &&
     !clearing;
 
   // Prefer real-time sync timestamp over the manual one when available
   $: displayLastSync = $realtimeSyncStore.lastSyncAt ?? lastSyncAt;
+
+  // Derive a user-facing label from the available auth fields. The
+  // Firebase store no longer ships a precomputed `userLabel`, so we
+  // fall back through displayName → email → uid here (CloudSyncSettings
+  // is the only consumer of the old field).
+  $: userLabel = (() => {
+    const name = $authStore.displayName?.trim();
+    if (name) return name;
+    const email = $authStore.email?.trim();
+    if (email) return email;
+    return $authStore.uid || '';
+  })();
 
   function formatDate(timestamp: number | null): string {
     if (!timestamp) return 'Never';
@@ -67,7 +80,7 @@
   }
 
   async function handleClearCloud(): Promise<void> {
-    if (!confirm('Clear all cloud data for this Clerk user? Local data stays on this device.')) return;
+    if (!confirm('Clear all cloud data for this account? Local data stays on this device.')) return;
 
     clearing = true;
     status = '';
@@ -83,9 +96,20 @@
     }
   }
 
+  // The old Clerk helper accepted a `redirectUrl` and bounced the user
+  // to `/` after sign-out. The Firebase `signOut` is async/no-arg, so
+  // we replicate that behaviour with `goto('/')` after the await.
+  async function handleSignOut(): Promise<void> {
+    try {
+      await signOut();
+    } finally {
+      void goto('/');
+    }
+  }
+
   onMount(() => {
     lastSyncAt = getLastCloudSyncAt();
-    void initClerk();
+    void initFirebase();
   });
 </script>
 
@@ -97,7 +121,7 @@
         <h2 class="text-lg font-semibold text-foreground">Cloud Sync</h2>
       </div>
       <p class="mt-1 text-sm text-muted-foreground">
-        Sync targets, sessions, notes, and payouts through Convex using Clerk authentication.
+        Sync targets, sessions, notes, and payouts across your devices.
       </p>
     </div>
 
@@ -108,19 +132,19 @@
 
   {#if !configured}
     <div class="mt-4 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4 text-sm text-amber-100">
-      Add <span class="font-mono text-amber-200">VITE_CLERK_PUBLISHABLE_KEY</span>,
+      Add <span class="font-mono text-amber-200">VITE_FIREBASE_API_KEY</span>,
       <span class="font-mono text-amber-200">VITE_CONVEX_URL</span>, and Convex
-      <span class="font-mono text-amber-200">CLERK_JWT_ISSUER_DOMAIN</span> configuration to enable cloud sync.
+      <span class="font-mono text-amber-200">FIREBASE_PROJECT_ID</span> configuration to enable cloud sync.
     </div>
-  {:else if $clerkAuthStore.loading}
+  {:else if $authStore.loading}
     <div class="mt-4 rounded-lg border border-border bg-muted/40 p-4 text-sm text-muted-foreground">
-      Initializing Clerk...
+      Initializing auth...
     </div>
-  {:else if $clerkAuthStore.error}
+  {:else if $authStore.error}
     <div class="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 p-4 text-sm text-red-300">
-      {$clerkAuthStore.error}
+      {$authStore.error}
     </div>
-  {:else if !$clerkAuthStore.signedIn}
+  {:else if !$authStore.signedIn}
     <div class="mt-4 flex flex-col gap-3 rounded-lg border border-border bg-muted/40 p-4 sm:flex-row sm:items-center sm:justify-between">
       <p class="text-sm text-muted-foreground">Sign in to connect this device to your HuntFlow cloud data. Pro is required for sync.</p>
       <div class="flex flex-col gap-2 sm:flex-row">
@@ -140,7 +164,7 @@
         </a>
       </div>
     </div>
-  {:else if !$clerkAuthStore.isPro}
+  {:else if !$authStore.isPro}
     <!-- Signed in but not on Pro: show a paywall with upgrade CTA. The
          non-Pro user keeps their local data — only sync is gated. -->
     <div class="mt-4 rounded-lg border border-amber-400/30 bg-gradient-to-br from-amber-500/10 to-amber-500/5 p-5">
@@ -181,7 +205,7 @@
             <button
               type="button"
               class="hf-button-ghost border border-border"
-              on:click={() => signOutFromClerk()}
+              on:click={handleSignOut}
             >
               <LogOut size={16} aria-hidden="true" />
               Sign out
@@ -194,9 +218,9 @@
     <div class="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
       <div class="rounded-lg border border-border bg-muted/40 p-4 shadow-inner-line">
         <p class="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Signed in &middot; Pro</p>
-        <p class="mt-1 text-sm font-medium text-foreground">{$clerkAuthStore.userLabel}</p>
+        <p class="mt-1 text-sm font-medium text-foreground">{userLabel}</p>
         <p class="mt-1 text-xs text-muted-foreground">
-          Convex auth: {$clerkAuthStore.convexAuthenticated ? 'ready' : 'waiting for token'}
+          Convex auth: {$authStore.convexAuthenticated ? 'ready' : 'waiting for token'}
         </p>
 
         <!-- Real-time sync status -->
@@ -248,7 +272,7 @@
         <button
           type="button"
           class="hf-button-ghost border border-border"
-          on:click={() => signOutFromClerk()}
+          on:click={handleSignOut}
         >
           <LogOut size={18} aria-hidden="true" />
           Sign Out

@@ -42,8 +42,8 @@ import type {
   Target
 } from '$lib/types';
 import { get } from 'svelte/store';
-import { clerkAuthStore, refreshProEntitlement } from './clerk';
-import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient, getClerkToken } from './convex';
+import { authStore, getFirebaseIdToken, refreshProEntitlement } from './firebase';
+import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient } from './convex';
 // Pure merge primitives live in `syncMerge.ts` so they can be unit-tested
 // without dragging IndexedDB and Convex into the test environment.
 // We re-export them so existing call sites stay untouched.
@@ -388,11 +388,11 @@ export async function syncNow(): Promise<CloudSyncResult> {
   const convex = getConvexClient();
   if (!convex) throw new Error('Convex is not available in this browser.');
 
-  // Pro gate: cloud sync is the paid feature. Re-check the live Clerk
+  // Pro gate: cloud sync is the paid feature. Re-check the live Firebase
   // entitlement before each sync (rather than trusting the cached store
   // value) so a just-cancelled subscription stops syncing immediately.
   await refreshProEntitlement();
-  const auth = get(clerkAuthStore);
+  const auth = get(authStore);
   if (!auth.isPro) {
     throw new ProRequiredError();
   }
@@ -403,7 +403,7 @@ export async function syncNow(): Promise<CloudSyncResult> {
   // "Sync Now" always returns fresh data — the WebSocket client's
   // convex.query() can serve stale cached results on cross-device syncs.
   const httpClient = getConvexHttpClient();
-  const token = await getClerkToken();
+  const token = await getFirebaseIdToken();
   if (!httpClient || !token) {
     throw new Error('Could not authenticate with Convex. Please sign in again.');
   }
