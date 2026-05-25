@@ -45,6 +45,7 @@
   import AccountDeleteCard from '$lib/components/auth/AccountDeleteCard.svelte';
   import AccountProfileCard from '$lib/components/auth/AccountProfileCard.svelte';
   import EmailVerificationBanner from '$lib/components/auth/EmailVerificationBanner.svelte';
+  import SignOutCard from '$lib/components/auth/SignOutCard.svelte';
   import SubscriptionCard from '$lib/components/auth/SubscriptionCard.svelte';
   import {
     ArrowRight,
@@ -458,7 +459,10 @@
       <!-- 3. Subscription card -->
       <SubscriptionCard />
 
-      <!-- 4. Delete card -->
+      <!-- 4. Sign-out card (non-destructive) -->
+      <SignOutCard />
+
+      <!-- 5. Delete card -->
       <AccountDeleteCard />
     {/if}
   </div>
