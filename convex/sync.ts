@@ -1,5 +1,6 @@
-import { mutationGeneric, queryGeneric } from 'convex/server';
 import { v } from 'convex/values';
+
+import { mutation, query } from './_generated/server';
 
 const syncCollection = v.union(
   v.literal('sessions'),
@@ -36,7 +37,7 @@ const MAX_STORAGE_BYTES = 1024 * 1024 * 1024;
 /** Tickets minted by `generateAssetUploadUrl` expire after this many ms. */
 const UPLOAD_TICKET_TTL_MS = 60 * 60 * 1000;
 
-export const getSnapshot = queryGeneric({
+export const getSnapshot = query({
   args: {},
   handler: async (ctx) => {
     const ownerId = await requireOwnerId(ctx);
@@ -47,7 +48,7 @@ export const getSnapshot = queryGeneric({
   }
 });
 
-export const upsertSnapshot = mutationGeneric({
+export const upsertSnapshot = mutation({
   args: {
     items: v.array(syncItemInput)
   },
@@ -96,7 +97,7 @@ export const upsertSnapshot = mutationGeneric({
   }
 });
 
-export const generateAssetUploadUrl = mutationGeneric({
+export const generateAssetUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
     const ownerId = await requireOwnerId(ctx);
@@ -116,7 +117,7 @@ export const generateAssetUploadUrl = mutationGeneric({
   }
 });
 
-export const registerAssetFile = mutationGeneric({
+export const registerAssetFile = mutation({
   args: {
     ticketId: v.id('assetUploadTickets'),
     assetId: v.string(),
@@ -203,7 +204,7 @@ export const registerAssetFile = mutationGeneric({
  * time, so the worst case if this never runs is unbounded growth of an
  * inert table — never a security issue.
  */
-export const cleanupExpiredUploadTickets = mutationGeneric({
+export const cleanupExpiredUploadTickets = mutation({
   args: {},
   handler: async (ctx) => {
     await requireOwnerId(ctx);
@@ -219,7 +220,7 @@ export const cleanupExpiredUploadTickets = mutationGeneric({
   }
 });
 
-export const getAssetFileUrl = queryGeneric({
+export const getAssetFileUrl = query({
   args: {
     assetId: v.string()
   },
@@ -246,7 +247,7 @@ export const getAssetFileUrl = queryGeneric({
   }
 });
 
-export const deleteAssetFile = mutationGeneric({
+export const deleteAssetFile = mutation({
   args: {
     assetId: v.string()
   },
@@ -264,7 +265,7 @@ export const deleteAssetFile = mutationGeneric({
   }
 });
 
-export const clearCloud = mutationGeneric({
+export const clearCloud = mutation({
   args: {},
   handler: async (ctx) => {
     const ownerId = await requireOwnerId(ctx);

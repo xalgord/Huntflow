@@ -1,6 +1,6 @@
-import { actionGeneric } from 'convex/server';
 import { ConvexError, v } from 'convex/values';
 import { api } from './_generated/api';
+import { action } from './_generated/server';
 
 /**
  * Dodo Payments integration: checkout + customer-portal entry points.
@@ -62,7 +62,7 @@ function requireEnv(name: string): string {
  *
  * Validates Requirements 8.1, 12.4, 12.5.
  */
-export const createCheckoutSession = actionGeneric({
+export const createCheckoutSession = action({
 	args: {
 		returnUrl: v.string(),
 		cancelUrl: v.string()
@@ -155,7 +155,7 @@ export const createCheckoutSession = actionGeneric({
  *
  * Validates Requirements 8.3, 12.4, 12.5.
  */
-export const getCustomerPortalUrl = actionGeneric({
+export const getCustomerPortalUrl = action({
 	args: {},
 	handler: async (ctx) => {
 		const identity = await ctx.auth.getUserIdentity();
