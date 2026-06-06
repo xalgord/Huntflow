@@ -1,0 +1,3 @@
+[submodule "powers/visible-chrome-devtools"]
+	path = powers/visible-chrome-devtools
+	url = https://github.com/xalgord/visible-chrome-devtools.git
