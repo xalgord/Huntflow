@@ -44,3 +44,4 @@ scripts/read-dodo-clipboard.mjs
 
 # One-off screenshot capture, not used by the build.
 example.png
+powers/
