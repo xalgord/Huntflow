@@ -19,6 +19,7 @@
   $: existingNote = isNew ? undefined : $noteStore.find((note) => note.id === noteId);
   $: tagSuggestions = Array.from(new Set($noteStore.flatMap((note) => note.tags))).sort();
   $: title = workingNote?.title?.trim() || (isNew ? 'New Note' : 'Note');
+  $: pageTitle = isNew ? 'New Note' : 'Edit Note';
   $: noteAssets = workingNote
     ? $evidenceAssetStore.filter((asset) => asset.noteId === workingNote?.id).sort((a, b) => b.updatedAt - a.updatedAt)
     : [];
@@ -152,6 +153,16 @@
     </div>
 
     {#if workingNote}
+      <header class="hf-page-header">
+        <div>
+          <p class="hf-eyebrow">Notes</p>
+          <h1 class="hf-title">{pageTitle}</h1>
+          <p class="hf-description">
+            Capture markdown notes, evidence references, and report-ready details while you hunt.
+          </p>
+        </div>
+      </header>
+
       <NoteEditor
         bind:note={workingNote}
         targets={$targetStore}

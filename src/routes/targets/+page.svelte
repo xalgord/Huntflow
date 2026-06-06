@@ -483,7 +483,12 @@
             <div class="mt-5 grid gap-3">
               <label>
                 <span class="hf-label">Status</span>
-                <select value={selectedAsset.status} class="hf-select mt-2" on:change={handleSelectedStatusChange}>
+                <select
+                  value={selectedAsset.status}
+                  class="hf-select mt-2"
+                  aria-label="Status"
+                  on:change={handleSelectedStatusChange}
+                >
                   {#each statusOptions as option}
                     <option value={option.value}>{option.label}</option>
                   {/each}
@@ -491,7 +496,12 @@
               </label>
               <label>
                 <span class="hf-label">Scope status</span>
-                <select value={scopeStatusFor(selectedAsset)} class="hf-select mt-2" on:change={handleSelectedScopeChange}>
+                <select
+                  value={scopeStatusFor(selectedAsset)}
+                  class="hf-select mt-2"
+                  aria-label="Scope status"
+                  on:change={handleSelectedScopeChange}
+                >
                   <option value="in-scope">In scope</option>
                   <option value="out-of-scope">Out of scope</option>
                   <option value="unknown">Unknown</option>

@@ -14,50 +14,52 @@ test.describe('core product workflows', () => {
     const consoleWatcher = watchConsole(page);
     await seedDemoApp(page);
 
-    await expect(page.getByRole('heading', { name: /Bug bounty work/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /What needs attention today/i })).toBeVisible();
     await expect(page.getByText('NeonBank').first()).toBeVisible();
-    await expect(page.getByText('1 evidence note attached').first()).toBeVisible();
-    await expect(page.getByText(/\[\$\] paid \$0 · pending \$8,400/)).toBeVisible();
+    await expect(page.getByText('api.neonbank.test').first()).toBeVisible();
+    await expect(page.getByText('$8,400').first()).toBeVisible();
 
-    await page.getByRole('button', { name: /Document & report/i }).click();
-    await expect(page.getByRole('heading', { name: 'Document & report' })).toBeVisible();
+    await page.getByRole('link', { name: /Capture Note/i }).click();
+    await expect(page).toHaveURL(/\/notes\/new\/?$/);
+    await expect(page.getByRole('heading', { name: /New note/i })).toBeVisible();
 
-    await page.getByRole('link', { name: /Start hunt room/i }).click();
+    await gotoAppRoute(page, '/dashboard');
+    await page.getByRole('link', { name: /New Session/i }).first().click();
     await expect(page).toHaveURL(/\/timer\/?$/);
     await expect(page.getByRole('heading', { name: 'Timer' })).toBeVisible();
     await consoleWatcher.assertClean();
   });
 
-  test('target create, search, detail status, and target timer link work', async ({ page }) => {
+  test('target asset create, search, and detail status work', async ({ page }) => {
     const consoleWatcher = watchConsole(page);
-    await seedEmptyApp(page);
+    await seedDemoApp(page);
 
     await gotoAppRoute(page, '/targets');
     await dismissOnboarding(page);
     await page.getByRole('button', { name: /Add Target/i }).first().click();
 
     const form = page.locator('form').first();
-    await form.getByPlaceholder('Example Corp').fill('NeonBank QA');
-    await form.getByLabel('Platform').selectOption('hackerone');
-    await form.getByPlaceholder('https://hackerone.com/example').fill('https://hackerone.com/neonbank-qa');
+    await form.getByPlaceholder('https://app.example.com or api.example.com').fill('https://qa.neonbank.test');
+    await form.getByLabel('Program').selectOption(seedIds.target);
+    await form.getByLabel('Type').selectOption('api');
     await form.getByLabel('Priority').selectOption('1');
-    await form.getByPlaceholder('*.example.com').fill('*.neonbank-qa.test\napi.neonbank-qa.test');
-    await form.getByPlaceholder('Program notes').fill('OAuth and payment flows.');
+    await form.getByLabel('Tech stack').fill('Next.js, GraphQL');
+    await form.getByLabel('Ports').fill('443');
+    await form.getByLabel('Tags').fill('auth, qa');
+    await form.getByPlaceholder('Scope caveats, testing notes, credentials, blockers...').fill('OAuth and payment flows.');
     await page.getByRole('button', { name: 'Create Target' }).click();
 
-    await expect(page.getByRole('link', { name: /NeonBank QA/i })).toBeVisible();
-    await page.getByPlaceholder('Search targets').fill('neonbank');
-    await expect(page.getByRole('link', { name: /NeonBank QA/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /qa\.neonbank\.test/i })).toBeVisible();
+    await page.getByPlaceholder('URL, domain, tech, tags').fill('qa.neonbank');
+    await expect(page.getByRole('button', { name: /qa\.neonbank\.test/i })).toBeVisible();
 
-    await page.getByRole('link', { name: /NeonBank QA/i }).click();
-    await expect(page.getByRole('heading', { name: 'NeonBank QA' })).toBeVisible();
-    await page.getByRole('button', { name: 'Testing' }).click();
+    await page.getByRole('button', { name: /qa\.neonbank\.test/i }).click();
+    await expect(page.getByRole('heading', { name: 'https://qa.neonbank.test' })).toBeVisible();
+    await page.locator('aside').getByLabel('Status', { exact: true }).selectOption('in-progress');
     await expect(page.getByText('Testing').first()).toBeVisible();
 
-    await page.getByRole('link', { name: /Start Session/i }).click();
-    await expect(page).toHaveURL(/\/timer\?target=/);
-    await expect(page.getByText('Target:')).toBeVisible();
-    await expect(page.locator('section').getByText('NeonBank QA')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'New linked note' })).toHaveAttribute('href', new RegExp(`/notes/new\\?target=${seedIds.target}`));
+    await expect(page.getByRole('link', { name: 'Capture finding' })).toHaveAttribute('href', new RegExp(`/findings\\?target=${seedIds.target}&new=1`));
     await consoleWatcher.assertClean();
   });
 

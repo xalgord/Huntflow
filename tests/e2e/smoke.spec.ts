@@ -49,8 +49,8 @@ test.describe('release smoke and responsive QA', () => {
       await page.setViewportSize({ width: viewport.width, height: viewport.height });
       await seedDemoApp(page);
 
-      await expect(page.getByRole('heading', { name: /Bug bounty work/i })).toBeVisible();
-      await expect(page.getByRole('link', { name: /Start hunt room/i })).toBeVisible();
+      await expect(page.getByRole('heading', { name: /What needs attention today/i })).toBeVisible();
+      await expect(page.getByRole('link', { name: /New Session/i })).toBeVisible();
       await expect(page.getByText('NeonBank').first()).toBeVisible();
       await expectNoHorizontalOverflow(page);
       await consoleWatcher.assertClean();
@@ -61,9 +61,9 @@ test.describe('release smoke and responsive QA', () => {
     await seedDemoApp(page);
 
     await expectContrastAtLeast(page, 'body');
-    await expectContrastAtLeast(page, 'a:has-text("Start hunt room")', 4.5);
-    await expectContrastAtLeast(page, 'p:has-text("HuntFlow keeps targets")', 4.5);
-    await expectContrastAtLeast(page, 'p:has-text("[$] paid")', 4.5);
+    await expectContrastAtLeast(page, 'a:has-text("New Session")', 4.5);
+    await expectContrastAtLeast(page, 'p:has-text("Local programs")', 4.5);
+    await expectContrastAtLeast(page, 'a:has-text("Pending payout")', 4.5);
   });
 
   test('keyboard navigation reaches shell, dashboard CTAs, workflow, and settings links', async ({ page }) => {
@@ -75,7 +75,7 @@ test.describe('release smoke and responsive QA', () => {
         const active = document.activeElement as HTMLElement | null;
         return active?.innerText || active?.getAttribute('aria-label') || active?.getAttribute('href') || '';
       });
-      if (/Start hunt room|Capture evidence|Dashboard|Timer|Targets|Notes|Evidence|Income|Settings/i.test(label)) return;
+      if (/New Session|Capture Note|Dashboard|Sessions|Targets|Notes|Evidence|Payouts|Settings/i.test(label)) return;
     }
 
     throw new Error('Keyboard focus did not reach expected interactive shell or dashboard controls.');

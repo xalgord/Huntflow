@@ -7,7 +7,8 @@ export const seedIds = {
   session: '22222222-2222-4222-8222-222222222222',
   note: '33333333-3333-4333-8333-333333333333',
   payout: '44444444-4444-4444-8444-444444444444',
-  asset: '55555555-5555-4555-8555-555555555555'
+  asset: '55555555-5555-4555-8555-555555555555',
+  reconAsset: '66666666-6666-4666-8666-666666666666'
 };
 
 // Public marketing root (`/`) and the in-app dashboard (`/dashboard`) are
@@ -50,7 +51,7 @@ export async function dismissOnboarding(page: Page): Promise<void> {
 
 export async function seedEmptyApp(page: Page): Promise<void> {
   await openStoragePage(page);
-  await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [], evidenceAssets: [], evidenceLinks: [], evidenceCanvasViews: [] });
+  await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [], reconAssets: [], evidenceAssets: [], evidenceLinks: [], evidenceCanvasViews: [] });
   // After seeding, land on the app dashboard rather than the marketing
   // landing page, so subsequent assertions target the actual workspace.
   await gotoAppRoute(page, '/dashboard');
@@ -126,6 +127,25 @@ export async function seedDemoApp(page: Page): Promise<TestSeed> {
       capturedAt: now - 30_000,
       createdAt: now - 30_000,
       updatedAt: now - 30_000
+    },
+    reconAsset: {
+      id: seedIds.reconAsset,
+      targetId: seedIds.target,
+      hostname: 'api.neonbank.test',
+      url: 'https://api.neonbank.test',
+      assetType: 'api',
+      scopeStatus: 'in-scope',
+      priority: 1,
+      status: 'in-progress',
+      inScope: true,
+      technologies: ['GraphQL', 'OAuth'],
+      ports: [443],
+      notes: 'Seeded API asset for dashboard and target smoke coverage.',
+      source: 'manual',
+      tags: ['auth', 'api'],
+      discoveredAt: now - 3_600_000,
+      createdAt: now - 3_600_000,
+      updatedAt: now - 60_000
     }
   };
 
@@ -135,6 +155,7 @@ export async function seedDemoApp(page: Page): Promise<TestSeed> {
     sessions: [seed.session],
     notes: [seed.note],
     payouts: [seed.payout],
+    reconAssets: [seed.reconAsset],
     evidenceAssets: [seed.asset],
     evidenceLinks: [],
     evidenceCanvasViews: []
@@ -146,7 +167,7 @@ export async function seedDemoApp(page: Page): Promise<TestSeed> {
 
 export async function seedFirstRunApp(page: Page): Promise<void> {
   await openStoragePage(page);
-  await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [], evidenceAssets: [], evidenceLinks: [], evidenceCanvasViews: [] }, false);
+  await seedIndexedDB(page, { targets: [], sessions: [], notes: [], payouts: [], reconAssets: [], evidenceAssets: [], evidenceLinks: [], evidenceCanvasViews: [] }, false);
   // First-run flow lives inside the app shell, so land on the dashboard
   // (the onboarding modal opens there).
   await gotoAppRoute(page, '/dashboard');
@@ -173,7 +194,7 @@ export async function expectSeoBasics(page: Page): Promise<void> {
   await expect(page).toHaveTitle(/\S/);
   const description = await page.locator('meta[name="description"]').last().getAttribute('content');
   expect(description?.trim().length ?? 0).toBeGreaterThan(20);
-  await expect(page.locator('link[rel="canonical"]').last()).toHaveAttribute('href', /http:\/\/127\.0\.0\.1:5173/);
+  await expect(page.locator('link[rel="canonical"]').last()).toHaveAttribute('href', /^(http:\/\/127\.0\.0\.1:5173|https:\/\/huntflow\.xalgorix\.com)/);
   await expect(page.locator('meta[name="robots"]').last()).toHaveAttribute('content', /index,follow/);
 }
 
@@ -223,6 +244,7 @@ async function seedIndexedDB(
     sessions: unknown[];
     notes: unknown[];
     payouts: unknown[];
+    reconAssets?: unknown[];
     evidenceAssets?: unknown[];
     evidenceLinks?: unknown[];
     evidenceCanvasViews?: unknown[];
@@ -392,6 +414,7 @@ async function seedIndexedDB(
         for (const item of seed.notes) tx.objectStore('notes').put(item);
         for (const item of seed.targets) tx.objectStore('targets').put(item);
         for (const item of seed.payouts) tx.objectStore('payouts').put(item);
+        for (const item of seed.reconAssets ?? []) tx.objectStore('reconAssets').put(item);
         for (const item of seed.evidenceAssets ?? []) tx.objectStore('evidenceAssets').put(item);
         for (const item of seed.evidenceLinks ?? []) tx.objectStore('evidenceLinks').put(item);
         for (const item of seed.evidenceCanvasViews ?? []) tx.objectStore('evidenceCanvasViews').put(item);
@@ -430,4 +453,5 @@ interface TestSeed {
   note: Record<string, unknown>;
   payout: Record<string, unknown>;
   asset: Record<string, unknown>;
+  reconAsset: Record<string, unknown>;
 }

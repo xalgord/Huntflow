@@ -2,19 +2,19 @@ import { expect, test } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
 import { gotoAppRoute, seedDemoApp, watchConsole } from './helpers';
 
-test.describe('settings, data management, cloud sync, and PWA surfaces', () => {
-  test('cloud sync reports configured, signed-out, loading, or missing-config state without crashing', async ({ page }) => {
+test.describe('settings, data management, account, and PWA surfaces', () => {
+  test('account and cloud entry points render configured or local-only state without crashing', async ({ page }) => {
     const consoleWatcher = watchConsole(page);
     await seedDemoApp(page);
 
     await gotoAppRoute(page, '/settings');
-    await expect(page.getByRole('heading', { name: 'Cloud Sync' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Account|Optional account|Profile/i })).toBeVisible();
+
+    await page.getByRole('link', { name: /Account|Optional account|Profile/i }).click();
+    await expect(page).toHaveURL(/\/account\/?$/);
     await expect(
-      page
-        .getByText(
-          /Add VITE_FIREBASE_API_KEY|Sign in to connect|Initializing auth|Auth failed|Signed in|Convex auth/i
-        )
-        .first()
+      page.getByRole('heading', { name: /Local workspace|Sign in to manage your account|Account/i }).first()
     ).toBeVisible();
     await consoleWatcher.assertClean();
   });
@@ -35,7 +35,7 @@ test.describe('settings, data management, cloud sync, and PWA surfaces', () => {
     expect(exported).toContain('NeonBank');
     expect(exported).toContain('OAuth callback state reuse');
 
-    await page.locator('input[type="file"]').setInputFiles({
+    await page.locator('label:has-text("Import JSON") input[type="file"]').setInputFiles({
       name: 'invalid-huntflow-import.json',
       mimeType: 'application/json',
       buffer: Buffer.from('{"not":"a valid export"}')
@@ -50,7 +50,7 @@ test.describe('settings, data management, cloud sync, and PWA surfaces', () => {
     await expect(page.getByRole('dialog')).toBeVisible();
     await page.getByRole('button', { name: 'Skip' }).click();
     await gotoAppRoute(page, '/targets');
-    await expect(page.getByText('No targets tracked')).toBeVisible();
+    await expect(page.getByText('No targets yet')).toBeVisible();
     await consoleWatcher.assertClean();
   });
 });

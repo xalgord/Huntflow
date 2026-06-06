@@ -109,6 +109,7 @@
 
     try {
       await settingsStore.setValue('onboardingCompleted', true);
+      await settingsStore.persistNow();
       if (startSession) await goto('/timer');
     } finally {
       saving = false;
@@ -127,6 +128,7 @@
       const { loadDemoWorkspace } = await import('$lib/seeds/demoWorkspace');
       await loadDemoWorkspace();
       await settingsStore.setValue('onboardingCompleted', true);
+      await settingsStore.persistNow();
       await goto('/account');
     } catch (error) {
       demoError = error instanceof Error ? error.message : 'Could not load the demo workspace.';

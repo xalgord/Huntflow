@@ -10,6 +10,7 @@
     content="HuntFlow is a local-first bug bounty command center for tracking programs, targets, hunt sessions, evidence, report drafts, and payouts."
   />
   <link rel="canonical" href="https://huntflow.xalgorix.com/" />
+  <meta name="robots" content="index,follow" />
   <meta property="og:title" content="HuntFlow — Local-First Bug Bounty Workflow App" />
   <meta
     property="og:description"
