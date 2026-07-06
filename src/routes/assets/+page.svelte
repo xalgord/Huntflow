@@ -667,9 +667,19 @@
   async function deleteSelectedAsset(): Promise<void> {
     if (!selectedAsset) return;
     if (!confirm(`Delete evidence asset "${selectedAsset.title}"?`)) return;
-    await deleteRemoteEvidenceAssetFile(selectedAsset.id).catch(() => undefined);
-    await evidenceAssetStore.delete(selectedAsset.id);
+    const assetId = selectedAsset.id;
+    const hasRemoteBlob = Boolean(selectedAsset.storageId);
+    // Delete local FIRST so the UI clears immediately even if the cloud
+    // delete is slow or fails. The remote blob is only present when the
+    // asset was actually synced (storageId set); URL/snippet assets have
+    // no cloud file to delete.
+    await evidenceAssetStore.delete(assetId);
     selectedAssetId = '';
+    if (hasRemoteBlob) {
+      await deleteRemoteEvidenceAssetFile(assetId).catch((e) => {
+        console.error('[huntflow] cloud asset delete failed:', e);
+      });
+    }
   }
 
   function buildDestinationOptions(asset: EvidenceAsset | undefined): { label: string; value: LinkDestination }[] {

@@ -12,7 +12,7 @@
     .filter((payout) => payout.status === 'paid')
     .filter((payout) => String(new Date(payout.date).getFullYear()) === year)
     .sort((a, b) => a.date - b.date);
-  $: exportTotal = exportRows.reduce((sum, payout) => sum + payout.amount, 0);
+  $: exportTotal = Math.round(exportRows.reduce((sum, payout) => sum + payout.amount, 0) * 100) / 100;
 
   function availableYears(items: Payout[]): string[] {
     const values = Array.from(
@@ -41,7 +41,10 @@
   }
 
   function csvCell(value: string | number): string {
-    const text = String(value);
+    let text = String(value);
+    if (/^[=+\-@\t\r]/.test(text)) {
+      text = `'${text}`;
+    }
     if (!/[",\n]/.test(text)) return text;
     return `"${text.replace(/"/g, '""')}"`;
   }
@@ -52,10 +55,10 @@
     for (const payout of exportRows) {
       lines.push(
         [
-          formatDate(payout.date),
+          csvCell(formatDate(payout.date)),
           csvCell(payout.program),
           payout.amount.toFixed(2),
-          payout.platform
+          csvCell(payout.platform)
         ].join(',')
       );
     }

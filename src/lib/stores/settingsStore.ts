@@ -19,6 +19,7 @@ let value = DEFAULT_SETTINGS;
 let loaded = false;
 let loading: Promise<Settings> | null = null;
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let mediaQueryListenerInstalled = false;
 
 source.subscribe((settings) => {
   value = settings;
@@ -136,10 +137,11 @@ export const settingsStore: SettingsStore = {
   persistNow: flush
 };
 
-if (browser) {
+if (browser && !mediaQueryListenerInstalled) {
   window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     if (value.theme === 'system') applyTheme(value.theme);
   });
+  mediaQueryListenerInstalled = true;
   // NOTE: settings flushing on pagehide is handled centrally by
   // `flushAllStores()` in +layout.svelte. We deliberately don't add a
   // second pagehide listener here — having two listeners racing the

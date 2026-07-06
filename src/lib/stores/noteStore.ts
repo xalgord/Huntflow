@@ -1,10 +1,19 @@
 import { noteDB } from '$lib/db/notes';
 import type { Note } from '$lib/types';
 import { createPersistedArrayStore } from './persistedArrayStore';
+import { evidenceAssetStore, evidenceLinkStore } from './evidenceStore';
 
-export const noteStore = createPersistedArrayStore<Note>(noteDB, {
+const baseNoteStore = createPersistedArrayStore<Note>(noteDB, {
   sort: (a, b) => b.updatedAt - a.updatedAt
 });
+
+export const noteStore = {
+  ...baseNoteStore,
+  async delete(id: string): Promise<void> {
+    await baseNoteStore.delete(id);
+    await Promise.all([evidenceAssetStore.refresh(), evidenceLinkStore.refresh()]);
+  }
+};
 
 export async function getNotesByTarget(targetId: string): Promise<Note[]> {
   await noteStore.load();

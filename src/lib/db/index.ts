@@ -98,7 +98,6 @@ function createStores(db: IDBPDatabase<HuntFlowDB>) {
     store.createIndex('by-severity', 'severity', { unique: false });
     store.createIndex('by-status', 'status', { unique: false });
     store.createIndex('by-date', 'date', { unique: false });
-    store.createIndex('by-target', 'targetId', { unique: false });
     store.createIndex('by-updated', 'updatedAt', { unique: false });
   }
 
@@ -187,19 +186,12 @@ function createStores(db: IDBPDatabase<HuntFlowDB>) {
 }
 
 /**
- * Incremental migration from v4 → v5:
- * - Adds the missing 'by-target' index on payouts for cascade-delete lookups.
+ * Incremental migrations are handled inline in the `upgrade` callback of
+ * `openDB` below (per-step, guarded by `oldVersion < N` checks). The v4→v5
+ * step adds a `by-target` index on payouts for legacy users; the `Payout`
+ * type has no `targetId` field, so that index is intentionally NOT created
+ * for fresh installs (see `createStores` above).
  */
-function migrateV4toV5(db: IDBPDatabase<HuntFlowDB>): void {
-  if (db.objectStoreNames.contains('payouts')) {
-    // The upgrade transaction gives us access to the store directly
-    const tx = (db as unknown as { transaction: IDBTransaction }).transaction;
-    const payoutsStore = tx.objectStore('payouts');
-    if (!payoutsStore.indexNames.contains('by-target')) {
-      payoutsStore.createIndex('by-target', 'targetId', { unique: false });
-    }
-  }
-}
 
 export function enableMemoryFallback(reason?: unknown): void {
   if (!memoryFallback) {

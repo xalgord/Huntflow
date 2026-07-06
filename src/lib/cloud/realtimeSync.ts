@@ -24,9 +24,9 @@
  * detected. `stopRealtimeSync()` tears everything down.
  */
 import { browser } from '$app/environment';
-import { writable } from 'svelte/store';
+import { get as storeGet, writable } from 'svelte/store';
 import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient } from './convex';
-import { getFirebaseIdToken } from './firebase';
+import { authStore, getFirebaseIdToken, refreshProEntitlement } from './firebase';
 import {
   applyLocalSnapshot,
   getLocalItems,
@@ -93,6 +93,18 @@ let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let pushPending = false;
 let recoveryInFlight = false;
 const PUSH_DEBOUNCE_MS = 1500;
+
+// Promise-chain mutex serializes the mutating sync bodies (push,
+// recover, remote-merge) so a debounce-spawned push can't race a
+// recovery cycle or an incoming subscription update and clobber the
+// merged snapshot. `recoveryInFlight` stays as a dedupe flag for the
+// event triggers; this lock guarantees the actual work never overlaps.
+let syncChain: Promise<unknown> = Promise.resolve();
+function withSyncLock<T>(fn: () => Promise<T>): Promise<T> {
+  const run = syncChain.then(fn, fn);
+  syncChain = run.catch(() => undefined);
+  return run;
+}
 /**
  * Last-resort safety-net cadence. The Convex subscription should keep
  * every device converged on its own — this exists only to catch the
@@ -148,36 +160,48 @@ async function pushToConvex(): Promise<void> {
   const convex = getConvexClient();
   if (!convex) return;
 
-  try {
-    realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Pushing…' }));
-
-    // Upload any pending evidence files before the data push so storageIds
-    // are current in the snapshot.
-    await uploadPendingEvidenceFiles();
-
-    const localItems = await getLocalItems();
-    await convex.mutation(cloudApi.upsertSnapshot, {
-      items: localItems.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
-        collection,
-        localId,
-        payload,
-        updatedAt,
-        ...(deletedAt ? { deletedAt } : {})
-      }))
-    });
-
-    const now = Date.now();
-    localStorage.setItem(LAST_SYNC_KEY, String(now));
-    realtimeSyncStore.update((s) => ({
-      ...s,
-      lastSyncAt: now,
-      statusLabel: 'Synced',
-      pushCount: s.pushCount + 1
-    }));
-  } catch (err) {
-    console.error('[realtimeSync] push failed:', err);
-    realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Push error' }));
+  // Pro gate: re-check the live entitlement right before the mutation
+  // (mirrors syncNow in sync.ts). A just-cancelled subscription must
+  // not push a snapshot even if the debounce already fired. Only
+  // refresh when the cache still says Pro (the only case where
+  // staleness matters); if already not-Pro there's nothing to push.
+  if (storeGet(authStore).isPro) {
+    await refreshProEntitlement();
   }
+  if (!storeGet(authStore).isPro) return;
+
+  await withSyncLock(async () => {
+    try {
+      realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Pushing…' }));
+
+      // Upload any pending evidence files before the data push so storageIds
+      // are current in the snapshot.
+      await uploadPendingEvidenceFiles();
+
+      const localItems = await getLocalItems();
+      await convex.mutation(cloudApi.upsertSnapshot, {
+        items: localItems.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
+          collection,
+          localId,
+          payload,
+          updatedAt,
+          ...(deletedAt ? { deletedAt } : {})
+        }))
+      });
+
+      const now = Date.now();
+      localStorage.setItem(LAST_SYNC_KEY, String(now));
+      realtimeSyncStore.update((s) => ({
+        ...s,
+        lastSyncAt: now,
+        statusLabel: 'Synced',
+        pushCount: s.pushCount + 1
+      }));
+    } catch (err) {
+      console.error('[realtimeSync] push failed:', err);
+      realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Push error' }));
+    }
+  });
 }
 
 function schedulePush(): void {
@@ -213,26 +237,35 @@ async function handleRemoteUpdate(rawRemote: unknown): Promise<void> {
     .map(normalizeRemoteItem)
     .filter((item): item is SyncItem => Boolean(item));
 
+  // NOTE: an empty remote snapshot is intentionally treated as a no-op
+  // rather than a "cloud is empty, wipe local" signal. A legitimately
+  // cleared account should be marked with an explicit `clearedAt`
+  // tombstone marker server-side; relying on `[]` here would brick
+  // local data whenever the subscription briefly returns empty (auth
+  // transition, partial replication). Proper `clearedAt` handling is
+  // a deferred follow-up.
   if (remoteItems.length === 0) return;
 
-  const localItems = await getLocalItems();
-  const merged = mergeItems(localItems, remoteItems);
+  await withSyncLock(async () => {
+    const localItems = await getLocalItems();
+    const merged = mergeItems(localItems, remoteItems);
 
-  // applyLocalSnapshot writes to IndexedDB then calls store.refresh()
-  // which re-reads via load(). The load() path sets the store value
-  // directly (source.set) without going through put/putBatch, so no
-  // dirtyIds are added, no scheduleSave fires, and onFlush never
-  // triggers — there is no circular push-back to worry about.
-  await applyLocalSnapshot(merged);
+    // applyLocalSnapshot writes to IndexedDB then calls store.refresh()
+    // which re-reads via load(). The load() path sets the store value
+    // directly (source.set) without going through put/putBatch, so no
+    // dirtyIds are added, no scheduleSave fires, and onFlush never
+    // triggers — there is no circular push-back to worry about.
+    await applyLocalSnapshot(merged);
 
-  const now = Date.now();
-  localStorage.setItem(LAST_SYNC_KEY, String(now));
-  realtimeSyncStore.update((s) => ({
-    ...s,
-    lastSyncAt: now,
-    statusLabel: 'Synced',
-    pullCount: s.pullCount + 1
-  }));
+    const now = Date.now();
+    localStorage.setItem(LAST_SYNC_KEY, String(now));
+    realtimeSyncStore.update((s) => ({
+      ...s,
+      lastSyncAt: now,
+      statusLabel: 'Synced',
+      pullCount: s.pullCount + 1
+    }));
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -257,56 +290,58 @@ async function recoverNow(reason: string): Promise<void> {
 
   recoveryInFlight = true;
   try {
-    realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Syncing…' }));
+    await withSyncLock(async () => {
+      realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Syncing…' }));
 
-    await uploadPendingEvidenceFiles();
+      await uploadPendingEvidenceFiles();
 
-    const httpClient = getConvexHttpClient();
-    const token = await getFirebaseIdToken();
-    if (!httpClient || !token) {
-      console.warn(`[realtimeSync] recovery skipped (${reason}): no HTTP client or Firebase ID token`);
-      return;
-    }
-    httpClient.setAuth(token);
+      const httpClient = getConvexHttpClient();
+      const token = await getFirebaseIdToken();
+      if (!httpClient || !token) {
+        console.warn(`[realtimeSync] recovery skipped (${reason}): no HTTP client or Firebase ID token`);
+        return;
+      }
+      httpClient.setAuth(token);
 
-    const [localItems, rawRemote] = await Promise.all([
-      getLocalItems(),
-      httpClient.query(cloudApi.getSnapshot, {})
-    ]);
+      const [localItems, rawRemote] = await Promise.all([
+        getLocalItems(),
+        httpClient.query(cloudApi.getSnapshot, {})
+      ]);
 
-    const remoteItems = Array.isArray(rawRemote)
-      ? rawRemote.map(normalizeRemoteItem).filter((item): item is SyncItem => Boolean(item))
-      : [];
+      const remoteItems = Array.isArray(rawRemote)
+        ? rawRemote.map(normalizeRemoteItem).filter((item): item is SyncItem => Boolean(item))
+        : [];
 
-    const merged = mergeItems(localItems, remoteItems);
+      const merged = mergeItems(localItems, remoteItems);
 
-    // Apply merged snapshot locally. As in handleRemoteUpdate(), this
-    // refreshes stores via source.set rather than put/putBatch, so it
-    // can't trigger an onFlush feedback loop.
-    await applyLocalSnapshot(merged);
+      // Apply merged snapshot locally. As in handleRemoteUpdate(), this
+      // refreshes stores via source.set rather than put/putBatch, so it
+      // can't trigger an onFlush feedback loop.
+      await applyLocalSnapshot(merged);
 
-    // Push merged snapshot back so other devices receive any local-only
-    // changes without waiting for the user's next edit.
-    await convex.mutation(cloudApi.upsertSnapshot, {
-      items: merged.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
-        collection,
-        localId,
-        payload,
-        updatedAt,
-        ...(deletedAt ? { deletedAt } : {})
-      }))
+      // Push merged snapshot back so other devices receive any local-only
+      // changes without waiting for the user's next edit.
+      await convex.mutation(cloudApi.upsertSnapshot, {
+        items: merged.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
+          collection,
+          localId,
+          payload,
+          updatedAt,
+          ...(deletedAt ? { deletedAt } : {})
+        }))
+      });
+
+      const now = Date.now();
+      localStorage.setItem(LAST_SYNC_KEY, String(now));
+      realtimeSyncStore.update((s) => ({
+        ...s,
+        lastSyncAt: now,
+        statusLabel: 'Synced',
+        pullCount: s.pullCount + 1,
+        pushCount: s.pushCount + 1
+      }));
+      console.debug(`[realtimeSync] recovery cycle completed (${reason})`);
     });
-
-    const now = Date.now();
-    localStorage.setItem(LAST_SYNC_KEY, String(now));
-    realtimeSyncStore.update((s) => ({
-      ...s,
-      lastSyncAt: now,
-      statusLabel: 'Synced',
-      pullCount: s.pullCount + 1,
-      pushCount: s.pushCount + 1
-    }));
-    console.debug(`[realtimeSync] recovery cycle completed (${reason})`);
   } catch (err) {
     console.error(`[realtimeSync] recovery cycle failed (${reason}):`, err);
     realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Sync error' }));
@@ -430,11 +465,21 @@ export function stopRealtimeSync(): void {
   if (pushPending) {
     void pushToConvex();
   }
+  pushPending = false;
 
   // Remove onFlush callbacks.
   for (const entry of allStores()) {
     entry.store.setOnFlush(undefined);
   }
+
+  // Reset transient flags so a subsequent startRealtimeSync() begins
+  // from a clean slate. `wasConnected` matches the module-level fresh
+  // initial (startRealtimeSync re-reads the live connection state
+  // before subscribing, so this default only governs the brief window
+  // before that read). `recoveryInFlight` clears any stuck gate from a
+  // failed/aborted cycle so the next start can recover immediately.
+  recoveryInFlight = false;
+  wasConnected = true;
 
   realtimeSyncStore.set(initialState);
   console.debug('[realtimeSync] stopped');

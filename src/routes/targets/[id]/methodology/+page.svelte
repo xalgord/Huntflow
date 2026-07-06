@@ -92,11 +92,13 @@
 
   async function updateInstance(event: CustomEvent<{ instance: ChecklistInstance }>) {
     await checklistInstanceStore.put(event.detail.instance);
+    await checklistInstanceStore.persistNow();
   }
 
   async function deleteInstance(event: CustomEvent<{ id: string }>) {
     if (!confirm('Delete this checklist? Progress will be lost.')) return;
     await checklistInstanceStore.delete(event.detail.id);
+    await checklistInstanceStore.persistNow();
   }
 </script>
 

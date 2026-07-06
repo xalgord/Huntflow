@@ -210,6 +210,9 @@ function isValidUUID(id: string): boolean {
   );
 }
 
+const isNonEmptyId = (v: unknown): boolean =>
+  typeof v === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(v.trim());
+
 function isValidURL(url: string): boolean {
   try {
     new URL(url);
@@ -281,7 +284,7 @@ function validateTarget(value: unknown, index: number, errors: string[]): Target
 
   const target = value as Partial<Target>;
 
-  if (!isString(target.id) || !isValidUUID(target.id)) errors.push(`targets[${index}].id is invalid`);
+  if (!isNonEmptyId(target.id)) errors.push(`targets[${index}].id is invalid`);
   if (!isString(target.name) || target.name.trim().length === 0 || target.name.length > 100) {
     errors.push(`targets[${index}].name must be 1-100 characters`);
   }
@@ -328,7 +331,7 @@ function validateSession(
 
   const session = value as Partial<Session>;
 
-  if (!isString(session.id) || !isValidUUID(session.id)) errors.push(`sessions[${index}].id is invalid`);
+  if (!isNonEmptyId(session.id)) errors.push(`sessions[${index}].id is invalid`);
   if (!isString(session.targetId) || !targetIds.has(session.targetId)) {
     errors.push(`sessions[${index}].targetId must reference an imported or existing target`);
   }
@@ -394,7 +397,7 @@ function validateNote(
 
   const note = value as Partial<Note>;
 
-  if (!isString(note.id) || !isValidUUID(note.id)) errors.push(`notes[${index}].id is invalid`);
+  if (!isNonEmptyId(note.id)) errors.push(`notes[${index}].id is invalid`);
   if (!isString(note.title) || note.title.trim().length === 0 || note.title.length > 200) {
     errors.push(`notes[${index}].title must be 1-200 characters`);
   }
@@ -433,7 +436,7 @@ function validatePayout(value: unknown, index: number, errors: string[]): Payout
 
   const payout = value as Partial<Payout>;
 
-  if (!isString(payout.id) || !isValidUUID(payout.id)) errors.push(`payouts[${index}].id is invalid`);
+  if (!isNonEmptyId(payout.id)) errors.push(`payouts[${index}].id is invalid`);
   if (!isString(payout.program) || payout.program.trim().length === 0 || payout.program.length > 100) {
     errors.push(`payouts[${index}].program must be 1-100 characters`);
   }
@@ -471,7 +474,7 @@ function validateEvidenceAsset(
 
   const asset = value as Partial<EvidenceAsset>;
 
-  if (!isString(asset.id) || !isValidUUID(asset.id)) errors.push(`evidenceAssets[${index}].id is invalid`);
+  if (!isNonEmptyId(asset.id)) errors.push(`evidenceAssets[${index}].id is invalid`);
   if (!isString(asset.title) || asset.title.trim().length === 0 || asset.title.length > 160) {
     errors.push(`evidenceAssets[${index}].title must be 1-160 characters`);
   }
@@ -575,7 +578,7 @@ function validateEvidenceLink(
 
   const link = value as Partial<EvidenceLink>;
 
-  if (!isString(link.id) || !isValidUUID(link.id)) errors.push(`evidenceLinks[${index}].id is invalid`);
+  if (!isNonEmptyId(link.id)) errors.push(`evidenceLinks[${index}].id is invalid`);
   if (!EVIDENCE_NODE_TYPES.includes(link.fromType as EvidenceNodeType)) {
     errors.push(`evidenceLinks[${index}].fromType is invalid`);
   }
@@ -617,7 +620,7 @@ function validateEvidenceCanvasView(
 
   const view = value as Partial<EvidenceCanvasView>;
 
-  if (!isString(view.id) || !isValidUUID(view.id)) errors.push(`evidenceCanvasViews[${index}].id is invalid`);
+  if (!isNonEmptyId(view.id)) errors.push(`evidenceCanvasViews[${index}].id is invalid`);
   if (!isString(view.name) || view.name.trim().length === 0 || view.name.length > 80) {
     errors.push(`evidenceCanvasViews[${index}].name must be 1-80 characters`);
   }
@@ -660,7 +663,7 @@ function validateReconAsset(
 
   const asset = value as Partial<ReconAsset>;
 
-  if (!isString(asset.id) || !isValidUUID(asset.id)) errors.push(`reconAssets[${index}].id is invalid`);
+  if (!isNonEmptyId(asset.id)) errors.push(`reconAssets[${index}].id is invalid`);
   if (!isString(asset.targetId) || !targetIds.has(asset.targetId)) {
     errors.push(`reconAssets[${index}].targetId must reference an imported or existing target`);
   }
@@ -741,7 +744,7 @@ function validatePayloadEntity(value: unknown, index: number, errors: string[]):
 
   const pl = value as Partial<Payload>;
 
-  if (!isString(pl.id) || !isValidUUID(pl.id)) errors.push(`payloads[${index}].id is invalid`);
+  if (!isNonEmptyId(pl.id)) errors.push(`payloads[${index}].id is invalid`);
   if (!isString(pl.name) || pl.name.trim().length === 0 || pl.name.length > 200) {
     errors.push(`payloads[${index}].name must be 1-200 characters`);
   }
@@ -843,7 +846,7 @@ function validateChecklistTemplate(value: unknown, index: number, errors: string
 
   const tpl = value as Partial<ChecklistTemplate>;
 
-  if (!isString(tpl.id) || !isValidUUID(tpl.id)) errors.push(`checklistTemplates[${index}].id is invalid`);
+  if (!isNonEmptyId(tpl.id)) errors.push(`checklistTemplates[${index}].id is invalid`);
   if (!isString(tpl.name) || tpl.name.trim().length === 0 || tpl.name.length > 200) {
     errors.push(`checklistTemplates[${index}].name must be 1-200 characters`);
   }
@@ -884,7 +887,7 @@ function validateChecklistInstance(
 
   const inst = value as Partial<ChecklistInstance>;
 
-  if (!isString(inst.id) || !isValidUUID(inst.id)) errors.push(`checklistInstances[${index}].id is invalid`);
+  if (!isNonEmptyId(inst.id)) errors.push(`checklistInstances[${index}].id is invalid`);
   if (!isString(inst.templateId) || inst.templateId.trim().length === 0) {
     errors.push(`checklistInstances[${index}].templateId must be a non-empty string`);
   }
@@ -956,7 +959,7 @@ function validateSubmission(
 
   const sub = value as Partial<Submission>;
 
-  if (!isString(sub.id) || !isValidUUID(sub.id)) errors.push(`submissions[${index}].id is invalid`);
+  if (!isNonEmptyId(sub.id)) errors.push(`submissions[${index}].id is invalid`);
   if (!isString(sub.title) || sub.title.trim().length === 0 || sub.title.length > 200) {
     errors.push(`submissions[${index}].title must be 1-200 characters`);
   }
@@ -1062,7 +1065,7 @@ function validateBookmark(value: unknown, index: number, errors: string[]): Book
 
   const bm = value as Partial<Bookmark>;
 
-  if (!isString(bm.id) || !isValidUUID(bm.id)) errors.push(`bookmarks[${index}].id is invalid`);
+  if (!isNonEmptyId(bm.id)) errors.push(`bookmarks[${index}].id is invalid`);
   if (!isString(bm.title) || bm.title.trim().length === 0 || bm.title.length > 200) {
     errors.push(`bookmarks[${index}].title must be 1-200 characters`);
   }

@@ -45,7 +45,7 @@
       asset: {
         ...asset,
         status,
-        lastTestedAt: status === 'untested' ? asset.lastTestedAt : Date.now(),
+        lastTestedAt: ['tested', 'safe', 'vulnerable'].includes(status) ? Date.now() : asset.lastTestedAt,
         updatedAt: Date.now()
       }
     });

@@ -73,5 +73,16 @@ export default defineSchema({
     dodoSubscriptionId: v.union(v.string(), v.null()),
     currentPeriodEnd: v.union(v.number(), v.null()), // ms epoch
     updatedAt: v.number() // ms epoch
-  }).index('by_uid', ['uid'])
+  }).index('by_uid', ['uid']),
+  /**
+   * Webhook delivery log for Dodo Payments idempotency. Each verified
+   * delivery records its `webhook-id` (the Standard Webhooks header) so
+   * a replayed delivery is detected and skipped before
+   * `entitlements.upsertFromWebhook` re-applies. Keyed/indexed by
+   * `webhookId` for a cheap existence check in the HTTP handler.
+   */
+  webhookDeliveries: defineTable({
+    webhookId: v.string(),
+    deliveredAt: v.number()
+  }).index('by_webhookId', ['webhookId'])
 });

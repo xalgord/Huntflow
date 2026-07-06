@@ -87,6 +87,18 @@ export class TargetDB {
           }
         }
       }
+      for (const [reconId, recon] of getMemoryDB().reconAssets) {
+        if (recon.targetId === id) getMemoryDB().reconAssets.delete(reconId);
+      }
+      for (const [instId, inst] of getMemoryDB().checklistInstances) {
+        if (inst.targetId === id) getMemoryDB().checklistInstances.delete(instId);
+      }
+      for (const [subId, sub] of getMemoryDB().submissions) {
+        if (sub.targetId === id) getMemoryDB().submissions.delete(subId);
+      }
+      for (const [viewId, view] of getMemoryDB().evidenceCanvasViews) {
+        if (view.targetId === id) getMemoryDB().evidenceCanvasViews.delete(viewId);
+      }
       for (const [linkId, link] of getMemoryDB().evidenceLinks) {
         if (link.fromKey === `target:${id}` || link.toKey === `target:${id}`) {
           getMemoryDB().evidenceLinks.delete(linkId);
@@ -96,15 +108,37 @@ export class TargetDB {
     }
 
     try {
-      const tx = db.transaction(['targets', 'sessions', 'notes', 'evidenceAssets', 'evidenceBlobs', 'evidenceLinks'], 'readwrite');
+      const tx = db.transaction(
+        [
+          'targets',
+          'sessions',
+          'notes',
+          'evidenceAssets',
+          'evidenceBlobs',
+          'evidenceLinks',
+          'reconAssets',
+          'checklistInstances',
+          'submissions',
+          'evidenceCanvasViews'
+        ],
+        'readwrite'
+      );
       const sessionsStore = tx.objectStore('sessions');
       const notesStore = tx.objectStore('notes');
       const assetsStore = tx.objectStore('evidenceAssets');
       const blobsStore = tx.objectStore('evidenceBlobs');
       const linksStore = tx.objectStore('evidenceLinks');
+      const reconStore = tx.objectStore('reconAssets');
+      const checklistInstanceStore = tx.objectStore('checklistInstances');
+      const submissionStore = tx.objectStore('submissions');
+      const canvasViewStore = tx.objectStore('evidenceCanvasViews');
       const sessions = await sessionsStore.index('by-target').getAll(id);
       const notes = await notesStore.index('by-target').getAll(id);
       const assets = await assetsStore.index('by-target').getAll(id);
+      const reconAssets = await reconStore.index('by-target').getAll(id);
+      const checklistInstances = await checklistInstanceStore.index('by-target').getAll(id);
+      const submissions = await submissionStore.index('by-target').getAll(id);
+      const canvasViews = await canvasViewStore.index('by-target').getAll(id);
       const targetLinks = [
         ...(await linksStore.index('by-from').getAll(`target:${id}`)),
         ...(await linksStore.index('by-to').getAll(`target:${id}`))
@@ -127,6 +161,10 @@ export class TargetDB {
         ...notes.map((note) => notesStore.delete(note.id)),
         ...assets.map((asset) => assetsStore.delete(asset.id)),
         ...assets.map((asset) => blobsStore.delete(asset.id)),
+        ...reconAssets.map((recon) => reconStore.delete(recon.id)),
+        ...checklistInstances.map((inst) => checklistInstanceStore.delete(inst.id)),
+        ...submissions.map((sub) => submissionStore.delete(sub.id)),
+        ...canvasViews.map((view) => canvasViewStore.delete(view.id)),
         ...Array.from(linksById.values()).map((link) => linksStore.delete(link.id)),
         tx.done
       ]);

@@ -477,6 +477,33 @@ export async function signOut(): Promise<void> {
   await fbSignOut(auth);
   resetConvexAuth();
   authStore.set({ ...initialAuthState, loading: false });
+  clearNoteDrafts();
+}
+
+/**
+ * Remove localStorage note-draft entries on sign-out. Drafts are
+ * per-note autosave buffers keyed `huntflow-note-draft:<id>`; leaving
+ * them across an identity switch could surface a previous user's
+ * unsaved text in the editor of a shared device. Guarded so SSR / non-
+ * browser contexts no-op.
+ */
+function clearNoteDrafts(): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('huntflow-note-draft:')) {
+        keysToRemove.push(key);
+      }
+    }
+    for (const key of keysToRemove) {
+      localStorage.removeItem(key);
+    }
+  } catch {
+    // localStorage can throw in private-mode / disabled storage; a
+    // failed draft clear must not abort sign-out.
+  }
 }
 
 /**

@@ -71,15 +71,19 @@
     (a, b) => Number(b) - Number(a)
   );
   $: paidPayouts = $payoutStore.filter((payout) => payout.status === 'paid');
-  $: paidTotal = paidPayouts.reduce((sum, payout) => sum + payout.amount, 0);
-  $: pendingTotal = $payoutStore
-    .filter((payout) => payout.status !== 'paid')
-    .reduce((sum, payout) => sum + payout.amount, 0);
+  $: paidTotal = Math.round(paidPayouts.reduce((sum, payout) => sum + payout.amount, 0) * 100) / 100;
+  $: pendingTotal = Math.round(
+    $payoutStore
+      .filter((payout) => payout.status !== 'paid')
+      .reduce((sum, payout) => sum + payout.amount, 0) * 100
+  ) / 100;
   $: currentYear = new Date().getFullYear();
-  $: yearPaidTotal = paidPayouts
-    .filter((payout) => new Date(payout.date).getFullYear() === currentYear)
-    .reduce((sum, payout) => sum + payout.amount, 0);
-  $: averagePaid = paidPayouts.length > 0 ? paidTotal / paidPayouts.length : 0;
+  $: yearPaidTotal = Math.round(
+    paidPayouts
+      .filter((payout) => new Date(payout.date).getFullYear() === currentYear)
+      .reduce((sum, payout) => sum + payout.amount, 0) * 100
+  ) / 100;
+  $: averagePaid = paidPayouts.length > 0 ? Math.round((paidTotal / paidPayouts.length) * 100) / 100 : 0;
   $: filteredPayouts = $payoutStore.filter((payout) => {
     if (statusFilter !== 'all' && payout.status !== statusFilter) return false;
     if (platformFilter !== 'all' && payout.platform !== platformFilter) return false;

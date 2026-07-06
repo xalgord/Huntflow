@@ -35,6 +35,7 @@ const MAX_NAME = 120;
 const MAX_EMAIL = 254;
 const MAX_SUBJECT = 200;
 const MAX_MESSAGE = 5000;
+const MAX_BODY_BYTES = 16_384;
 
 interface ContactPayload {
   name?: unknown;
@@ -51,6 +52,34 @@ interface ContactClean {
   message: string;
 }
 
+// In-memory per-IP rate limit (token bucket). NOT shared across
+// serverless instances and resets on cold start — defense-in-depth only,
+// not a hard guarantee. Caps burst abuse of the Resend relay.
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX = 3;
+const rateLimitBuckets = new Map<string, { count: number; resetAt: number }>();
+
+function clientIp(req: VercelRequest): string {
+  const xff = req.headers['x-forwarded-for'];
+  if (typeof xff === 'string' && xff.length > 0) return xff.split(',')[0].trim();
+  if (Array.isArray(xff) && xff.length > 0) return xff[0].trim();
+  return req.socket?.remoteAddress ?? 'unknown';
+}
+
+function checkRateLimit(ip: string): { ok: true } | { ok: false; retryAfter: number } {
+  const now = Date.now();
+  const bucket = rateLimitBuckets.get(ip);
+  if (!bucket || now > bucket.resetAt) {
+    rateLimitBuckets.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { ok: true };
+  }
+  if (bucket.count >= RATE_LIMIT_MAX) {
+    return { ok: false, retryAfter: Math.ceil((bucket.resetAt - now) / 1000) };
+  }
+  bucket.count += 1;
+  return { ok: true };
+}
+
 function isString(value: unknown): value is string {
   return typeof value === 'string';
 }
@@ -62,8 +91,9 @@ function trim(value: unknown, max: number): string {
 
 function isValidEmail(value: string): boolean {
   // Pragmatic email check — rejects obvious garbage but keeps the regex
-  // small. Resend does its own validation server-side anyway.
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  // small. Requires a 2+ char final label (TLD) to cut common noise.
+  // Resend does its own validation server-side anyway.
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value);
 }
 
 function escapeHtml(value: string): string {
@@ -148,6 +178,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const contentLength = Number(req.headers['content-length'] ?? 0);
+  if (contentLength > MAX_BODY_BYTES) {
+    res.status(413).json({ error: 'Request body too large.' });
+    return;
+  }
+
+  const ip = clientIp(req);
+  const limit = checkRateLimit(ip);
+  if (!limit.ok) {
+    res.setHeader('Retry-After', String(limit.retryAfter));
+    res.status(429).json({ error: 'Too many messages from this address. Please try again later.' });
     return;
   }
 

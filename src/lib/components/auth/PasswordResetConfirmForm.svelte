@@ -32,6 +32,7 @@
   import { Loader2 } from 'lucide-svelte';
   import { confirmPasswordReset } from '$lib/cloud/firebase';
   import { mapAuthError } from './AuthErrorMap';
+  import { PASSWORD_POLICY_MESSAGES, validatePassword } from './passwordPolicy';
 
   /**
    * One-time code from the password-reset email's `?oobCode=` param.
@@ -116,6 +117,15 @@
       // Inline validation matching Requirement 1.4 / 10.4 — flag the
       // failed field before any network round-trip.
       error = 'Use at least 8 characters for your new password.';
+      return;
+    }
+
+    // Enforce the full client-side policy (letter + number) consistent
+    // with AuthForm, so the user gets precise guidance instead of a
+    // generic `auth/weak-password` after a network round-trip.
+    const policy = validatePassword(password);
+    if (!policy.ok) {
+      error = PASSWORD_POLICY_MESSAGES[policy.reason];
       return;
     }
 

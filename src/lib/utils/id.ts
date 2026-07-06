@@ -10,9 +10,9 @@ export function generateId(_prefix?: string): string {
   if (cryptoApi?.getRandomValues) {
     cryptoApi.getRandomValues(bytes);
   } else {
-    for (let index = 0; index < bytes.length; index += 1) {
-      bytes[index] = Math.floor(Math.random() * 256);
-    }
+    throw new Error(
+      'No cryptographically secure random source (crypto.randomUUID/getRandomValues) is available; refusing to generate a predictable id.'
+    );
   }
 
   bytes[6] = (bytes[6] & 0x0f) | 0x40;

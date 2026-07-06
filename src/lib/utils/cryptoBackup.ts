@@ -11,7 +11,7 @@
  *     "magic": "HUNTFLOW-BACKUP",
  *     "version": 1,
  *     "encrypted": boolean,
- *     "kdf": { "name": "PBKDF2", "iterations": 250000, "salt": <base64> },  // when encrypted
+ *     "kdf": { "name": "PBKDF2", "iterations": 600000, "salt": <base64> },  // when encrypted
  *     "iv": <base64>,                                                        // when encrypted
  *     "ciphertext": <base64>,                                                // when encrypted
  *     "payload": <object>                                                    // when not encrypted
@@ -20,7 +20,7 @@
 
 export const BACKUP_MAGIC = 'HUNTFLOW-BACKUP';
 export const BACKUP_VERSION = 1;
-const PBKDF2_ITERATIONS = 250_000;
+const PBKDF2_ITERATIONS = 600_000;
 const SALT_BYTES = 16;
 const IV_BYTES = 12;
 
@@ -72,7 +72,11 @@ function base64ToBytes(b64: string): Uint8Array {
 
 // ─── KDF + cipher ────────────────────────────────────────────────────────────
 
-async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKey> {
+async function deriveKey(
+  passphrase: string,
+  salt: Uint8Array,
+  iterations: number = PBKDF2_ITERATIONS
+): Promise<CryptoKey> {
   const baseKey = await crypto.subtle.importKey(
     'raw',
     new TextEncoder().encode(passphrase),
@@ -81,7 +85,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
     ['deriveKey']
   );
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt: salt.buffer as ArrayBuffer, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt.buffer as ArrayBuffer, iterations, hash: 'SHA-256' },
     baseKey,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -131,7 +135,7 @@ export async function decryptBackup(bundle: EncryptedBackup, passphrase: string)
   }
   const salt = base64ToBytes(bundle.kdf.salt);
   const iv = base64ToBytes(bundle.iv);
-  const key = await deriveKey(passphrase, salt);
+  const key = await deriveKey(passphrase, salt, bundle.kdf.iterations ?? PBKDF2_ITERATIONS);
 
   let plaintext: ArrayBuffer;
   try {

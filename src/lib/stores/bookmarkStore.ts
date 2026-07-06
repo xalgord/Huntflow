@@ -11,10 +11,10 @@ const baseStore = createPersistedArrayStore<Bookmark>(bookmarkDB, {
 });
 
 let seeded = false;
-let seedingPromise: Promise<void> | null = null;
+let seedingPromise: Promise<Bookmark[]> | null = null;
 
-async function ensureSeeded(): Promise<void> {
-  if (seeded) return;
+async function ensureSeeded(): Promise<Bookmark[]> {
+  if (seeded) return baseStore.load();
   if (seedingPromise) return seedingPromise;
 
   seedingPromise = (async () => {
@@ -31,10 +31,11 @@ async function ensureSeeded(): Promise<void> {
       }
     }
     seeded = true;
+    return baseStore.load();
   })();
 
   try {
-    await seedingPromise;
+    return await seedingPromise;
   } finally {
     seedingPromise = null;
   }
@@ -43,8 +44,7 @@ async function ensureSeeded(): Promise<void> {
 export const bookmarkStore = {
   ...baseStore,
   async load() {
-    await ensureSeeded();
-    return baseStore.load();
+    return ensureSeeded();
   },
   async refresh() {
     seeded = false;

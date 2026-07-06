@@ -71,7 +71,7 @@ export function previewTargetCascade(targetId: string): TargetCascadePreview {
 /**
  * Cascading delete: removes the target and every row in every other store
  * that references it. Evidence blobs are removed alongside their asset rows
- * (the evidence store's `delete()` already cleans up the IndexedDB blob).
+ * (the evidence store's `delete()` now removes the IndexedDB blob too).
  *
  * Idempotent — calling twice is a no-op the second time. Errors propagate
  * so the UI can show them; the global pagehide flush will still drain any

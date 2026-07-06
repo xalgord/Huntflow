@@ -149,14 +149,25 @@ export function parseDodoEvent(
 			? (data.metadata as Record<string, unknown>)
 			: {};
 	const uid = asTrimmedString(metadata.uid);
-	if (!uid) return MISSING_UID_MARKER;
+	// Validate the uid format before we key an entitlement row on it.
+	// Firebase uids are 6-128 chars of [A-Za-z0-9_-]. A uid that fails
+	// this check is treated as missing (→ 400) so a spoofed or
+	// malformed metadata.uid can't attach Pro to an arbitrary/garbage
+	// key. This is the webhook-side counterpart to the design's
+	// "Dodo cannot map an event back to a Firebase user without it"
+	// guard.
+	const UID_RE = /^[A-Za-z0-9_-]{6,128}$/;
+	if (!uid || !UID_RE.test(uid)) return MISSING_UID_MARKER;
 
 	// Customer id: prefer `data.customer.customer_id` (Standard Dodo
 	// shape per the design's Data Models section). Fall back to a
 	// flat `data.customer_id` if Dodo ever emits one. Empty string is
 	// acceptable per the schema (the column is `v.string()`, not
 	// nullable, and entitlement rows tolerate an empty customer id
-	// for audit purposes).
+	// for audit purposes). A non-empty value must look like a Dodo
+	// customer id (`cus_`-prefixed or plain alnum) — anything else is
+	// coerced to empty so a malformed field can't poison the row.
+	const CUSTOMER_RE = /^(cus_[A-Za-z0-9_-]+|[A-Za-z0-9_-]+)$/;
 	let dodoCustomerId = '';
 	const customer =
 		data.customer && typeof data.customer === 'object'
@@ -168,9 +179,16 @@ export function parseDodoEvent(
 	if (!dodoCustomerId) {
 		dodoCustomerId = asTrimmedString(data.customer_id);
 	}
+	if (dodoCustomerId && !CUSTOMER_RE.test(dodoCustomerId)) {
+		dodoCustomerId = '';
+	}
 
+	// Subscription id: validate format when present; coerce malformed
+	// to null (no subscription) rather than rejecting the event.
+	const SUBSCRIPTION_RE = /^[A-Za-z0-9_-]+$/;
 	const subscriptionId = asTrimmedString(data.subscription_id);
-	const dodoSubscriptionId = subscriptionId === '' ? null : subscriptionId;
+	const dodoSubscriptionId =
+		subscriptionId === '' || !SUBSCRIPTION_RE.test(subscriptionId) ? null : subscriptionId;
 
 	const currentPeriodEnd = parseCurrentPeriodEnd(data.next_billing_date);
 
@@ -230,12 +248,52 @@ const dodoWebhook = httpAction(async (ctx, request) => {
 
 	if (parsed === MISSING_UID_MARKER) {
 		// Event type is one we consume, but Dodo didn't echo back the
-		// `metadata.uid` we set on the checkout. Without uid we cannot
-		// safely key the entitlement row, so we reject the delivery.
-		return plainResponse('Missing metadata.uid', 400);
+		// `metadata.uid` we set on the checkout (or it failed format
+		// validation). Without a valid uid we cannot safely key the
+		// entitlement row, so we reject the delivery.
+		return plainResponse('Missing or invalid metadata.uid', 400);
 	}
 
-	await ctx.runMutation(internal.entitlements.upsertFromWebhook, parsed);
+	// Idempotency: skip re-applying if we've already seen this
+	// `webhook-id`. Standard Webhooks guarantees a unique `webhook-id`
+	// per logical event, so a replay (Dodo retry, network dup) is a
+	// no-op. We do the dedup CHECK before applying (so a replay doesn't
+	// double-apply), but RECORD the delivery only AFTER a successful
+	// upsert — so a failed upsert (validation error, transient Convex
+	// failure) doesn't permanently wedge the event: Dodo retries, the
+	// delivery row was never committed, and the retry re-applies.
+	// Concurrent same-id deliveries are closed by Convex's OCC
+	// serialization (the second commit sees the first's insert in its
+	// read range and retries → dedup hits).
+	const webhookId = headers['webhook-id'];
+	if (webhookId) {
+		const existing = await ctx.runQuery(internal.entitlements.findWebhookDelivery, {
+			webhookId
+		});
+		if (existing) {
+			return plainResponse('Duplicate webhook delivery', 200);
+		}
+	}
+
+	// Standard Webhooks `webhook-timestamp` is unix seconds. Convert to
+	// ms for the entitlement row's last-writer-wins comparison. Fall back
+	// to 0 (→ Date.now() in the mutation) if the header is missing or
+	// unparseable so a misconfigured sender can't wedge the handler.
+	const tsSeconds = Number.parseInt(headers['webhook-timestamp'], 10);
+	const eventTime = Number.isFinite(tsSeconds) ? tsSeconds * 1000 : 0;
+
+	await ctx.runMutation(internal.entitlements.upsertFromWebhook, {
+		...parsed,
+		eventTime
+	});
+
+	// Record the delivery AFTER a successful apply so a failed upsert
+	// can be retried by Dodo without being permanently deduped.
+	if (webhookId) {
+		await ctx.runMutation(internal.entitlements.recordWebhookDelivery, {
+			webhookId
+		});
+	}
 	return plainResponse('ok', 200);
 });
 

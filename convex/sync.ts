@@ -1,6 +1,7 @@
 import { v } from 'convex/values';
 
-import { mutation, query } from './_generated/server';
+import { mutation, query, internalMutation } from './_generated/server';
+import type { MutationCtx } from './_generated/server';
 
 const syncCollection = v.union(
   v.literal('sessions'),
@@ -32,6 +33,24 @@ async function requireOwnerId(ctx: { auth: { getUserIdentity: () => Promise<{ su
   return identity.subject;
 }
 
+/**
+ * Server-side Pro gate. Reads the entitlements row keyed by the caller's
+ * Firebase uid (identity.subject) and throws if the user is not Pro.
+ * Mirrors the client-side gate so a cancelled subscription can't keep
+ * writing snapshots or uploading assets even if a stale client still
+ * believes it is Pro. Uses the same `by_uid` index as
+ * `entitlements.getMine`.
+ */
+async function requirePro(ctx: Pick<MutationCtx, 'auth' | 'db'>) {
+  const identity = await ctx.auth.getUserIdentity();
+  if (!identity) throw new Error('Not authenticated');
+  const row = await ctx.db
+    .query('entitlements')
+    .withIndex('by_uid', (q) => q.eq('uid', identity.subject))
+    .first();
+  if (!row?.isPro) throw new Error('Pro required');
+}
+
 const MAX_FILE_SIZE = 100 * 1024 * 1024;
 const MAX_STORAGE_BYTES = 1024 * 1024 * 1024;
 /** Tickets minted by `generateAssetUploadUrl` expire after this many ms. */
@@ -54,6 +73,7 @@ export const upsertSnapshot = mutation({
   },
   handler: async (ctx, args) => {
     const ownerId = await requireOwnerId(ctx);
+    await requirePro(ctx);
     let upserted = 0;
     const existingItems = await ctx.db
       .query('syncItems')
@@ -67,6 +87,14 @@ export const upsertSnapshot = mutation({
       const key = `${item.collection}:${item.localId}`;
       const existing = existingByKey.get(key);
 
+      // Resurrection: a live item (no deletedAt) must explicitly clear
+      // any stored tombstone. We build the deletedAt field
+      // conditionally so `undefined` is carried into the patch and
+      // removes the field rather than leaving the stale tombstone in
+      // place. delete→re-create then converges on a live row.
+      const deletedAtPatch =
+        typeof item.deletedAt === 'number' ? { deletedAt: item.deletedAt } : { deletedAt: undefined };
+
       if (existing) {
         // Last-writer-wins: update if the incoming timestamp is newer.
         // For soft deletes, compare deletedAt against updatedAt too.
@@ -76,7 +104,7 @@ export const upsertSnapshot = mutation({
           await ctx.db.patch(existing._id, {
             payload: item.payload,
             updatedAt: item.updatedAt,
-            deletedAt: item.deletedAt
+            ...deletedAtPatch
           });
         }
       } else {
@@ -101,6 +129,7 @@ export const generateAssetUploadUrl = mutation({
   args: {},
   handler: async (ctx) => {
     const ownerId = await requireOwnerId(ctx);
+    await requirePro(ctx);
     // Mint a single-use ticket scoped to the caller. The client must
     // present this ticketId back to `registerAssetFile`, which proves
     // that the same authenticated user who requested the upload URL is
@@ -130,6 +159,7 @@ export const registerAssetFile = mutation({
   },
   handler: async (ctx, args) => {
     const ownerId = await requireOwnerId(ctx);
+    await requirePro(ctx);
 
     // Ticket binding: must exist, must belong to the caller, must be
     // fresh. Anything else, including a forged or replayed ticketId,
@@ -203,11 +233,15 @@ export const registerAssetFile = mutation({
  * occasionally. Either way, expired tickets are also rejected at use
  * time, so the worst case if this never runs is unbounded growth of an
  * inert table — never a security issue.
+ *
+ * Internal + cron-driven: there is no authenticated caller when a cron
+ * fires, so this sweep is global (not owner-scoped) and skips the
+ * `requireOwnerId` gate. It only ever deletes already-expired tickets,
+ * which are inert. Registered hourly from `convex/cron.ts`.
  */
-export const cleanupExpiredUploadTickets = mutation({
+export const cleanupExpiredUploadTickets = internalMutation({
   args: {},
   handler: async (ctx) => {
-    await requireOwnerId(ctx);
     const cutoff = Date.now() - UPLOAD_TICKET_TTL_MS;
     const expired = await ctx.db
       .query('assetUploadTickets')
@@ -274,6 +308,17 @@ export const clearCloud = mutation({
       .withIndex('by_owner', (q) => q.eq('ownerId', ownerId))
       .collect();
 
+    // Capture LIVE (non-tombstone) evidenceAssets references before we
+    // delete any syncItems. An asset whose syncItem is still live is in
+    // active use on this or another device; destroying its blob would
+    // brick the asset there. We skip those blobs (and their rows) below.
+    const liveEvidenceAssetIds = new Set(
+      items
+        .filter((item) => item.collection === 'evidenceAssets' && item.deletedAt === undefined)
+        .map((item) => item.localId)
+    );
+
+    let skippedFiles = 0;
     for (const item of items) {
       await ctx.db.delete(item._id);
     }
@@ -284,10 +329,17 @@ export const clearCloud = mutation({
       .collect();
 
     for (const file of files) {
+      if (liveEvidenceAssetIds.has(file.assetId)) {
+        // Leave the blob and the row intact so other devices can still
+        // resolve this asset. The user can re-run clearCloud once the
+        // asset is actually deleted everywhere.
+        skippedFiles += 1;
+        continue;
+      }
       await ctx.storage.delete(file.storageId);
       await ctx.db.delete(file._id);
     }
 
-    return { deleted: items.length + files.length };
+    return { deleted: items.length + (files.length - skippedFiles), skippedFiles };
   }
 });

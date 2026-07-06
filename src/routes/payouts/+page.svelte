@@ -41,9 +41,9 @@
 
   $: paidPayouts = $payoutStore.filter((payout) => payout.status === 'paid');
   $: pendingPayouts = $payoutStore.filter((payout) => payout.status !== 'paid');
-  $: totalPaid = paidPayouts.reduce((sum, payout) => sum + payout.amount, 0);
-  $: pendingTotal = pendingPayouts.reduce((sum, payout) => sum + payout.amount, 0);
-  $: averagePaid = paidPayouts.length > 0 ? totalPaid / paidPayouts.length : 0;
+  $: totalPaid = Math.round(paidPayouts.reduce((sum, payout) => sum + payout.amount, 0) * 100) / 100;
+  $: pendingTotal = Math.round(pendingPayouts.reduce((sum, payout) => sum + payout.amount, 0) * 100) / 100;
+  $: averagePaid = paidPayouts.length > 0 ? Math.round((totalPaid / paidPayouts.length) * 100) / 100 : 0;
   $: acceptedReports = $submissionStore.filter((submission) => ['accepted', 'resolved', 'rewarded'].includes(submission.status)).length;
   $: decidedReports = $submissionStore.filter((submission) =>
     ['accepted', 'resolved', 'rewarded', 'duplicate', 'informational', 'not-applicable', 'closed'].includes(submission.status)

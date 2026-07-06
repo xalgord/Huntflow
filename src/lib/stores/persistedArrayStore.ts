@@ -63,27 +63,35 @@ export function createPersistedArrayStore<T extends { id: string }>(
       saveTimer = null;
     }
 
+    // Snapshot the pending state synchronously, before any await, so a
+    // failure can't lose the record of what still needs writing and a
+    // concurrent mutation can't shift what we persist.
+    const valueSnapshot = value;
     const deletes = Array.from(pendingDeletes);
-    pendingDeletes.clear();
-
-    // Only persist items that changed since the last flush instead of
-    // rewriting the entire array on every save cycle.
     const dirty = Array.from(dirtyIds);
+    pendingDeletes.clear();
     dirtyIds.clear();
 
-    await Promise.all(deletes.map((id) => db.delete(id)));
+    try {
+      await Promise.all(deletes.map((id) => db.delete(id)));
 
-    if (dirty.length > 0) {
-      const dirtySet = new Set(dirty);
-      const dirtyItems = value.filter((item) => dirtySet.has(item.id));
-      if (dirtyItems.length > 0) {
-        await db.putBatch(dirtyItems);
+      if (dirty.length > 0) {
+        const dirtySet = new Set(dirty);
+        const dirtyItems = valueSnapshot.filter((item) => dirtySet.has(item.id));
+        if (dirtyItems.length > 0) {
+          await db.putBatch(dirtyItems);
+        }
       }
-    }
 
-    // Notify the real-time sync engine so it can push local changes.
-    if (dirty.length > 0 || deletes.length > 0) {
-      options.onFlush?.(dirty, deletes);
+      // Notify the real-time sync engine so it can push local changes.
+      if (dirty.length > 0 || deletes.length > 0) {
+        options.onFlush?.(dirty, deletes);
+      }
+    } catch (error) {
+      // Re-queue the dirty ids so the next flush retries them instead of
+      // silently dropping the failed writes.
+      for (const id of dirty) dirtyIds.add(id);
+      throw error;
     }
   }
 
@@ -91,7 +99,9 @@ export function createPersistedArrayStore<T extends { id: string }>(
     if (!browser || !loaded) return;
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      void flush();
+      void flush().catch(() => {
+        /* flush re-queues dirty ids on failure; swallow to avoid unhandled rejection */
+      });
     }, 500);
   }
 

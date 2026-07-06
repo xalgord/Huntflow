@@ -5,6 +5,7 @@
     CVSS_METRIC_OPTIONS,
     buildVectorString,
     calculateCvss,
+    formatCvssVersionWarning,
     parseCvssVector,
     severityColorClass,
     type CvssBaseMetrics
@@ -43,6 +44,9 @@
 
   $: cvss = calculateCvss(metrics);
   $: vectorString = cvss.vectorString;
+  // Surface a warning when the user pasted/typed a CVSS:3.0 vector — the
+  // score is recomputed with 3.1 formulas, so the result may differ.
+  $: versionWarning = formatCvssVersionWarning(vector);
 
   // Emit change after computation, but only when the resulting vector differs
   // from the last emit to avoid feedback loops with the parent.
@@ -130,6 +134,9 @@
             {/if}
           </button>
         </div>
+        {#if versionWarning}
+          <p class="mt-1.5 text-[11px] text-amber-500 dark:text-amber-400">{versionWarning}</p>
+        {/if}
       </label>
     </div>
   </header>

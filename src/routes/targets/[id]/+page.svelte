@@ -86,10 +86,12 @@
 
   async function saveTarget(event: CustomEvent<{ target: Target }>) {
     await targetStore.put({
+      ...target,
       ...event.detail.target,
       status: target?.status ?? event.detail.target.status,
       lastSessionAt: target?.lastSessionAt,
-      sessionCount: target?.sessionCount ?? 0
+      sessionCount: target?.sessionCount ?? 0,
+      updatedAt: Date.now()
     });
   }
 

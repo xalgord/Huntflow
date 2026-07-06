@@ -1,4 +1,5 @@
 <script lang="ts">
+  import DOMPurify from 'dompurify';
   import { evidenceAssetStore } from '$lib/stores';
   import EvidenceReferenceTile from './EvidenceReferenceTile.svelte';
 
@@ -147,6 +148,7 @@
   }
 
   $: rendered = renderMarkdown(content);
+  $: safe = DOMPurify.sanitize(rendered, { USE_PROFILES: { html: true } });
 
   /**
    * After the HTML is mounted, find every `[[evidence:id]]` placeholder
@@ -230,7 +232,7 @@
 
 <div bind:this={host} class="markdown-preview min-h-[28rem] rounded-b-lg bg-zinc-850 p-4 text-zinc-100">
   {#if content.trim()}
-    {@html rendered}
+    {@html safe}
   {:else}
     <p class="text-sm text-zinc-500">Nothing to preview yet.</p>
   {/if}

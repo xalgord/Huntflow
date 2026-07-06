@@ -1,6 +1,6 @@
 import { v } from 'convex/values';
 
-import { internalMutation, query } from './_generated/server';
+import { internalMutation, internalQuery, query } from './_generated/server';
 
 /**
  * Read the current user's Pro entitlement row. Returns `null` when:
@@ -14,6 +14,32 @@ import { internalMutation, query } from './_generated/server';
  * signature. The client never writes the entitlement directly.
  */
 export const getMine = query({
+	args: {},
+	handler: async (ctx) => {
+		const identity = await ctx.auth.getUserIdentity();
+		if (!identity) return null;
+		const row = await ctx.db
+			.query('entitlements')
+			.withIndex('by_uid', (q) => q.eq('uid', identity.subject))
+			.first();
+		// Project to the minimal shape the client needs. Payment ids
+		// (dodoCustomerId, dodoSubscriptionId) never cross the wire to
+		// the browser — the customer-portal action reads them directly
+		// from the table server-side instead of via this query.
+		if (!row) return null;
+		return { isPro: row.isPro, currentPeriodEnd: row.currentPeriodEnd };
+	}
+});
+
+/**
+ * Internal counterpart of `getMine` that returns the FULL entitlement
+ * row (including payment ids). Used only by server-side actions such as
+ * `dodo.getCustomerPortalUrl`, which need `dodoCustomerId` to mint a
+ * portal session. Internal so the client can never call it — the public
+ * `getMine` is the only entitlement surface exposed to the browser, and
+ * it projects away payment ids.
+ */
+export const getMineInternal = internalQuery({
 	args: {},
 	handler: async (ctx) => {
 		const identity = await ctx.auth.getUserIdentity();
@@ -43,21 +69,39 @@ export const upsertFromWebhook = internalMutation({
 		isPro: v.boolean(),
 		dodoCustomerId: v.string(),
 		dodoSubscriptionId: v.union(v.string(), v.null()),
-		currentPeriodEnd: v.union(v.number(), v.null())
+		currentPeriodEnd: v.union(v.number(), v.null()),
+		// Standard Webhooks `webhook-timestamp` (unix seconds) converted
+		// to ms by the HTTP handler. Used as the row's `updatedAt` so the
+		// stored value reflects the event's own time, enabling
+		// last-writer-wins on event time: a stale/replayed event older
+		// than the most recently applied event is skipped. 0 means
+		// "unknown" and falls back to Date.now() to preserve prior
+		// behavior. Optional so a rolled-back caller omitting it still
+		// applies the event.
+		eventTime: v.optional(v.number())
 	},
 	handler: async (ctx, args) => {
-		const now = Date.now();
+		const eventTime = args.eventTime > 0 ? args.eventTime : Date.now();
 		const existing = await ctx.db
 			.query('entitlements')
 			.withIndex('by_uid', (q) => q.eq('uid', args.uid))
 			.first();
 		if (existing) {
+			// Last-writer-wins on event time: skip if the incoming event
+			// is older than the most recently applied event. This stops
+			// an out-of-order or replayed delivery from reverting a
+			// newer state (e.g. a `subscription.renewed` arriving before
+			// a delayed `subscription.cancelled` would otherwise flip
+			// isPro back to true).
+			if (eventTime < existing.updatedAt) {
+				return { mode: 'skip' as const, id: existing._id };
+			}
 			await ctx.db.patch(existing._id, {
 				isPro: args.isPro,
 				dodoCustomerId: args.dodoCustomerId,
 				dodoSubscriptionId: args.dodoSubscriptionId,
 				currentPeriodEnd: args.currentPeriodEnd,
-				updatedAt: now
+				updatedAt: eventTime
 			});
 			return { mode: 'patch' as const, id: existing._id };
 		}
@@ -67,9 +111,52 @@ export const upsertFromWebhook = internalMutation({
 			dodoCustomerId: args.dodoCustomerId,
 			dodoSubscriptionId: args.dodoSubscriptionId,
 			currentPeriodEnd: args.currentPeriodEnd,
-			updatedAt: now
+			updatedAt: eventTime
 		});
 		return { mode: 'insert' as const, id };
+	}
+});
+
+/**
+ * Read-only idempotency check: returns true if a delivery with this
+ * `webhookId` has already been recorded. The HTTP handler calls this
+ * BEFORE applying the event (so a replay skips the apply), and calls
+ * `recordWebhookDelivery` AFTER a successful apply (so a failed upsert
+ * can be retried). Internal so only the webhook action can call it.
+ */
+export const findWebhookDelivery = internalQuery({
+	args: {
+		webhookId: v.string()
+	},
+	handler: async (ctx, args) => {
+		const existing = await ctx.db
+			.query('webhookDeliveries')
+			.withIndex('by_webhookId', (q) => q.eq('webhookId', args.webhookId))
+			.first();
+		return Boolean(existing);
+	}
+});
+
+/**
+ * Record a successfully-applied webhook delivery for future dedup.
+ * Called by the HTTP handler AFTER `upsertFromWebhook` resolves, so a
+ * failed upsert never commits a delivery record (and Dodo can retry).
+ * Internal so only the webhook action can call it.
+ */
+export const recordWebhookDelivery = internalMutation({
+	args: {
+		webhookId: v.string()
+	},
+	handler: async (ctx, args) => {
+		const existing = await ctx.db
+			.query('webhookDeliveries')
+			.withIndex('by_webhookId', (q) => q.eq('webhookId', args.webhookId))
+			.first();
+		if (existing) return;
+		await ctx.db.insert('webhookDeliveries', {
+			webhookId: args.webhookId,
+			deliveredAt: Date.now()
+		});
 	}
 });
 

@@ -21,7 +21,6 @@ export const cloudApi = {
   upsertSnapshot: anyApi.sync.upsertSnapshot,
   generateAssetUploadUrl: anyApi.sync.generateAssetUploadUrl,
   registerAssetFile: anyApi.sync.registerAssetFile,
-  cleanupExpiredUploadTickets: anyApi.sync.cleanupExpiredUploadTickets,
   getAssetFileUrl: anyApi.sync.getAssetFileUrl,
   deleteAssetFile: anyApi.sync.deleteAssetFile,
   clearCloud: anyApi.sync.clearCloud

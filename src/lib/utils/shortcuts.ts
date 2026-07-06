@@ -203,12 +203,23 @@ function clearPrefix() {
   prefixArmedAt = 0;
 }
 
+let focusinInstalled = false;
+
+function installFocusinGuard(): void {
+  if (focusinInstalled || typeof window === 'undefined') return;
+  focusinInstalled = true;
+  window.addEventListener('focusin', (event) => {
+    if (isTextInput(event.target)) clearPrefix();
+  });
+}
+
 /**
  * Install the global handler. Returns a cleanup function so the layout
  * can call it during teardown — though in practice the layout lives for
  * the entire app session, so this is mostly defensive.
  */
 export function installGlobalShortcuts(getPathname: () => string): () => void {
+  installFocusinGuard();
   const onKeyDown = (event: KeyboardEvent) => {
     // Ignore anything with modifiers (handled elsewhere — Cmd+K, etc.).
     if (event.metaKey || event.ctrlKey || event.altKey) return;

@@ -128,10 +128,9 @@
     ['submitted', 'triaged', 'accepted'].includes(s.status)
   ).length;
 
-  $: totalBounty = $submissionStore.reduce(
-    (sum, s) => sum + (s.bountyAmount ?? 0),
-    0
-  );
+  $: totalBounty = Math.round(
+    $submissionStore.filter((s) => s.status === 'rewarded').reduce((sum, s) => sum + (s.bountyAmount ?? 0), 0) * 100
+  ) / 100;
 
   $: avgTimeToReward = (() => {
     const rewarded = $submissionStore.filter(

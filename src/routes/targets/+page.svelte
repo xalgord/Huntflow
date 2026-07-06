@@ -109,8 +109,15 @@
       const url = new URL(trimmed);
       return { hostname: url.hostname, url: trimmed };
     }
-    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(trimmed) || trimmed.includes(':')) {
+    if (/^\d{1,3}(\.\d{1,3}){3}$/.test(trimmed)) {
       return { hostname: trimmed, ipAddress: trimmed };
+    }
+    if (trimmed.includes(':')) {
+      const host = trimmed.split(':')[0];
+      if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+        return { hostname: host, ipAddress: host };
+      }
+      return { hostname: host };
     }
     return { hostname: trimmed };
   }

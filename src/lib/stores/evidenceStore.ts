@@ -32,6 +32,7 @@ export const evidenceAssetStore = {
   ...baseEvidenceAssetStore,
   async delete(id: string): Promise<void> {
     await evidenceAssetDB.delete(id);
+    await evidenceBlobDB.delete(id);
     await Promise.all([baseEvidenceAssetStore.refresh(), baseEvidenceLinkStore.refresh()]);
   },
   async persistNow(): Promise<void> {

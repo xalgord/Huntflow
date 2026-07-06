@@ -58,9 +58,7 @@
   let cvssVector = submission?.cvssVector ?? '';
   let reportUrl = submission?.reportUrl ?? '';
   let status: SubmissionStatus = submission?.status ?? 'draft';
-  let submittedAtInput = submission?.submittedAt
-    ? new Date(submission.submittedAt).toISOString().slice(0, 10)
-    : new Date().toISOString().slice(0, 10);
+  let submittedAtInput = inputDate(submission?.submittedAt ?? Date.now());
   let bountyAmount: number | undefined = submission?.bountyAmount;
   let notes = submission?.notes ?? '';
   let tagsInput = (submission?.tags ?? []).join(', ');
@@ -68,6 +66,18 @@
   let errorMessage = '';
 
   $: targetOptions = targets;
+
+  function inputDate(timestamp: number): string {
+    const value = new Date(timestamp);
+    const year = value.getFullYear();
+    const month = String(value.getMonth() + 1).padStart(2, '0');
+    const day = String(value.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  function timestampFromDate(value: string): number {
+    return new Date(`${value}T12:00:00`).getTime();
+  }
 
   function handleSubmit(event: Event): void {
     event.preventDefault();
@@ -83,7 +93,7 @@
     }
 
     const now = Date.now();
-    const submittedAt = submittedAtInput ? new Date(submittedAtInput).getTime() : undefined;
+    const submittedAt = submittedAtInput ? timestampFromDate(submittedAtInput) : undefined;
     const tags = tagsInput
       .split(',')
       .map((tag) => tag.trim().toLowerCase())
@@ -111,7 +121,7 @@
     const normalizedBounty =
       bountyAmount == null || Number.isNaN(Number(bountyAmount))
         ? undefined
-        : Math.max(0, Number(bountyAmount));
+        : Math.round(Math.max(0, Number(bountyAmount)) * 100) / 100;
 
     // Use `||` (not `??`) so an empty id from a "draft from note" prefill
     // is treated as a new submission rather than persisting with id "".

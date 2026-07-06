@@ -1,10 +1,12 @@
 <script lang="ts">
+  import DOMPurify from 'dompurify';
   import { renderMarkdownToHtml } from '$lib/utils/reports';
 
   export let markdown = '';
   export let title = 'Report preview';
 
   $: rendered = renderMarkdownToHtml(markdown);
+  $: safe = DOMPurify.sanitize(rendered, { USE_PROFILES: { html: true } });
 </script>
 
 <section class="overflow-hidden rounded-lg border border-zinc-700 bg-zinc-800 shadow-dark-sm">
@@ -15,7 +17,7 @@
 
   <article class="report-preview min-h-[32rem] overflow-auto bg-zinc-850 p-5 text-zinc-100">
     {#if markdown.trim()}
-      {@html rendered}
+      {@html safe}
     {:else}
       <p class="text-sm text-zinc-500">Nothing to preview yet.</p>
     {/if}

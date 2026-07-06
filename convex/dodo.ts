@@ -1,5 +1,5 @@
 import { ConvexError, v } from 'convex/values';
-import { api } from './_generated/api';
+import { internal } from './_generated/api';
 import { action } from './_generated/server';
 
 /**
@@ -119,17 +119,14 @@ export const createCheckoutSession = action({
  *
  * Requires an authenticated Firebase identity AND an existing
  * `entitlements` row with a non-empty `dodoCustomerId`. We read the
- * entitlement via the public `entitlements.getMine` query — `getMine`
- * already gates on `ctx.auth.getUserIdentity()`, so when this action
- * propagates auth into `runQuery`, the row returned belongs to the
- * authenticated caller. This is the OQ 7 design default
- * ("server reads entitlement"), kept unless an operator overrides it.
- *
- * Note on api vs internal: `entitlements.getMine` is currently exported
- * as a public `queryGeneric`, not an `internalQuery`. We therefore call
- * it via `api.entitlements.getMine` rather than `internal.…`. Calling
- * it via `internal` would fail at runtime because the function isn't
- * registered on the internal surface.
+ * entitlement via the internal `entitlements.getMineInternal` query —
+ * the public `getMine` projects away payment ids so they never reach
+ * the browser, but this server-side action legitimately needs
+ * `dodoCustomerId` to mint a portal session. Both queries gate on
+ * `ctx.auth.getUserIdentity()`, so when this action propagates auth
+ * into `runQuery`, the row returned belongs to the authenticated
+ * caller. This is the OQ 7 design default ("server reads
+ * entitlement"), kept unless an operator overrides it.
  *
  * The action POSTs to
  * `${DODO_API_BASE_URL}/customers/${customerId}/customer-portal/session`
@@ -163,7 +160,13 @@ export const getCustomerPortalUrl = action({
 			throw new Error('Not authenticated');
 		}
 
-		const entitlement = (await ctx.runQuery(api.entitlements.getMine, {})) as {
+		// Read the full entitlement row server-side via the internal
+		// query. The public `entitlements.getMine` projects away
+		// payment ids so they never reach the browser; the portal
+		// action legitimately needs `dodoCustomerId`, so it uses the
+		// internal surface that returns the whole row. Auth propagates
+		// into the runQuery, so the row belongs to the caller.
+		const entitlement = (await ctx.runQuery(internal.entitlements.getMineInternal, {})) as {
 			dodoCustomerId?: string | null;
 		} | null;
 

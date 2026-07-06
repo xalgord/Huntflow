@@ -94,16 +94,18 @@
         demoMode = false;
       }
 
-      // Core HuntFlow routes are local-first and never require sign-in.
-      // Auth bootstraps only on auth/account surfaces where optional
-      // cloud identity is relevant.
-      if (
-        pathname === '/account' ||
-        pathname.startsWith('/sign-in') ||
-        pathname.startsWith('/sign-up')
-      ) {
-        void initFirebase();
-      }
+      // Core HuntFlow routes are intentionally local-first and require
+      // NO sign-in — there is no auth redirect gate by design. Cloud
+      // sync (and the auth surfaces that opt into it) is additive: a
+      // signed-out user gets the full hunting workflow against local
+      // IndexedDB. We bootstrap Firebase on every mount (not just on
+      // auth/account routes) so the realtime sync lifecycle below can
+      // start automatically the moment a returning Pro user's session
+      // hydrates, regardless of which route they landed on. initFirebase
+      // is idempotent (returns the same promise) and a no-op when
+      // VITE_FIREBASE_* env vars are missing, so this is safe on every
+      // page including the marketing landing surface.
+      void initFirebase();
 
       // Drain debounced store writes (500ms timer) before the tab is unloaded
       // so the latest session state, notes, recon edits, etc. always survive

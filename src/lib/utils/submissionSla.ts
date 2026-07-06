@@ -175,7 +175,9 @@ export function calculateRoi(
   const minutesSpent = Math.round(
     targetSessions.reduce((sum, s) => sum + (s.durationActual ?? 0), 0) / 60
   );
-  const bountyEarned = targetSubs.reduce((sum, s) => sum + (s.bountyAmount ?? 0), 0);
+  const bountyEarned = Math.round(
+    targetSubs.filter((s) => s.status === 'rewarded').reduce((sum, s) => sum + (s.bountyAmount ?? 0), 0) * 100
+  ) / 100;
 
   const rewardedCount = targetSubs.filter((s) => s.status === 'rewarded').length;
   const rejectedCount = targetSubs.filter((s) => REJECTED_STATUSES.includes(s.status)).length;
@@ -242,7 +244,7 @@ export function buildWeeklyRecap(
   const submitted = submissions.filter((s) => inWindow(s.submittedAt, thisStart, thisEnd)).length;
   const triaged = submissions.filter((s) => inWindow(s.triagedAt, thisStart, thisEnd)).length;
   const rewardedSubs = submissions.filter((s) => inWindow(s.rewardedAt, thisStart, thisEnd));
-  const bountyEarned = rewardedSubs.reduce((sum, s) => sum + (s.bountyAmount ?? 0), 0);
+  const bountyEarned = Math.round(rewardedSubs.reduce((sum, s) => sum + (s.bountyAmount ?? 0), 0) * 100) / 100;
 
   const sessionsThisWeek = sessions.filter((s) => inWindow(s.startedAt, thisStart, thisEnd));
   const minutesHunted = Math.round(
@@ -252,9 +254,11 @@ export function buildWeeklyRecap(
 
   // Last-week comparators
   const lastSubmitted = submissions.filter((s) => inWindow(s.submittedAt, lastStart, lastEnd)).length;
-  const lastBounty = submissions
-    .filter((s) => inWindow(s.rewardedAt, lastStart, lastEnd))
-    .reduce((sum, s) => sum + (s.bountyAmount ?? 0), 0);
+  const lastBounty = Math.round(
+    submissions
+      .filter((s) => inWindow(s.rewardedAt, lastStart, lastEnd))
+      .reduce((sum, s) => sum + (s.bountyAmount ?? 0), 0) * 100
+  ) / 100;
   const lastMinutes = Math.round(
     sessions
       .filter((s) => inWindow(s.startedAt, lastStart, lastEnd))

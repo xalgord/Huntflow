@@ -163,9 +163,16 @@ function setLastCloudSyncAt(value: number): void {
 
 function sessionUpdatedAt(session: Session): number {
   // Completed/abandoned sessions use endedAt as their last-modified marker.
-  // Running/paused sessions have no endedAt; use Date.now() so mid-session
-  // edits (tags, quickNote) are always newer than any cached remote snapshot.
-  return session.endedAt ?? (session.status === 'running' || session.status === 'paused' ? Date.now() : session.startedAt);
+  // Running/paused sessions have no endedAt; use startedAt as a stable
+  // marker. Previously this returned Date.now(), which re-stamped the
+  // session on every sync cycle and made it perpetually "newer" than the
+  // remote snapshot — a feedback loop that pushed the same session every
+  // cycle. startedAt is stable so a running session only pushes when its
+  // payload actually changes (and toSyncItem callers that mutate
+  // quickNote/tags bump the DB row's own updatedAt for other collections;
+  // sessions carry those fields inline, so the merge still reconciles via
+  // the snapshot diff rather than this timestamp alone).
+  return session.endedAt ?? session.startedAt;
 }
 
 export function toSyncItem(collection: SyncCollection, item: SyncPayload): SyncItem {

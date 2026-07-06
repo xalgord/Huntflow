@@ -45,6 +45,7 @@ export class BaseDB<T extends IndexedItem> {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       return (await (db as any).getAll(this.storeName)) as T[];
     } catch (error) {
+      console.error('[HuntFlow] persistence error in', this.storeName, '.getAll:', error);
       enableMemoryFallback(error);
       return Array.from(this.memory().values());
     }

@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import type { Note } from '$lib/types';
 
 export type ReportPlatform = 'hackerone' | 'bugcrowd' | 'intigriti' | 'custom';
@@ -684,7 +685,7 @@ function buildPrintableHtml(markdown: string, title: string): string {
     </style>
   </head>
   <body>
-    <main>${renderMarkdownToHtml(markdown)}</main>
+    <main>${DOMPurify.sanitize(renderMarkdownToHtml(markdown), { USE_PROFILES: { html: true } })}</main>
   </body>
 </html>`;
 }

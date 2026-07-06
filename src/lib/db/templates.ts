@@ -24,11 +24,21 @@ export class TemplateDB {
 
     try {
       const tx = db.transaction('templates', 'readwrite');
-      await Promise.all([...BUILT_IN_TEMPLATES.map((template) => tx.store.put(template)), tx.done]);
+      const existingIds = new Set(await tx.store.getAllKeys());
+      await Promise.all([
+        ...BUILT_IN_TEMPLATES.filter((template) => !existingIds.has(template.id)).map(
+          (template) => tx.store.put(template)
+        ),
+        tx.done
+      ]);
       this.seeded = true;
     } catch (error) {
       enableMemoryFallback(error);
-      for (const template of BUILT_IN_TEMPLATES) getMemoryDB().templates.set(template.id, template);
+      for (const template of BUILT_IN_TEMPLATES) {
+        if (!getMemoryDB().templates.has(template.id)) {
+          getMemoryDB().templates.set(template.id, template);
+        }
+      }
       this.seeded = true;
     }
   }

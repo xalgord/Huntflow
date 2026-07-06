@@ -40,12 +40,14 @@
 
   let tab: Tab = 'paste';
   let textarea: HTMLTextAreaElement | undefined;
+  let containerEl: HTMLDivElement | undefined;
   let dragActive = false;
   let pastedFile: File | null = null;
   let pastedFilePreviewUrl = '';
   let saving = false;
   let copied = false;
   let copyTimer: ReturnType<typeof setTimeout> | null = null;
+  let hydrating = false;
 
   // Form state
   let inputText = '';
@@ -63,7 +65,7 @@
   $: classification = inputText.trim() ? classifyClipboard(inputText) : null;
   $: targets = $targetStore.filter((target) => target.status !== 'archived');
   $: targetById = new Map($targetStore.map((target) => [target.id, target]));
-  $: targetSessions = sessionId || targetId
+  $: targetSessions = targetId
     ? $sessionStore.filter((session) => session.targetId === targetId)
     : [];
   $: targetNotes = targetId
@@ -77,40 +79,50 @@
   })();
 
   // ─── Lifecycle: open / close ────────────────────────────────────────
-  $: if (open) hydrate();
+  $: if (open && !saving) hydrate();
   $: if (!open) reset();
+  $: if (targetId) {
+    sessionId = targetSessions.some((s) => s.id === sessionId) ? sessionId : '';
+    noteId = targetNotes.some((n) => n.id === noteId) ? noteId : '';
+  }
 
   async function hydrate(): Promise<void> {
     if (!browser) return;
-    await Promise.all([targetStore.load(), sessionStore.load(), noteStore.load(), evidenceAssetStore.load()]);
+    if (hydrating) return;
+    hydrating = true;
+    try {
+      await Promise.all([targetStore.load(), sessionStore.load(), noteStore.load(), evidenceAssetStore.load()]);
 
-    const ctx = $quickCaptureStore;
-    inputText = ctx.initialText ?? '';
-    title = '';
-    sessionId = ctx.sessionId ?? '';
-    noteId = ctx.noteId ?? '';
-    tagsInput = '';
-    severity = '';
-    saveAs = 'evidence';
-    pastedFile = null;
-    revokePreview();
+      const ctx = $quickCaptureStore;
+      inputText = ctx.initialText ?? '';
+      title = '';
+      sessionId = ctx.sessionId ?? '';
+      noteId = ctx.noteId ?? '';
+      tagsInput = '';
+      severity = '';
+      saveAs = 'evidence';
+      pastedFile = null;
+      revokePreview();
 
-    let nextTargetId = ctx.targetId ?? '';
-    if (!nextTargetId) {
-      try {
-        nextTargetId = localStorage.getItem(RECENT_TARGET_KEY) ?? '';
-      } catch {
-        nextTargetId = '';
+      let nextTargetId = ctx.targetId ?? '';
+      if (!nextTargetId) {
+        try {
+          nextTargetId = localStorage.getItem(RECENT_TARGET_KEY) ?? '';
+        } catch {
+          nextTargetId = '';
+        }
       }
-    }
-    if (!nextTargetId || !targets.some((target) => target.id === nextTargetId)) {
-      nextTargetId = targets[0]?.id ?? '';
-    }
-    targetId = nextTargetId;
-    tab = 'paste';
+      if (!nextTargetId || !targets.some((target) => target.id === nextTargetId)) {
+        nextTargetId = targets[0]?.id ?? '';
+      }
+      targetId = nextTargetId;
+      tab = 'paste';
 
-    await tick();
-    textarea?.focus();
+      await tick();
+      textarea?.focus();
+    } finally {
+      hydrating = false;
+    }
   }
 
   function reset(): void {
@@ -420,11 +432,38 @@
     quickCaptureStore.close();
   }
 
+  function focusables(): HTMLElement[] {
+    if (!containerEl) return [];
+    return Array.from(
+      containerEl.querySelectorAll<HTMLElement>('input,button,select,textarea,a[href],[tabindex]')
+    ).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+  }
+
   function handleKeydown(event: KeyboardEvent): void {
     if (!open) return;
     if (event.key === 'Escape') {
       event.preventDefault();
       close();
+      return;
+    }
+    if (event.key === 'Tab') {
+      const items = focusables();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (event.shiftKey) {
+        if (active === first || !containerEl?.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (active === last || !containerEl?.contains(active)) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+      return;
     }
     if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
       event.preventDefault();
@@ -464,6 +503,7 @@
     on:click|self={close}
   >
     <div
+      bind:this={containerEl}
       class="relative flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-card/95 shadow-dark-xl backdrop-blur-xl"
       role="dialog"
       aria-modal="true"

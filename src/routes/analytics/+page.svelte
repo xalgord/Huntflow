@@ -55,7 +55,9 @@
 
   $: completedSessions = $sessionStore.filter((session) => session.status === 'completed');
   $: totalSeconds = completedSessions.reduce((sum, session) => sum + session.durationActual, 0);
-  $: totalPayout = $payoutStore.filter((payout) => payout.status === 'paid').reduce((sum, payout) => sum + payout.amount, 0);
+  $: totalPayout = Math.round(
+    $payoutStore.filter((payout) => payout.status === 'paid').reduce((sum, payout) => sum + payout.amount, 0) * 100
+  ) / 100;
   $: decidedReports = $submissionStore.filter((submission) =>
     ['accepted', 'resolved', 'rewarded', 'duplicate', 'informational', 'not-applicable', 'closed'].includes(submission.status)
   );

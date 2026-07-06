@@ -42,11 +42,7 @@ function computeBestStreak(sessions: Session[]): number {
   let current = 1;
 
   for (let index = 1; index < dates.length; index += 1) {
-    const previous = new Date(`${dates[index - 1]}T00:00:00.000Z`);
-    const next = new Date(`${dates[index]}T00:00:00.000Z`);
-    const diffDays = Math.round((next.getTime() - previous.getTime()) / 86_400_000);
-
-    if (diffDays === 1) {
+    if (isNextDay(dates[index - 1], dates[index])) {
       current += 1;
     } else {
       current = 1;
@@ -56,6 +52,20 @@ function computeBestStreak(sessions: Session[]): number {
   }
 
   return best;
+}
+
+function isNextDay(prevKey: string, nextKey: string): boolean {
+  const [py, pm, pd] = prevKey.split('-').map(Number);
+  const [ny, nm, nd] = nextKey.split('-').map(Number);
+  if (ny === py && nm === pm && nd === pd + 1) return true;
+  if (ny === py + 1 && pm === 12 && nm === 1 && pd === 31 && nd === 1) return true;
+  const dim = daysInMonth(py, pm);
+  if (ny === py && nm === pm + 1 && pd === dim && nd === 1) return true;
+  return false;
+}
+
+function daysInMonth(year: number, month: number): number {
+  return new Date(year, month, 0).getDate();
 }
 
 function computeDailyStats(sessions: Session[]): DailyStat[] {

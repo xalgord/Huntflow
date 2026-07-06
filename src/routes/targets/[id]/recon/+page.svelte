@@ -79,11 +79,13 @@
 
   async function updateAsset(event: CustomEvent<{ asset: ReconAsset }>) {
     await reconAssetStore.put(event.detail.asset);
+    await reconAssetStore.persistNow();
   }
 
   async function deleteAsset(event: CustomEvent<{ id: string }>) {
     if (!confirm('Delete this recon asset?')) return;
     await reconAssetStore.delete(event.detail.id);
+    await reconAssetStore.persistNow();
   }
 </script>
 

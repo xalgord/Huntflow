@@ -49,6 +49,8 @@
   let activeNode: CanvasNode | null = null;
   let lastPointer = { x: 0, y: 0 };
   let resizeObserver: ResizeObserver | null = null;
+  let drawQueued = false;
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
   $: graphKey = JSON.stringify({
     nodes: graph.nodes.map((node) => [node.id, node.type, node.label, node.subtitle, node.tone]),
@@ -189,9 +191,19 @@
     }
   }
 
+  function scheduleDraw(): void {
+    if (drawQueued) return;
+    drawQueued = true;
+    requestAnimationFrame(() => {
+      drawQueued = false;
+      draw();
+    });
+  }
+
   function tickLayout(): void {
     clampNodesToViewport();
-    draw();
+    if (simulation && simulation.alpha() < 0.025) return;
+    scheduleDraw();
   }
 
   function finishLayout(): void {
@@ -222,7 +234,9 @@
       .force('collide', forceCollide<CanvasNode>().radius((node) => node.size + 18))
       .force('center', forceCenter(width / 2, height / 2))
       .alpha(0.8)
+      .alphaMin(0.025)
       .alphaDecay(0.055)
+      .velocityDecay(0.4)
       .on('tick', tickLayout)
       .on('end', finishLayout);
 
@@ -246,9 +260,13 @@
       canvas.style.height = `${height}px`;
       context = canvas.getContext('2d');
       context?.setTransform(scale, 0, 0, scale, 0, 0);
-      simulation?.force('center', forceCenter(width / 2, height / 2));
-      simulation?.alpha(0.4).restart();
       draw();
+      if (resizeTimer) clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        resizeTimer = null;
+        simulation?.force('center', forceCenter(width / 2, height / 2));
+        simulation?.alpha(0.4).restart();
+      }, 150);
     };
 
     resize();
@@ -462,6 +480,7 @@
 
   onDestroy(() => {
     simulation?.stop();
+    if (resizeTimer) clearTimeout(resizeTimer);
     resizeObserver?.disconnect();
   });
 </script>

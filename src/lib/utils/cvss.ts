@@ -98,9 +98,11 @@ const UI_VALUES: Record<CvssUserInteraction, number> = { N: 0.85, R: 0.62 };
 const IMPACT_VALUES: Record<CvssImpact, number> = { N: 0, L: 0.22, H: 0.56 };
 
 function roundUp(value: number): number {
-  // CVSS rounding: round up to one decimal place, treating very small float deltas as zero.
-  const rounded = Math.ceil(value * 100000) / 100000;
-  return Math.ceil(rounded * 10) / 10;
+  // CVSS 3.1 spec rounding: round to nearest at 1e-5, then round up to one
+  // decimal place, with an early return when already at full precision.
+  const int_input = Math.round(value * 100000);
+  const decimal = int_input % 10000;
+  return decimal === 0 ? int_input / 100000 : (Math.floor(int_input / 10000) + 1) / 10;
 }
 
 export function calculateCvss(metrics: CvssBaseMetrics): CvssVector {
@@ -144,9 +146,7 @@ const PARSE_KEYS: (keyof CvssBaseMetrics)[] = ['AV', 'AC', 'PR', 'UI', 'S', 'C',
 
 export function parseCvssVector(vector: string): CvssBaseMetrics | null {
   if (!vector || typeof vector !== 'string') return null;
-  if (!vector.toUpperCase().startsWith('CVSS:3.1/') && !vector.toUpperCase().startsWith('CVSS:3.0/')) {
-    return null;
-  }
+  if (!getCvssVersion(vector)) return null;
 
   const parts = vector
     .split('/')
@@ -174,6 +174,21 @@ export function parseCvssVector(vector: string): CvssBaseMetrics | null {
   }
 
   return candidate;
+}
+
+export function getCvssVersion(vector: string): '3.0' | '3.1' | null {
+  if (!vector || typeof vector !== 'string') return null;
+  const upper = vector.toUpperCase();
+  if (upper.startsWith('CVSS:3.1/')) return '3.1';
+  if (upper.startsWith('CVSS:3.0/')) return '3.0';
+  return null;
+}
+
+export function formatCvssVersionWarning(vector: string): string {
+  if (getCvssVersion(vector) === '3.0') {
+    return 'CVSS 3.0 vector detected — calculations use the 3.1 spec. Re-export as CVSS:3.1 for full accuracy.';
+  }
+  return '';
 }
 
 export function severityToReportSeverity(severity: CvssBaseSeverity): 'critical' | 'high' | 'medium' | 'low' | 'informational' {

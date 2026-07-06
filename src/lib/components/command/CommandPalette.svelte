@@ -73,6 +73,7 @@
   let activeIndex = 0;
   let inputEl: HTMLInputElement | undefined;
   let listEl: HTMLDivElement | undefined;
+  let containerEl: HTMLDivElement | undefined;
   let recentIds: string[] = [];
 
   $: open = $commandPaletteStore.open;
@@ -429,8 +430,39 @@
   $: flat = groups.flatMap((g) => g.items);
   $: if (activeIndex >= flat.length) activeIndex = Math.max(0, flat.length - 1);
 
+  function focusables(): HTMLElement[] {
+    if (!containerEl) return [];
+    return Array.from(
+      containerEl.querySelectorAll<HTMLElement>('input,button,select,textarea,a[href],[tabindex]')
+    ).filter((el) => !el.hasAttribute('disabled') && el.tabIndex !== -1);
+  }
+
   function handleKeydown(event: KeyboardEvent): void {
     if (!open) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key === 'Tab') {
+      const items = focusables();
+      if (items.length === 0) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (event.shiftKey) {
+        if (active === first || !containerEl?.contains(active)) {
+          event.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (active === last || !containerEl?.contains(active)) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
+      return;
+    }
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       activeIndex = Math.min(activeIndex + 1, flat.length - 1);
@@ -443,9 +475,6 @@
       event.preventDefault();
       const item = flat[activeIndex];
       if (item) void execute(item);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      close();
     } else if (event.key === 'Home') {
       event.preventDefault();
       activeIndex = 0;
@@ -480,6 +509,7 @@
     on:click|self={close}
   >
     <div
+      bind:this={containerEl}
       class="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card/95 shadow-dark-xl backdrop-blur-xl"
       role="dialog"
       aria-modal="true"
