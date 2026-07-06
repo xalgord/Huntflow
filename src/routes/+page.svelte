@@ -38,7 +38,7 @@
       </span>
     </a>
     <div class="flex items-center gap-2">
-      <a href="https://github.com/xalgord" class="hf-button-ghost hidden sm:inline-flex" target="_blank" rel="noreferrer">
+      <a href="https://github.com/xalgorix" class="hf-button-ghost hidden sm:inline-flex" target="_blank" rel="noreferrer">
         <Github size={16} aria-hidden="true" />
         GitHub
       </a>
@@ -49,7 +49,7 @@
   <section class="relative overflow-hidden border-y border-zinc-900 bg-black">
     <div class="mx-auto flex min-h-[calc(100vh-88px)] max-w-7xl flex-col justify-between px-5 py-14 sm:py-16">
       <div class="mx-auto max-w-5xl text-center">
-        <p class="text-sm font-medium text-zinc-400">HuntFlow by xalgord</p>
+        <p class="text-sm font-medium text-zinc-400">HuntFlow by xalgorix</p>
         <h1 class="mx-auto mt-4 max-w-5xl text-5xl font-semibold leading-tight tracking-normal text-white sm:text-6xl lg:text-7xl">
           Your local-first command center for bug bounty hunting.
         </h1>
@@ -61,7 +61,7 @@
             Start using
             <ArrowRight size={16} aria-hidden="true" />
           </a>
-          <a href="https://github.com/xalgord" target="_blank" rel="noreferrer" class="hf-button-secondary">
+          <a href="https://github.com/xalgorix" target="_blank" rel="noreferrer" class="hf-button-secondary">
             <Github size={16} aria-hidden="true" />
             View GitHub
           </a>
@@ -209,7 +209,7 @@ huntflow --port 4000</pre>
     <div class="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h2 class="text-2xl font-semibold text-zinc-50">Start hunting with a cleaner workspace.</h2>
-        <p class="mt-2 text-sm text-zinc-500">Local-first bug bounty workflow management by xalgord.</p>
+        <p class="mt-2 text-sm text-zinc-500">Local-first bug bounty workflow management by xalgorix.</p>
       </div>
       <a href="/dashboard" class="hf-button-primary">
         Start using

@@ -65,7 +65,7 @@ Vercel (static SvelteKit build, served from huntflow.xalgorix.com)
 
 ### 3.1 Import the GitHub repo
 
-1. New Project → import `xalgord/huntflow`.
+1. New Project → import `xalgorix/huntflow`.
 2. Framework preset: **SvelteKit (auto-detected)**.
 3. Build Command: `npm run build` (already in `vercel.json`).
 4. Output Directory: `build` (already in `vercel.json`).

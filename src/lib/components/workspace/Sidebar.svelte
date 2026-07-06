@@ -34,7 +34,7 @@
       {#if !collapsed}
         <span class="min-w-0">
           <span class="block text-sm font-semibold tracking-normal text-zinc-50">HuntFlow</span>
-          <span class="block truncate text-[11px] text-zinc-500">by xalgord</span>
+          <span class="block truncate text-[11px] text-zinc-500">by xalgorix</span>
         </span>
       {/if}
     </a>
