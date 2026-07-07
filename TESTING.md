@@ -147,7 +147,7 @@ Test run:
 - Expected result:
   - Session status is abandoned.
   - Session appears in history with abandoned status.
-  - Session does not count toward completed stats, streak, or hunting time.
+  - Session does not count toward completed stats, streak, or testing time.
 
 ### T-08 Abandon After 50 Percent Guard
 - Pass/Fail: [ ] Pass [ ] Fail
@@ -441,9 +441,9 @@ Test run:
 - Steps:
   1. Complete one or more sessions today.
   2. Open dashboard/stats.
-  3. Compare displayed hunting time and completed count to session history.
+  3. Compare displayed testing time and completed count to session history.
 - Expected result:
-  - Today's hunting time equals completed session duration total.
+  - Today's testing time equals completed session duration total.
   - Completed session count is correct.
   - Abandoned sessions are excluded from completed totals.
 
@@ -477,7 +477,7 @@ Test run:
   4. Tap a day if day drill-down is supported.
 - Expected result:
   - Each day appears in the correct weekday position.
-  - Color intensity matches hunting minutes: 0, 1-15, 16-45, 46-90, 90+.
+  - Color intensity matches testing minutes: 0, 1-15, 16-45, 46-90, 90+.
   - Day drill-down shows that day's sessions.
 
 ### S-05 Total Time Cards
@@ -485,7 +485,7 @@ Test run:
 - Steps:
   1. Create completed sessions this week, this month, and all time.
   2. Open stats.
-  3. Compare total hunting time cards against manual sums.
+  3. Compare total testing time cards against manual sums.
 - Expected result:
   - All-time, monthly, and weekly totals are correct.
   - Durations are formatted clearly as hours/minutes.

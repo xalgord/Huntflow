@@ -45,3 +45,17 @@ scripts/read-dodo-clipboard.mjs
 # One-off screenshot capture, not used by the build.
 example.png
 powers/
+
+# Internal planning / strategy docs — not for public consumption.
+# These contain build prompts, architecture decisions, deploy runbooks,
+# and migration procedures with internal project names.
+brain.md
+mvp.md
+project.md
+prompts.md
+tech-spec.md
+data-model.md
+DEPLOY.md
+docs/firebase-auth-migration/
+docs/testing-checklist.md
+docs/screenshots/

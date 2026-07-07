@@ -45,15 +45,15 @@ npx huntflow --port 4000
 
 ## Screenshots
 
-![HuntFlow dashboard](docs/screenshots/dashboard.png)
+![HuntFlow dashboard](static/screenshots/dashboard.png)
 
 | Targets | Notes |
 | --- | --- |
-| ![Targets](docs/screenshots/target-detail.png) | ![Notes](docs/screenshots/notes-preview.png) |
+| ![Targets](static/screenshots/targets.png) | ![Notes](static/screenshots/notes.png) |
 
-| Stats | Income |
+| Evidence | Findings |
 | --- | --- |
-| ![Stats](docs/screenshots/stats.png) | ![Income](docs/screenshots/income.png) |
+| ![Evidence](static/screenshots/evidence.png) | ![Findings](static/screenshots/findings.png) |
 
 ## License
 

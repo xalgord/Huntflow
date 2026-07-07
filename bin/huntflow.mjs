@@ -63,7 +63,7 @@ function parseArgs() {
 
 function showHelp() {
   console.log(`
-HuntFlow - Bug Bounty Hunting Companion
+HuntFlow - Pentest Workflow Companion
 
 Usage:
   huntflow [options]

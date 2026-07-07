@@ -7,7 +7,7 @@
 ## Design Principles
 
 1. **Dark First:** Default theme is dark. Hunters work at night. Light mode is secondary.
-2. **High Contrast:** Text must be readable in direct sunlight (mobile hunting outdoors).
+2. **High Contrast:** Text must be readable in direct sunlight (mobile testing outdoors).
 3. **Information Density:** Show what matters, hide what doesn't. No wasted space.
 4. **Touch Targets:** Minimum 44x44px for all interactive elements (mobile-first).
 5. **Instant Feedback:** Every tap/click gets immediate visual response.
@@ -578,7 +578,7 @@ Action:         Primary button (if applicable)
 
 ### Examples
 ```
-No Sessions:    "No hunting sessions yet" + "Start your first session" button
+No Sessions:    "No testing sessions yet" + "Start your first session" button
 No Targets:     "No targets tracked" + "Add your first target" button
 No Notes:       "No notes yet" + "Write your first note" button
 No Stats:       "Hunt for 7 days to see your streak" + subtle illustration
