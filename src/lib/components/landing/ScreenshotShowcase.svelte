@@ -23,9 +23,10 @@
 
   // Each `id` matches a real PNG in static/screenshots/ that was captured
   // from the running app with seeded sample engagement data. Order follows
-  // the natural testing workflow: see the day, focus, pick a target,
-  // write findings, attach proof, look up payloads, run utilities,
-  // ship the report, then reach for references.
+  // the natural testing workflow: overview the dashboard, start a session,
+  // pick a target, write findings, capture evidence, look up payloads,
+  // run utilities, ship the report, track findings, check analytics,
+  // then reach for references.
   const shots: Shot[] = [
     {
       id: 'dashboard',
@@ -36,8 +37,8 @@
       alt: 'HuntFlow dashboard with Acme engagement workspace, stats, and exploit chain status'
     },
     {
-      id: 'timer',
-      title: 'Focus timer',
+      id: 'sessions',
+      title: 'Sessions',
       description:
         'Pomodoro-style focus sessions tied to a target. Track streaks, completed sessions, and best run, so deep work compounds instead of slipping away.',
       fallback: DashboardMockup,
@@ -47,7 +48,7 @@
       id: 'targets',
       title: 'Targets',
       description:
-        'Engagement tracker for internal pentests, client work, bug bounty, and self-hosted scopes. Sort by priority and status so you spend time on what matters.',
+        'Engagement tracker for internal pentests, client work, and self-hosted scopes. Sort by priority and status so you spend time on what matters.',
       fallback: TargetsMockup,
       alt: 'Targets list with Acme engagement, Globex Public, and Initech Lite ranked by priority'
     },
@@ -84,7 +85,15 @@
       alt: 'Pentest toolkit utilities with Encoder/Decoder, JWT, Hash, Random, and Scope Validator tabs'
     },
     {
-      id: 'submissions',
+      id: 'reports',
+      title: 'Reports',
+      description:
+        'Auto-populated report builder with severity suggestions, CVSS scoring, and markdown/PDF export. Turn confirmed findings into a structured report in minutes.',
+      fallback: NotesMockup,
+      alt: 'Report builder with markdown editor, CVSS calculator, and PDF export preview'
+    },
+    {
+      id: 'findings',
       title: 'Findings',
       description:
         'Track every finding from draft through triage, resolution, and sign-off. Weekly recap shows findings logged, triaged, resolved, and hours tested.',
@@ -92,7 +101,23 @@
       alt: 'Findings pipeline with 4 reports, 2 in triage, 2 resolved, and weekly recap'
     },
     {
-      id: 'references',
+      id: 'analytics',
+      title: 'Analytics',
+      description:
+        'Year heatmap, weekly recap, hours tracked, vulnerability mix, and the times of day you actually ship. See patterns, not just numbers.',
+      fallback: StatsMockup,
+      alt: 'Analytics dashboard with year heatmap, weekly bars, vulnerability distribution, and activity timeline'
+    },
+    {
+      id: 'payouts',
+      title: 'Payouts',
+      description:
+        'Track engagement payouts and status progression across platforms. Export for taxes or client billing in one click.',
+      fallback: DashboardMockup,
+      alt: 'Payouts tracker with engagement payouts, status filters, and tax export'
+    },
+    {
+      id: 'reference',
       title: 'References',
       description:
         'Knowledge base of writeups, CVEs, tools, cheatsheets, and videos organised by vuln class. Build a personal corpus that travels with you.',
@@ -163,14 +188,13 @@
       </div>
     </div>
 
-    <!-- The captured PNGs are roughly 1903x854 (~ 20:9). We match that
+    <!-- The captured PNGs are roughly 1895x1078 (~1.76:1). We match that
          aspect ratio exactly so the screenshots fill the frame edge-to-edge
          with no clipping and no visible letterboxing. `object-contain`
-         guarantees the entire UI is always visible (Add Target button,
-         right-most cards, etc.) even if a future capture has a slightly
-         different ratio. The CSS-mockup fallbacks use the same frame so
-         layout never jumps when an image fails to load. -->
-    <div class="relative aspect-[1903/854] overflow-hidden bg-zinc-950">
+         guarantees the entire UI is always visible even if a future capture
+         has a slightly different ratio. The CSS-mockup fallbacks use the
+         same frame so layout never jumps when an image fails to load. -->
+    <div class="relative aspect-[1895/1078] overflow-hidden bg-zinc-950">
       {#each shots as shot, index}
         <div
           class="absolute inset-0 transition-opacity duration-700 {active === index
