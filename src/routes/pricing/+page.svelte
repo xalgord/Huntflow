@@ -355,7 +355,7 @@
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Connect</p>
           <a
             class="mt-3 inline-flex items-center gap-2 text-zinc-300 hover:text-zinc-100"
-            href="https://github.com/xalgorix/huntflow"
+            href="https://github.com/xalgord/huntflow"
             rel="noreferrer"
           >
             <Github size={14} aria-hidden="true" />
