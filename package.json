@@ -1,7 +1,7 @@
 {
   "name": "huntflow",
   "version": "1.0.5",
-  "description": "Bug bounty hunting companion — track targets, sessions, notes, evidence, and payouts. Offline-first, zero telemetry.",
+  "description": "Pentest workflow companion — track targets, sessions, notes, evidence, and findings. Offline-first, zero telemetry.",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "bin": {
@@ -14,10 +14,9 @@
     "README.md"
   ],
   "keywords": [
-    "bug-bounty",
-    "security",
-    "hunting",
     "pentest",
+    "penetration-testing",
+    "security",
     "vulnerability",
     "tracker",
     "offline",

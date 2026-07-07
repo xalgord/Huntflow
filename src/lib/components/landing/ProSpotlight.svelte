@@ -17,12 +17,12 @@
       </span>
 
       <h2 class="mt-4 text-3xl font-bold leading-tight text-zinc-100 sm:text-4xl">
-        Real-time cloud sync — built for your hunting workspace.
+        Real-time cloud sync — built for your pentest workspace.
       </h2>
 
       <p class="mt-4 text-base leading-7 text-zinc-300">
-        HuntFlow Pro keeps your targets, sessions, notes, evidence and submissions in sync across every device, in
-        real time. Open a session on your laptop, finish it on your phone, write the report on a tablet — same data
+        HuntFlow Pro keeps your targets, sessions, notes, evidence and findings in sync across every device, in
+        real time. Start a test on your laptop, finish it on your phone, write the report on a tablet — same data
         everywhere, always up to date.
       </p>
 

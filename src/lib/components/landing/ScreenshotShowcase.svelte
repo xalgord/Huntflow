@@ -22,8 +22,8 @@
   }
 
   // Each `id` matches a real PNG in static/screenshots/ that was captured
-  // from the running app with seeded sample bounty data. Order follows
-  // the natural hunting workflow: see the day, focus, pick a target,
+  // from the running app with seeded sample engagement data. Order follows
+  // the natural testing workflow: see the day, focus, pick a target,
   // write findings, attach proof, look up payloads, run utilities,
   // ship the report, then reach for references.
   const shots: Shot[] = [
@@ -31,9 +31,9 @@
       id: 'dashboard',
       title: 'Dashboard',
       description:
-        'Local vault overview: today\u2019s focused time, active targets, evidence captured, and pending payouts. Pick up the timer where you paused yesterday.',
+        'Local vault overview: today\u2019s focused time, active targets, evidence captured, and pending reports. Pick up the timer where you paused yesterday.',
       fallback: DashboardMockup,
-      alt: 'HuntFlow dashboard with Acme Bug Bounty hunt-room, stats, and exploit chain status'
+      alt: 'HuntFlow dashboard with Acme engagement workspace, stats, and exploit chain status'
     },
     {
       id: 'timer',
@@ -41,15 +41,15 @@
       description:
         'Pomodoro-style focus sessions tied to a target. Track streaks, completed sessions, and best run, so deep work compounds instead of slipping away.',
       fallback: DashboardMockup,
-      alt: 'Focus session timer running 12:43 against Acme Bug Bounty with streak and session counters'
+      alt: 'Focus session timer running 12:43 against Acme engagement with streak and session counters'
     },
     {
       id: 'targets',
       title: 'Targets',
       description:
-        'Program tracker for HackerOne, Bugcrowd, Intigriti, and self-hosted scopes. Sort by priority and status so you spend time on what actually pays.',
+        'Engagement tracker for internal pentests, client work, bug bounty, and self-hosted scopes. Sort by priority and status so you spend time on what matters.',
       fallback: TargetsMockup,
-      alt: 'Targets list with Acme Bug Bounty, Globex Public, and Initech Lite ranked by priority'
+      alt: 'Targets list with Acme engagement, Globex Public, and Initech Lite ranked by priority'
     },
     {
       id: 'notes',
@@ -81,15 +81,15 @@
       description:
         'Encoder/decoder, JWT inspector, hash tools, random generators, and a real scope validator \u2014 all offline. Stop alt-tabbing to CyberChef.',
       fallback: DashboardMockup,
-      alt: 'Hunter Toolkit utilities with Encoder/Decoder, JWT, Hash, Random, and Scope Validator tabs'
+      alt: 'Pentest toolkit utilities with Encoder/Decoder, JWT, Hash, Random, and Scope Validator tabs'
     },
     {
       id: 'submissions',
-      title: 'Submissions',
+      title: 'Findings',
       description:
-        'Track every report from draft through triage, resolution, and reward. Weekly recap shows submitted, triaged, bounty earned, and hours hunted.',
+        'Track every finding from draft through triage, resolution, and sign-off. Weekly recap shows findings logged, triaged, resolved, and hours tested.',
       fallback: StatsMockup,
-      alt: 'Submissions pipeline with 4 reports, 2 in triage, 2 resolved, $1,000 total bounty, and weekly recap'
+      alt: 'Findings pipeline with 4 reports, 2 in triage, 2 resolved, and weekly recap'
     },
     {
       id: 'references',

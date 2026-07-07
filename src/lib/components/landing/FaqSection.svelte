@@ -17,7 +17,7 @@
     {
       question: 'What data is stored in the browser?',
       answer:
-        'Targets, sessions, notes, recon, evidence files, payouts, submissions, settings — all of it. You can also export an encrypted backup at any time and restore it on another device.'
+        'Targets, sessions, notes, recon, evidence files, findings, settings — all of it. You can also export an encrypted backup at any time and restore it on another device.'
     },
     {
       question: 'How does cloud sync compare to a regular database?',
@@ -37,7 +37,7 @@
     {
       question: 'How is HuntFlow different from a generic note app?',
       answer:
-        'It\u2019s built specifically for the bug bounty workflow: targets with scope rules, pomodoro sessions tied to programs, vulnerability-specific note templates, an evidence canvas, payout tracking, ROI per program, and a hunter toolkit (encoder/decoder, JWT, scope validator).'
+        'It\u2019s built specifically for the pentest workflow: targets with scope rules, timed sessions tied to engagements, vulnerability-specific note templates, an evidence canvas, findings tracking, coverage per engagement, and a pentest toolkit (encoder/decoder, JWT, scope validator).'
     },
     {
       question: 'Can I run HuntFlow locally without ever connecting to the internet?',
@@ -64,9 +64,7 @@
       <p class="hf-eyebrow">FAQ</p>
       <h2 class="mt-2 text-3xl font-bold leading-tight text-zinc-100 sm:text-4xl">Things people ask before they install.</h2>
       <p class="mt-3 text-sm leading-6 text-zinc-400">
-        Still have questions? Use the
-        <a href="#contact" class="text-primary-300 underline-offset-4 hover:underline">contact form below</a>
-        or email
+        Still have questions? Email
         <a href="mailto:huntflow@xalgorix.com" class="text-primary-300 underline-offset-4 hover:underline">huntflow@xalgorix.com</a>.
       </p>
     </div>

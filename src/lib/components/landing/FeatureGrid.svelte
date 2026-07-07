@@ -25,13 +25,13 @@
       icon: Timer,
       title: 'Focus sessions',
       description:
-        'Pomodoro-style timed hunts pinned to a target. Pause-aware, so abandoned minutes never count as work.'
+        'Pomodoro-style timed tests pinned to a target. Pause-aware, so abandoned minutes never count as work.'
     },
     {
       icon: Crosshair,
       title: 'Target tracker',
       description:
-        'Programs with platform, scope, priority, status, ROI per hour and acceptance rate — at a glance.'
+        'Engagements with scope, priority, status, time per target and coverage rate — at a glance.'
     },
     {
       icon: FileText,
@@ -55,11 +55,11 @@
       icon: BarChart3,
       title: 'Stats and streaks',
       description:
-        'Year heatmap, weekly recap, $/hour, vulnerability mix and the times of day you actually ship.'
+        'Year heatmap, weekly recap, hours tracked, vulnerability mix and the times of day you actually ship.'
     },
     {
       icon: Wrench,
-      title: 'Hunter toolkit',
+      title: 'Pentest toolkit',
       description:
         'Encoder/decoder, JWT, hash, random tokens and a scope validator. No more Alt-Tabbing to CyberChef.'
     },
@@ -67,7 +67,7 @@
       icon: Keyboard,
       title: 'Command palette',
       description:
-        'Cmd-K opens a fuzzy palette across every target, note, payload and submission. g-t to jump anywhere.'
+        'Cmd-K opens a fuzzy palette across every target, note, payload and finding. g-t to jump anywhere.'
     },
     {
       icon: ShieldCheck,
@@ -89,7 +89,7 @@
   <div class="mx-auto max-w-6xl">
     <div class="max-w-2xl">
       <p class="hf-eyebrow">Features</p>
-      <h2 class="mt-2 text-3xl font-bold leading-tight text-zinc-100 sm:text-4xl">Built around how hunters actually work.</h2>
+      <h2 class="mt-2 text-3xl font-bold leading-tight text-zinc-100 sm:text-4xl">Built around how pentesters actually work.</h2>
       <p class="mt-3 text-base leading-7 text-zinc-400">
         Ten focused tools that talk to each other, instead of ten browser tabs that don't.
       </p>
