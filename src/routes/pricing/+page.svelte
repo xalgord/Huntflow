@@ -374,7 +374,7 @@
     </div>
 
     <div class="mx-auto mt-10 max-w-6xl border-t border-white/[0.06] pt-6 text-xs text-zinc-600">
-      &copy; 2026 HuntFlow. All rights reserved.
+      &copy; 2026 HuntFlow. MIT Licensed.
     </div>
   </footer>
 </div>

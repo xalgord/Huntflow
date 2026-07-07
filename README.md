@@ -57,8 +57,6 @@ npx huntflow --port 4000
 
 ## License
 
-HuntFlow is proprietary software. Copyright © 2026 xalgorix. All rights reserved.
+MIT License. Copyright © 2026 xalgorix.
 
-You may install and use HuntFlow on your own devices for personal or internal business use under the terms in [`LICENSE`](./LICENSE). Redistribution, resale, sublicensing, and reverse engineering are not permitted.
-
-For commercial licensing or inquiries → [huntflow.xalgorix.com](https://huntflow.xalgorix.com)
+See [`LICENSE`](./LICENSE) for the full text. You are free to use, modify, distribute, and sublicense this software.

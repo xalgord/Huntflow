@@ -1,4 +1,32 @@
 User-agent: *
 Allow: /
+Allow: /pricing
+
+# App routes are client-side and not useful to crawlers.
+Disallow: /account
+Disallow: /analytics
+Disallow: /assets
+Disallow: /bookmarks
+Disallow: /dashboard
+Disallow: /demo
+Disallow: /findings
+Disallow: /forgot-password
+Disallow: /income
+Disallow: /notes
+Disallow: /payloads
+Disallow: /payouts
+Disallow: /programs
+Disallow: /reports
+Disallow: /reset-password
+Disallow: /sessions
+Disallow: /settings
+Disallow: /sign-in
+Disallow: /sign-up
+Disallow: /stats
+Disallow: /submissions
+Disallow: /targets
+Disallow: /timer
+Disallow: /tools
+Disallow: /verify-email
 
 Sitemap: https://huntflow.xalgorix.com/sitemap.xml

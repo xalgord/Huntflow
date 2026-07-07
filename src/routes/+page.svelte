@@ -266,7 +266,7 @@
     </div>
 
     <div class="mx-auto mt-10 max-w-7xl border-t border-zinc-900 pt-6 text-xs text-zinc-600">
-      &copy; 2026 HuntFlow by xalgorix. All rights reserved.
+      &copy; 2026 HuntFlow by xalgorix. MIT Licensed.
     </div>
   </footer>
 </main>
