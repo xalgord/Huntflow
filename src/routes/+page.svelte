@@ -27,6 +27,7 @@
       url: 'https://huntflow.xalgorix.com'
     }
   };
+  const jsonLdScript = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
 </script>
 
 <svelte:head>
@@ -59,7 +60,7 @@
   <meta name="twitter:image:alt" content="HuntFlow brand mark" />
   <meta name="twitter:site" content="@xalgorix" />
   <meta name="twitter:creator" content="@xalgorix" />
-  <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+  {@html `<script type="application/ld+json">${jsonLdScript}</script>`}
 </svelte:head>
 
 <main class="min-h-screen bg-black text-zinc-50">
