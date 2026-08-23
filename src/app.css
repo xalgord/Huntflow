@@ -11,8 +11,8 @@
   --card-foreground: 0 0% 98%;
   --popover: 0 0% 6%;
   --popover-foreground: 0 0% 98%;
-  --primary: 0 0% 98%;
-  --primary-foreground: 0 0% 4%;
+  --primary: 351 80% 48%;
+  --primary-foreground: 0 0% 98%;
   --secondary: 0 0% 9%;
   --secondary-foreground: 0 0% 96%;
   --muted: 0 0% 10%;
@@ -23,7 +23,7 @@
   --destructive-foreground: 0 0% 98%;
   --border: 0 0% 15%;
   --input: 0 0% 15%;
-  --ring: 0 0% 82%;
+  --ring: 351 80% 55%;
   --radius: 0.875rem;
   --commune-text-primary: #fafafa;
   --commune-text-secondary: #a1a1aa;
@@ -49,13 +49,16 @@
   --color-text-muted: #71717a;
   --color-link: hsl(var(--primary));
   --color-accent: hsl(var(--primary));
-  --color-accent-hover: #ffffff;
+  --color-accent-hover: #fb7185;
   --shadow-card:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
     rgba(0, 0, 0, 0.28) 0 18px 56px -36px;
   --terminal-amber: 42 92% 58%;
   --terminal-red: 0 77% 61%;
   --terminal-cyan: 217 91% 60%;
+  --hf-grid-line: hsl(0 0% 100% / 0.035);
+  --hf-glow: hsl(var(--primary) / 0.16);
+  --hf-glow-soft: hsl(var(--primary) / 0.07);
 }
 
 :root:not(.dark),
@@ -67,8 +70,8 @@
   --card-foreground: 240 10% 4%;
   --popover: 0 0% 100%;
   --popover-foreground: 240 10% 4%;
-  --primary: 154 68% 34%;
-  --primary-foreground: 158 74% 96%;
+  --primary: 351 74% 42%;
+  --primary-foreground: 0 0% 100%;
   --secondary: 240 5% 96%;
   --secondary-foreground: 240 6% 10%;
   --muted: 240 5% 96%;
@@ -79,7 +82,7 @@
   --destructive-foreground: 0 0% 98%;
   --border: 240 6% 90%;
   --input: 240 6% 90%;
-  --ring: 154 68% 34%;
+  --ring: 351 74% 42%;
   --color-bg-page: hsl(var(--background));
   --color-bg-page-deep: #ffffff;
   --color-bg-card: hsl(var(--card));
@@ -91,8 +94,11 @@
   --color-text-muted: hsl(240 4% 58%);
   --color-link: hsl(var(--primary));
   --color-accent: hsl(var(--primary));
-  --color-accent-hover: hsl(154 72% 28%);
+  --color-accent-hover: hsl(351 74% 34%);
   --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.7), 0 18px 40px rgba(24, 24, 27, 0.08);
+  --hf-grid-line: hsl(240 10% 4% / 0.05);
+  --hf-glow: hsl(var(--primary) / 0.1);
+  --hf-glow-soft: hsl(var(--primary) / 0.05);
 }
 
 @layer base {
@@ -116,6 +122,28 @@
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Xalgorix brand backdrop: faint targeting grid + crimson radial glow.
+     Fixed, non-interactive, and painted behind all app content. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+      radial-gradient(1150px 640px at 50% -14%, var(--hf-glow), transparent 60%),
+      radial-gradient(760px 480px at 100% 2%, var(--hf-glow-soft), transparent 58%),
+      linear-gradient(to right, var(--hf-grid-line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--hf-grid-line) 1px, transparent 1px);
+    background-size:
+      100% 100%,
+      100% 100%,
+      48px 48px,
+      48px 48px;
+    -webkit-mask-image: radial-gradient(ellipse 130% 94% at 50% 0%, #000 34%, transparent 88%);
+    mask-image: radial-gradient(ellipse 130% 94% at 50% 0%, #000 34%, transparent 88%);
   }
 
   html.light body {
@@ -162,18 +190,18 @@
   }
 
   ::selection {
-    background: hsl(0 0% 100% / 0.24);
-    color: hsl(var(--primary-foreground));
+    background: hsl(var(--primary) / 0.32);
+    color: hsl(var(--foreground));
   }
 }
 
 @layer components {
   .hf-shell {
-    @apply min-h-screen bg-background text-foreground;
+    @apply min-h-screen text-foreground;
   }
 
   .hf-page {
-    @apply min-h-screen bg-black px-5 pb-16 pt-6 text-foreground sm:px-6 xl:px-10;
+    @apply min-h-screen px-5 pb-16 pt-6 text-foreground sm:px-6 xl:px-10;
   }
 
   .hf-page-inner {
@@ -226,7 +254,10 @@
   }
 
   .hf-button-primary {
-    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-zinc-50 px-4 py-2.5 text-sm font-medium text-black shadow-dark-sm transition hover:bg-white active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground transition hover:bg-primary-600 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.12),
+      0 10px 30px -12px hsl(var(--primary) / 0.65);
   }
 
   .hf-button-secondary {

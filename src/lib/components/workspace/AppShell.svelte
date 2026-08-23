@@ -10,7 +10,7 @@
   $: sidebarWidth = collapsed ? '4rem' : '14rem';
 </script>
 
-<div class="min-h-screen bg-black text-zinc-50" style={`--hf-sidebar-width: ${sidebarWidth}`}>
+<div class="min-h-screen text-zinc-50" style={`--hf-sidebar-width: ${sidebarWidth}`}>
   <Sidebar
     {pathname}
     bind:collapsed
