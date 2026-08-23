@@ -40,6 +40,32 @@ function requireEnv(name: string): string {
 }
 
 /**
+ * Validate a client-supplied post-checkout redirect URL before we hand
+ * it to Dodo as `return_url` / `cancel_url`. We only accept absolute
+ * http(s) URLs, which rejects `javascript:`, `data:`, and other
+ * non-navigational schemes from being forwarded as a redirect target.
+ *
+ * Host allow-listing is intentionally NOT enforced here: HuntFlow is
+ * served from several origins (production domain, Vercel previews,
+ * localhost during dev), and these URLs are the caller's own return
+ * destinations for their own checkout — not a cross-user redirect. The
+ * scheme check is the proportionate hardening; a host allow-list would
+ * risk breaking legitimate deployments for a self-redirect-only vector.
+ */
+function requireRedirectUrl(name: string, value: string): string {
+	let parsed: URL;
+	try {
+		parsed = new URL(value);
+	} catch {
+		throw new ConvexError(`${name} must be an absolute http(s) URL.`);
+	}
+	if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
+		throw new ConvexError(`${name} must be an http(s) URL.`);
+	}
+	return parsed.toString();
+}
+
+/**
  * Create a Dodo Payments checkout session for the calling user.
  *
  * Requires an authenticated Firebase identity. The action POSTs to
@@ -77,6 +103,10 @@ export const createCheckoutSession = action({
 		const apiKey = requireEnv('DODO_API_KEY');
 		const productId = requireEnv('DODO_PRO_PRODUCT_ID');
 
+		// Only forward well-formed http(s) redirect targets to Dodo.
+		const returnUrl = requireRedirectUrl('returnUrl', args.returnUrl);
+		const cancelUrl = requireRedirectUrl('cancelUrl', args.cancelUrl);
+
 		const res = await fetch(`${baseUrl}/checkouts`, {
 			method: 'POST',
 			headers: {
@@ -87,8 +117,8 @@ export const createCheckoutSession = action({
 				product_cart: [{ product_id: productId, quantity: 1 }],
 				customer: { email: identity.email ?? '' },
 				metadata: { uid: identity.subject },
-				return_url: args.returnUrl,
-				cancel_url: args.cancelUrl
+				return_url: returnUrl,
+				cancel_url: cancelUrl
 			})
 		});
 
