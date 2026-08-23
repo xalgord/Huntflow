@@ -45,15 +45,15 @@ npx huntflow --port 4000
 
 ## Screenshots
 
-![HuntFlow dashboard](static/screenshots/dashboard.png)
+![HuntFlow dashboard](https://huntflow.xalgorix.com/screenshots/dashboard.png)
 
 | Targets | Notes |
 | --- | --- |
-| ![Targets](static/screenshots/targets.png) | ![Notes](static/screenshots/notes.png) |
+| ![Targets](https://huntflow.xalgorix.com/screenshots/targets.png) | ![Notes](https://huntflow.xalgorix.com/screenshots/notes.png) |
 
 | Evidence | Findings |
 | --- | --- |
-| ![Evidence](static/screenshots/evidence.png) | ![Findings](static/screenshots/findings.png) |
+| ![Evidence](https://huntflow.xalgorix.com/screenshots/evidence.png) | ![Findings](https://huntflow.xalgorix.com/screenshots/findings.png) |
 
 ## License
 
