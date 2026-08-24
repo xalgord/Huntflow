@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://huntflow.xalgorix.com/icons/huntflow-logo.png?v=2" alt="HuntFlow" width="120" height="120" />
+</p>
+
 # HuntFlow
 
 Your personal pentest command center. Track targets, time test sessions, capture evidence, draft reports, and manage findings — all from a single local-first app that runs entirely on your machine.
