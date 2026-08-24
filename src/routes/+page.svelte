@@ -43,10 +43,10 @@
     property="og:description"
     content="Track engagements, targets, test sessions, evidence, report drafts, and findings without spreadsheets or cloud lock-in."
   />
-  <meta property="og:image" content="https://huntflow.xalgorix.com/brand/huntflow-mark.jpg" />
-  <meta property="og:image:width" content="1024" />
-  <meta property="og:image:height" content="1024" />
-  <meta property="og:image:alt" content="HuntFlow brand mark — three stacked chevron-cut slabs" />
+  <meta property="og:image" content="https://huntflow.xalgorix.com/screenshots/dashboard.png" />
+  <meta property="og:image:width" content="1899" />
+  <meta property="og:image:height" content="1070" />
+  <meta property="og:image:alt" content="HuntFlow dashboard — the bug bounty command center" />
   <meta property="og:url" content="https://huntflow.xalgorix.com/" />
   <meta property="og:type" content="website" />
   <meta property="og:locale" content="en_US" />
@@ -56,8 +56,8 @@
     name="twitter:description"
     content="A local-first command center for authorized security testing and pentest engagements."
   />
-  <meta name="twitter:image" content="https://huntflow.xalgorix.com/brand/huntflow-mark.jpg" />
-  <meta name="twitter:image:alt" content="HuntFlow brand mark" />
+  <meta name="twitter:image" content="https://huntflow.xalgorix.com/screenshots/dashboard.png" />
+  <meta name="twitter:image:alt" content="HuntFlow dashboard — the bug bounty command center" />
   {@html `<script type="application/ld+json">${jsonLdScript}</script>`}
 </svelte:head>
 

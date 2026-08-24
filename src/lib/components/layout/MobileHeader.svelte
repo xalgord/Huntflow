@@ -27,7 +27,7 @@
   <div class="mx-auto flex max-w-6xl items-center justify-between gap-3">
     <a href="/account" class="flex min-h-[44px] items-center gap-2 text-sm font-semibold text-foreground">
       <span class="flex h-8 w-8 items-center justify-center rounded-[14px] border border-primary/25 bg-primary/10 text-primary">
-        <BrandMark size={22} filled={false} />
+        <BrandMark size={22} />
       </span>
       HuntFlow
     </a>
