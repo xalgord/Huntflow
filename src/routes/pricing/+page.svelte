@@ -127,7 +127,7 @@
   </main>
 {:else}
 <div class="pricing-page min-h-screen overflow-hidden text-zinc-100">
-  <header class="pricing-header sticky top-0 z-50 border-b border-white/[0.06] bg-[hsl(140_18%_3%/0.8)] backdrop-blur-xl backdrop-saturate-150">
+  <header class="pricing-header sticky top-0 z-50 border-b border-white/[0.06] bg-[hsl(350_18%_3%/0.8)] backdrop-blur-xl backdrop-saturate-150">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
       <a href="/" class="flex min-h-[44px] items-center gap-2.5 text-zinc-100 transition-opacity hover:opacity-80">
         <img
@@ -152,7 +152,7 @@
         {#if $authStore.signedIn}
           <a
             href="/account"
-            class="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-[10px] bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_12px_rgba(96,255,92,0.15)] transition hover:bg-primary-500 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.25)]"
+            class="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-[10px] bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_12px_rgba(225,29,52,0.15)] transition hover:bg-primary-500 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(225,29,52,0.25)]"
           >
             Open app
             <ArrowRight size={14} aria-hidden="true" />
@@ -166,7 +166,7 @@
           </a>
           <a
             href="/sign-up"
-            class="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-[10px] bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_12px_rgba(96,255,92,0.15)] transition hover:bg-primary-500 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.25)]"
+            class="inline-flex min-h-[36px] items-center justify-center gap-1.5 rounded-[10px] bg-primary-600 px-3.5 py-1.5 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_12px_rgba(225,29,52,0.15)] transition hover:bg-primary-500 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(225,29,52,0.25)]"
           >
             Get started
           </a>
@@ -178,21 +178,21 @@
   <section class="pricing-hero relative isolate border-b border-white/[0.06] px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
     <div class="absolute inset-0 -z-10" aria-hidden="true">
       <div class="absolute inset-0 bg-zinc-950"></div>
-      <div class="absolute inset-x-0 top-0 h-[640px] bg-[radial-gradient(ellipse_at_top,_rgba(20,184,166,0.18),_transparent_55%)]"></div>
-      <div class="absolute inset-x-0 top-0 h-full bg-[radial-gradient(circle_at_80%_20%,_rgba(96,255,92,0.08),_transparent_40%)]"></div>
-      <div class="absolute inset-x-0 bottom-0 h-[320px] bg-[radial-gradient(ellipse_at_bottom,_rgba(96,255,92,0.06),_transparent_60%)]"></div>
+      <div class="absolute inset-x-0 top-0 h-[640px] bg-[radial-gradient(ellipse_at_top,_rgba(225,29,52,0.18),_transparent_55%)]"></div>
+      <div class="absolute inset-x-0 top-0 h-full bg-[radial-gradient(circle_at_80%_20%,_rgba(225,29,52,0.08),_transparent_40%)]"></div>
+      <div class="absolute inset-x-0 bottom-0 h-[320px] bg-[radial-gradient(ellipse_at_bottom,_rgba(225,29,52,0.06),_transparent_60%)]"></div>
     </div>
     <!-- Grid overlay matching landing page -->
     <div class="absolute inset-0 -z-10 opacity-[0.18]" aria-hidden="true" style="background-image:linear-gradient(to right,rgb(30 41 59/0.5) 1px,transparent 1px),linear-gradient(to bottom,rgb(30 41 59/0.5) 1px,transparent 1px);background-size:56px 56px;mask-image:radial-gradient(ellipse at center top,black 0%,transparent 70%)"></div>
 
     <div class="mx-auto max-w-3xl text-center">
-      <span class="pricing-badge inline-flex items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/[0.08] px-4 py-1.5 text-xs font-medium text-primary-300 shadow-[0_0_16px_rgba(96,255,92,0.08)] backdrop-blur-sm">
+      <span class="pricing-badge inline-flex items-center gap-2 rounded-full border border-primary-500/25 bg-primary-500/[0.08] px-4 py-1.5 text-xs font-medium text-primary-300 shadow-[0_0_16px_rgba(225,29,52,0.08)] backdrop-blur-sm">
         <Sparkles size={13} aria-hidden="true" class="animate-pulse" />
         Simple, hunter-friendly pricing
       </span>
       <h1 class="mt-8 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
         Free forever. Pro when you need
-        <span class="bg-gradient-to-br from-primary-200 via-primary-400 to-cyan-500 bg-clip-text text-transparent">
+        <span class="bg-gradient-to-br from-primary-200 via-primary-400 to-primary-600 bg-clip-text text-transparent">
           real-time sync.
         </span>
       </h1>
@@ -248,7 +248,7 @@
 
   <!-- Pro value reminder, three concrete callouts -->
   <section class="relative border-b border-white/[0.06] px-4 py-20 sm:px-6 lg:px-8">
-    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_bottom,_rgba(96,255,92,0.04),_transparent_60%)]" aria-hidden="true"></div>
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_bottom,_rgba(225,29,52,0.04),_transparent_60%)]" aria-hidden="true"></div>
     <div class="mx-auto max-w-6xl">
       <p class="hf-eyebrow">What Pro buys you</p>
       <h2 class="mt-2 text-3xl font-bold leading-tight text-white sm:text-4xl">Three things, no fluff.</h2>
@@ -256,7 +256,7 @@
       <div class="mt-10 grid gap-5 md:grid-cols-3">
         <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-tranzinc-y-0.5">
           <div class="absolute inset-0 -z-10 bg-gradient-to-br from-primary-500/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-          <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(96,255,92,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(96,255,92,0.15)]">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(225,29,52,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(225,29,52,0.15)]">
             <Cloud size={20} aria-hidden="true" />
           </div>
           <h3 class="mt-5 text-lg font-semibold text-white">Real-time sync</h3>
@@ -266,7 +266,7 @@
         </article>
         <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-tranzinc-y-0.5">
           <div class="absolute inset-0 -z-10 bg-gradient-to-br from-primary-500/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-          <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(96,255,92,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(96,255,92,0.15)]">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(225,29,52,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(225,29,52,0.15)]">
             <Lock size={20} aria-hidden="true" />
           </div>
           <h3 class="mt-5 text-lg font-semibold text-white">Encrypted at rest</h3>
@@ -276,7 +276,7 @@
         </article>
         <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-tranzinc-y-0.5">
           <div class="absolute inset-0 -z-10 bg-gradient-to-br from-primary-500/[0.04] to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-          <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(96,255,92,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(96,255,92,0.15)]">
+          <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(225,29,52,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(225,29,52,0.15)]">
             <Smartphone size={20} aria-hidden="true" />
           </div>
           <h3 class="mt-5 text-lg font-semibold text-white">Mobile-friendly</h3>
@@ -290,7 +290,7 @@
 
   <!-- Closing CTA -->
   <section class="relative border-b border-white/[0.06] px-4 py-20 sm:px-6 lg:px-8">
-    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(20,184,166,0.08),_transparent_60%)]" aria-hidden="true"></div>
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(225,29,52,0.08),_transparent_60%)]" aria-hidden="true"></div>
     <div class="mx-auto max-w-3xl text-center">
       <h2 class="text-3xl font-bold leading-tight text-white sm:text-4xl">Stop juggling tabs. Start a hunt.</h2>
       <p class="mt-3 text-base leading-7 text-zinc-400">
@@ -302,7 +302,7 @@
       <div class="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
         <a
           href="/account"
-          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] bg-primary-600 px-6 py-3 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_12px_rgba(96,255,92,0.15)] transition hover:bg-primary-500 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(96,255,92,0.25)]"
+          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-[10px] bg-primary-600 px-6 py-3 text-sm font-medium text-white shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_12px_rgba(225,29,52,0.15)] transition hover:bg-primary-500 hover:shadow-[0_1px_2px_rgba(0,0,0,0.3),0_0_20px_rgba(225,29,52,0.25)]"
         >
           Open the app
         </a>
@@ -387,14 +387,14 @@
   /* ----------------------------------------------------------------------- */
   .pricing-page {
     background:
-      linear-gradient(180deg, hsl(140 18% 3%) 0%, hsl(140 20% 2%) 100%);
+      linear-gradient(180deg, hsl(350 18% 3%) 0%, hsl(350 20% 2%) 100%);
   }
 
   /* ----------------------------------------------------------------------- */
   /* Sign-in CTA inside the PlanCard slot — visual parity with             */
   /* `SubscriptionCard.primary-btn` so signed-in and signed-out users see   */
   /* the same button shape and color in the same slot. Contrast of         */
-  /* `#070d0a` text on `#60ff5c` is ~13:1, well past WCAG AAA.             */
+  /* `#070d0a` text on `hsl(var(--primary))` is ~13:1, well past WCAG AAA.             */
   /* ----------------------------------------------------------------------- */
   .signin-cta {
     display: inline-flex;
@@ -406,20 +406,20 @@
     padding: 0.6rem 1rem;
     border-radius: 0.5rem;
     border: 1px solid transparent;
-    background-color: #60ff5c;
-    color: #070d0a;
+    background-color: hsl(var(--primary));
+    color: #ffffff;
     font-size: 0.875rem;
     font-weight: 600;
     text-decoration: none;
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.06),
-      0 6px 18px rgba(96, 255, 92, 0.18);
+      0 6px 18px rgba(225, 29, 52, 0.18);
     transition: background-color 150ms ease, transform 150ms ease,
       box-shadow 150ms ease;
   }
 
   .signin-cta:hover {
-    background-color: #7dff7a;
+    background-color: #c81530;
   }
 
   .signin-cta:active {
@@ -429,8 +429,8 @@
   .signin-cta:focus-visible {
     outline: none;
     box-shadow:
-      0 0 0 2px rgba(96, 255, 92, 0.55),
-      0 6px 18px rgba(96, 255, 92, 0.25);
+      0 0 0 2px rgba(225, 29, 52, 0.55),
+      0 6px 18px rgba(225, 29, 52, 0.25);
   }
 
   .signin-cta__hint {
@@ -441,14 +441,14 @@
   }
 
   .signin-cta__link {
-    color: #86efac; /* green-300 */
+    color: #fda4af; /* crimson-300 */
     text-decoration: none;
-    border-bottom: 1px solid rgba(134, 239, 172, 0.4);
+    border-bottom: 1px solid rgba(253, 164, 175, 0.4);
   }
 
   .signin-cta__link:hover {
-    color: #bbf7d0;
-    border-bottom-color: rgba(187, 247, 208, 0.6);
+    color: #fecdd3;
+    border-bottom-color: rgba(254, 205, 211, 0.6);
   }
 
   /* ----------------------------------------------------------------------- */
@@ -470,7 +470,7 @@
   .value-card {
     background:
       linear-gradient(180deg, hsl(var(--primary) / 0.025), transparent 40%),
-      hsl(150 14% 7% / 0.6);
+      hsl(350 14% 7% / 0.6);
     box-shadow:
       inset 0 1px 0 hsl(0 0% 100% / 0.04),
       0 16px 48px -12px rgba(0, 0, 0, 0.35);

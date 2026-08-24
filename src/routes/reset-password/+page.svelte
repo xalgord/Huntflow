@@ -268,7 +268,7 @@
 <style>
   /* Primary link button — matches the AuthForm accent so the visual
      language stays consistent across every auth surface. Contrast of
-     `#070d0a` text on `#60ff5c` clears WCAG AAA. */
+     `#070d0a` text on `hsl(var(--primary))` clears WCAG AAA. */
   .primary-link {
     display: inline-flex;
     align-items: center;
@@ -277,27 +277,27 @@
     min-height: 44px;
     width: 100%;
     border-radius: 0.5rem;
-    background-color: #60ff5c;
+    background-color: hsl(var(--primary));
     padding: 0.625rem 1rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #070d0a;
+    color: #ffffff;
     text-decoration: none;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06),
-      0 8px 24px rgba(96, 255, 92, 0.18);
+      0 8px 24px rgba(225, 29, 52, 0.18);
     transition: background-color 150ms ease, transform 150ms ease,
       box-shadow 150ms ease;
   }
   .primary-link:hover {
-    background-color: #7dff7a;
+    background-color: #c81530;
   }
   .primary-link:active {
     transform: scale(0.985);
   }
   .primary-link:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(96, 255, 92, 0.55),
-      0 8px 24px rgba(96, 255, 92, 0.25);
+    box-shadow: 0 0 0 2px rgba(225, 29, 52, 0.55),
+      0 8px 24px rgba(225, 29, 52, 0.25);
   }
 
   /* Secondary link used for the "Request a new link" affordance.
@@ -332,7 +332,7 @@
   }
   .secondary-link:focus-visible {
     outline: none;
-    border-color: #60ff5c;
-    box-shadow: 0 0 0 2px rgba(96, 255, 92, 0.35);
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 2px rgba(225, 29, 52, 0.35);
   }
 </style>

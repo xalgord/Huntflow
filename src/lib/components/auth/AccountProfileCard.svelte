@@ -23,7 +23,7 @@
    * `AuthErrorMap.mapAuthError` so the surfaced copy stays brand-clean
    * even when the SDK leaks a "Firebase:" prefix. The component renders
    * no third-party badge text, no remote scripts, and matches the
-   * AuthForm visual conventions (zinc-950 chrome, `#60ff5c` accent,
+   * AuthForm visual conventions (zinc-950 chrome, `hsl(var(--primary))` accent,
    * `hf-input` / `hf-label` utilities, focus ring on accent green).
    *
    * Resolves OQ 4 inline at the wider Account flow level: the destructive
@@ -397,7 +397,7 @@
   .avatar__initial {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #60ff5c;
+    color: hsl(var(--primary));
     line-height: 1;
     user-select: none;
   }
@@ -491,8 +491,8 @@
 
   .icon-btn:focus-visible {
     outline: none;
-    border-color: #60ff5c;
-    box-shadow: 0 0 0 2px rgba(96, 255, 92, 0.35);
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 2px rgba(225, 29, 52, 0.35);
   }
 
   .icon-btn:disabled {
@@ -509,19 +509,19 @@
     padding: 0.375rem 0.875rem;
     border-radius: 0.5rem;
     border: 1px solid transparent;
-    background-color: #60ff5c;
-    color: #070d0a;
+    background-color: hsl(var(--primary));
+    color: #ffffff;
     font-size: 0.8125rem;
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06),
-      0 6px 18px rgba(96, 255, 92, 0.18);
+      0 6px 18px rgba(225, 29, 52, 0.18);
     transition: background-color 150ms ease, transform 150ms ease,
       box-shadow 150ms ease;
   }
 
   .primary-btn:hover:not(:disabled) {
-    background-color: #7dff7a;
+    background-color: #c81530;
   }
 
   .primary-btn:active:not(:disabled) {
@@ -530,8 +530,8 @@
 
   .primary-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(96, 255, 92, 0.55),
-      0 6px 18px rgba(96, 255, 92, 0.25);
+    box-shadow: 0 0 0 2px rgba(225, 29, 52, 0.55),
+      0 6px 18px rgba(225, 29, 52, 0.25);
   }
 
   .primary-btn:disabled {
@@ -570,8 +570,8 @@
 
   .secondary-btn:focus-visible {
     outline: none;
-    border-color: #60ff5c;
-    box-shadow: 0 0 0 2px rgba(96, 255, 92, 0.35);
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 2px rgba(225, 29, 52, 0.35);
   }
 
   .secondary-btn:disabled {
@@ -600,7 +600,7 @@
   .chip--ok {
     background-color: rgba(34, 197, 94, 0.12); /* green-500 @ 12% */
     border: 1px solid rgba(74, 222, 128, 0.35); /* green-400 @ 35% */
-    color: #bbf7d0; /* green-200 */
+    color: #fecdd3; /* green-200 */
   }
 
   .chip--warn {

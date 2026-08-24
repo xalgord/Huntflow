@@ -34,7 +34,7 @@
    * "Couldn't start checkout. Try again in a minute." string instead
    * of leaking SDK detail. The error region clears on the next click.
    *
-   * Visual style: zinc-950 surround, `#0e1612` card, `#60ff5c`
+   * Visual style: zinc-950 surround, `#0e1612` card, `hsl(var(--primary))`
    * primary action — the same palette as `AuthForm.svelte`. The "Pro"
    * pill uses the same accent green over a low-alpha tint so it reads
    * as a status badge, not a button. Card surface, not a banner.
@@ -281,7 +281,7 @@
   /* Pro pill — small status badge that uses the agreed accent green over   */
   /* a low-alpha tint. Reads as a badge rather than an action because it    */
   /* has no border-radius mismatch with the title baseline and no hover     */
-  /* state. Contrast of `#86efac` (green-300) on the tinted surface clears */
+  /* state. Contrast of `#fda4af` (green-300) on the tinted surface clears */
   /* WCAG AA for small text.                                                 */
   /* ----------------------------------------------------------------------- */
   .pro-pill {
@@ -290,9 +290,9 @@
     gap: 0.25rem;
     padding: 0.125rem 0.5rem;
     border-radius: 9999px;
-    background-color: rgba(96, 255, 92, 0.14);
-    border: 1px solid rgba(96, 255, 92, 0.4);
-    color: #86efac; /* green-300 */
+    background-color: rgba(225, 29, 52, 0.14);
+    border: 1px solid rgba(225, 29, 52, 0.4);
+    color: #fda4af; /* green-300 */
     font-size: 0.6875rem;
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -320,7 +320,7 @@
 
   /* ----------------------------------------------------------------------- */
   /* Primary CTA — same accent green as `AuthForm.primary-btn`. Contrast    */
-  /* of `#070d0a` (zinc-950) text on `#60ff5c` (accent) is ~13:1, well past */
+  /* of `#070d0a` (zinc-950) text on `hsl(var(--primary))` (accent) is ~13:1, well past */
   /* WCAG AAA for normal-size text.                                         */
   /* ----------------------------------------------------------------------- */
   .primary-btn {
@@ -332,19 +332,19 @@
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
     border: 1px solid transparent;
-    background-color: #60ff5c;
-    color: #070d0a;
+    background-color: hsl(var(--primary));
+    color: #ffffff;
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06),
-      0 6px 18px rgba(96, 255, 92, 0.18);
+      0 6px 18px rgba(225, 29, 52, 0.18);
     transition: background-color 150ms ease, transform 150ms ease,
       box-shadow 150ms ease;
   }
 
   .primary-btn:hover:not(:disabled) {
-    background-color: #7dff7a;
+    background-color: #c81530;
   }
 
   .primary-btn:active:not(:disabled) {
@@ -353,8 +353,8 @@
 
   .primary-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(96, 255, 92, 0.55),
-      0 6px 18px rgba(96, 255, 92, 0.25);
+    box-shadow: 0 0 0 2px rgba(225, 29, 52, 0.55),
+      0 6px 18px rgba(225, 29, 52, 0.25);
   }
 
   .primary-btn:disabled {

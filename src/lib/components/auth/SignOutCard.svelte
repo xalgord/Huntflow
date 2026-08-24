@@ -166,8 +166,8 @@
 
   .signout-btn:focus-visible {
     outline: none;
-    border-color: #60ff5c;
-    box-shadow: 0 0 0 2px rgba(96, 255, 92, 0.35);
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 2px rgba(225, 29, 52, 0.35);
   }
 
   .signout-btn:disabled {
