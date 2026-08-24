@@ -130,7 +130,7 @@
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6 lg:px-8">
       <a href="/" class="flex min-h-[44px] items-center gap-2.5 text-zinc-100 transition-opacity hover:opacity-80">
         <img
-          src="/brand/huntflow-mark.jpg"
+          src="/icons/huntflow-logo.png"
           alt="HuntFlow"
           width="36"
           height="36"
@@ -321,7 +321,7 @@
       <div class="max-w-md">
         <div class="flex items-center gap-2.5 text-zinc-100">
           <img
-            src="/brand/huntflow-mark.jpg"
+            src="/icons/huntflow-logo.png"
             alt="HuntFlow"
             width="36"
             height="36"
