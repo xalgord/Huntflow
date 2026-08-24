@@ -5,7 +5,7 @@
   import ProSpotlight from '$lib/components/landing/ProSpotlight.svelte';
   import FaqSection from '$lib/components/landing/FaqSection.svelte';
   import InstallCommand from '$lib/components/landing/InstallCommand.svelte';
-  import { ArrowRight, Github, Lock, Terminal, Twitter } from 'lucide-svelte';
+  import { ArrowRight, Github, Lock, Terminal } from 'lucide-svelte';
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -58,8 +58,6 @@
   />
   <meta name="twitter:image" content="https://huntflow.xalgorix.com/brand/huntflow-mark.jpg" />
   <meta name="twitter:image:alt" content="HuntFlow brand mark" />
-  <meta name="twitter:site" content="@xalgorix" />
-  <meta name="twitter:creator" content="@xalgorix" />
   {@html `<script type="application/ld+json">${jsonLdScript}</script>`}
 </svelte:head>
 
@@ -253,14 +251,6 @@
           >
             <Github size={14} aria-hidden="true" />
             GitHub
-          </a>
-          <a
-            class="mt-2 inline-flex items-center gap-2 text-zinc-300 transition hover:text-zinc-100"
-            href="https://x.com/xalgorix"
-            rel="noreferrer"
-          >
-            <Twitter size={14} aria-hidden="true" />
-            Twitter
           </a>
         </div>
       </div>
