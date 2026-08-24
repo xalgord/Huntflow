@@ -48,8 +48,7 @@
     LogIn,
     Lock,
     Smartphone,
-    Sparkles,
-    Twitter
+    Sparkles
   } from 'lucide-svelte';
   import InstallCommand from '$lib/components/landing/InstallCommand.svelte';
   import { onMount } from 'svelte';
@@ -360,14 +359,6 @@
           >
             <Github size={14} aria-hidden="true" />
             GitHub
-          </a>
-          <a
-            class="mt-2 inline-flex items-center gap-2 text-zinc-300 hover:text-zinc-100"
-            href="https://x.com/xalgorix"
-            rel="noreferrer"
-          >
-            <Twitter size={14} aria-hidden="true" />
-            Twitter
           </a>
         </div>
       </div>
