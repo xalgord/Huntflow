@@ -8,7 +8,7 @@
    * is brand-clean by construction.
    *
    * Visual design follows the AuthForm conventions: zinc-950 chrome
-   * (`#070d0a` surround, `#0e1612` card), `#60ff5c` primary action,
+   * (`#070d0a` surround, `#0e1612` card), `hsl(var(--primary))` primary action,
    * and the shared `hf-label` / `hf-input` utilities.
    *
    * Feature: firebase-auth-migration
@@ -120,7 +120,7 @@
 <style>
   /* Primary submit button — matches the AuthForm accent so the visual
      language stays consistent across every auth surface. Contrast of
-     `#070d0a` text on `#60ff5c` clears WCAG AAA. */
+     `#070d0a` text on `hsl(var(--primary))` clears WCAG AAA. */
   .primary-btn {
     display: inline-flex;
     align-items: center;
@@ -129,24 +129,24 @@
     min-height: 44px;
     width: 100%;
     border-radius: 0.5rem;
-    background-color: #60ff5c;
+    background-color: hsl(var(--primary));
     padding: 0.625rem 1rem;
     font-size: 0.875rem;
     font-weight: 600;
-    color: #070d0a;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 24px rgba(96, 255, 92, 0.18);
+    color: #ffffff;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 24px rgba(225, 29, 52, 0.18);
     transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
     cursor: pointer;
   }
   .primary-btn:hover:not(:disabled) {
-    background-color: #7dff7a;
+    background-color: #c81530;
   }
   .primary-btn:active:not(:disabled) {
     transform: scale(0.985);
   }
   .primary-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(96, 255, 92, 0.55), 0 8px 24px rgba(96, 255, 92, 0.25);
+    box-shadow: 0 0 0 2px rgba(225, 29, 52, 0.55), 0 8px 24px rgba(225, 29, 52, 0.25);
   }
   .primary-btn:disabled {
     cursor: not-allowed;

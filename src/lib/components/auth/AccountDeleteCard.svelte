@@ -34,7 +34,7 @@
    * Visual style: red/rose tinted destructive surface, matched to the
    * AuthForm input/button conventions (zinc-950 chrome,
    * `hf-input` / `hf-label` utilities) but with a destructive accent
-   * instead of the `#60ff5c` primary so the card reads as dangerous
+   * instead of the `hsl(var(--primary))` primary so the card reads as dangerous
    * without competing with sign-in primary actions on the same page.
    *
    * Feature: firebase-auth-migration
@@ -578,8 +578,8 @@
 
   .secondary-btn:focus-visible {
     outline: none;
-    border-color: #60ff5c;
-    box-shadow: 0 0 0 2px rgba(96, 255, 92, 0.35);
+    border-color: hsl(var(--primary));
+    box-shadow: 0 0 0 2px rgba(225, 29, 52, 0.35);
   }
 
   .secondary-btn:disabled {
