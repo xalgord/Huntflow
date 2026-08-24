@@ -45,31 +45,31 @@ npx huntflow --port 4000
 
 ## Screenshots
 
-![HuntFlow dashboard](https://huntflow.xalgorix.com/screenshots/dashboard.png)
+![HuntFlow dashboard](https://huntflow.xalgorix.com/screenshots/dashboard.png?v=2)
 
 | Targets | Sessions |
 | --- | --- |
-| ![Targets](https://huntflow.xalgorix.com/screenshots/targets.png) | ![Sessions](https://huntflow.xalgorix.com/screenshots/sessions.png) |
+| ![Targets](https://huntflow.xalgorix.com/screenshots/targets.png?v=2) | ![Sessions](https://huntflow.xalgorix.com/screenshots/sessions.png?v=2) |
 
 | Notes | Evidence |
 | --- | --- |
-| ![Notes](https://huntflow.xalgorix.com/screenshots/notes.png) | ![Evidence](https://huntflow.xalgorix.com/screenshots/evidence.png) |
+| ![Notes](https://huntflow.xalgorix.com/screenshots/notes.png?v=2) | ![Evidence](https://huntflow.xalgorix.com/screenshots/evidence.png?v=2) |
 
 | Payloads | Toolkit |
 | --- | --- |
-| ![Payloads](https://huntflow.xalgorix.com/screenshots/payloads.png) | ![Toolkit](https://huntflow.xalgorix.com/screenshots/toolkit.png) |
+| ![Payloads](https://huntflow.xalgorix.com/screenshots/payloads.png?v=2) | ![Toolkit](https://huntflow.xalgorix.com/screenshots/toolkit.png?v=2) |
 
 | Reports | Findings |
 | --- | --- |
-| ![Reports](https://huntflow.xalgorix.com/screenshots/reports.png) | ![Findings](https://huntflow.xalgorix.com/screenshots/findings.png) |
+| ![Reports](https://huntflow.xalgorix.com/screenshots/reports.png?v=2) | ![Findings](https://huntflow.xalgorix.com/screenshots/findings.png?v=2) |
 
 | Analytics | Payouts |
 | --- | --- |
-| ![Analytics](https://huntflow.xalgorix.com/screenshots/analytics.png) | ![Payouts](https://huntflow.xalgorix.com/screenshots/payouts.png) |
+| ![Analytics](https://huntflow.xalgorix.com/screenshots/analytics.png?v=2) | ![Payouts](https://huntflow.xalgorix.com/screenshots/payouts.png?v=2) |
 
 | Programs | Reference |
 | --- | --- |
-| ![Programs](https://huntflow.xalgorix.com/screenshots/programs.png) | ![Reference](https://huntflow.xalgorix.com/screenshots/reference.png) |
+| ![Programs](https://huntflow.xalgorix.com/screenshots/programs.png?v=2) | ![Reference](https://huntflow.xalgorix.com/screenshots/reference.png?v=2) |
 
 ## License
 
