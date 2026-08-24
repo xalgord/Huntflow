@@ -47,13 +47,29 @@ npx huntflow --port 4000
 
 ![HuntFlow dashboard](https://huntflow.xalgorix.com/screenshots/dashboard.png)
 
-| Targets | Notes |
+| Targets | Sessions |
 | --- | --- |
-| ![Targets](https://huntflow.xalgorix.com/screenshots/targets.png) | ![Notes](https://huntflow.xalgorix.com/screenshots/notes.png) |
+| ![Targets](https://huntflow.xalgorix.com/screenshots/targets.png) | ![Sessions](https://huntflow.xalgorix.com/screenshots/sessions.png) |
 
-| Evidence | Findings |
+| Notes | Evidence |
 | --- | --- |
-| ![Evidence](https://huntflow.xalgorix.com/screenshots/evidence.png) | ![Findings](https://huntflow.xalgorix.com/screenshots/findings.png) |
+| ![Notes](https://huntflow.xalgorix.com/screenshots/notes.png) | ![Evidence](https://huntflow.xalgorix.com/screenshots/evidence.png) |
+
+| Payloads | Toolkit |
+| --- | --- |
+| ![Payloads](https://huntflow.xalgorix.com/screenshots/payloads.png) | ![Toolkit](https://huntflow.xalgorix.com/screenshots/toolkit.png) |
+
+| Reports | Findings |
+| --- | --- |
+| ![Reports](https://huntflow.xalgorix.com/screenshots/reports.png) | ![Findings](https://huntflow.xalgorix.com/screenshots/findings.png) |
+
+| Analytics | Payouts |
+| --- | --- |
+| ![Analytics](https://huntflow.xalgorix.com/screenshots/analytics.png) | ![Payouts](https://huntflow.xalgorix.com/screenshots/payouts.png) |
+
+| Programs | Reference |
+| --- | --- |
+| ![Programs](https://huntflow.xalgorix.com/screenshots/programs.png) | ![Reference](https://huntflow.xalgorix.com/screenshots/reference.png) |
 
 ## License
 
