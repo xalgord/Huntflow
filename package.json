@@ -35,7 +35,7 @@
     "dev": "vite dev",
     "convex:dev": "convex dev",
     "convex:deploy": "convex deploy",
-    "build": "vite build",
+    "build": "vite build && node scripts/postbuild-cf-pages.mjs",
     "build:web": "vite build",
     "build:app": "node bin/build-app.mjs",
     "preview": "vite preview",
@@ -46,7 +46,8 @@
     "lint": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "prepublishOnly": "npm run build:app",
-    "prepare": "node bin/prepare.mjs"
+    "prepare": "node bin/prepare.mjs",
+    "deploy:cf": "npm run build && npx wrangler pages deploy build --project-name=huntflow-dpx --branch main"
   },
   "dependencies": {
     "@sveltejs/kit": "^2.60.1",

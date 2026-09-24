@@ -1,0 +1,4 @@
+/login     /sign-in  302
+/signup    /sign-up  302
+/register  /sign-up  302
+/billing   /pricing  302
