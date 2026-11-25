@@ -14,7 +14,7 @@ test.describe('core product workflows', () => {
     const consoleWatcher = watchConsole(page);
     await seedDemoApp(page);
 
-    await expect(page.getByRole('heading', { name: /What needs attention today/i })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Today', exact: true })).toBeVisible();
     await expect(page.getByText('NeonBank').first()).toBeVisible();
     await expect(page.getByText('api.neonbank.test').first()).toBeVisible();
     await expect(page.getByText('$8,400').first()).toBeVisible();
@@ -24,7 +24,7 @@ test.describe('core product workflows', () => {
     await expect(page.getByRole('heading', { name: /New note/i })).toBeVisible();
 
     await gotoAppRoute(page, '/dashboard');
-    await page.getByRole('link', { name: /New Session/i }).first().click();
+    await page.getByRole('link', { name: /Start Session/i }).first().click();
     await expect(page).toHaveURL(/\/timer\/?$/);
     await expect(page.getByRole('heading', { name: 'Timer' })).toBeVisible();
     await consoleWatcher.assertClean();
@@ -126,7 +126,7 @@ test.describe('core product workflows', () => {
     const consoleWatcher = watchConsole(page);
     await seedDemoApp(page);
 
-    await gotoAppRoute(page, '/income');
+    await gotoAppRoute(page, '/payouts');
     await expect(page.getByText('NeonBank').first()).toBeVisible();
     await expect(page.getByText('$8,400.00').first()).toBeVisible();
 

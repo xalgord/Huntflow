@@ -66,7 +66,7 @@
     },
     {
       title: 'Start your first session',
-      description: 'Pick a target, choose a duration, and begin your first focused hunt.',
+      description: 'Pick a program, choose a duration, and begin your first focused hunt.',
       icon: CheckCircle2,
       accent: 'text-primary-400 bg-primary-500/10 border-primary-500/30'
     }

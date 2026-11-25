@@ -55,12 +55,16 @@
     showForm = false;
   }
 
-  function targetCount(programId: string): number {
-    return $reconAssetStore.filter((asset) => asset.targetId === programId).length;
-  }
+  // Reactive lookup tables. Plain helper functions that read $stores are
+  // not re-run by Svelte when the store loads, which left these columns at
+  // 0 until something else forced a re-render.
+  $: targetCounts = countBy($reconAssetStore.map((asset) => asset.targetId));
+  $: findingCounts = countBy($submissionStore.map((submission) => submission.targetId));
 
-  function findingCount(programId: string): number {
-    return $submissionStore.filter((submission) => submission.targetId === programId).length;
+  function countBy(ids: string[]): Map<string, number> {
+    const counts = new Map<string, number>();
+    for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+    return counts;
   }
 
   $: activePrograms = $targetStore.filter((program) => !['archived', 'closed'].includes(program.status));
@@ -187,8 +191,8 @@
               <span class="text-sm text-zinc-400">{platformLabels[program.platform]}</span>
               <span><StatusBadge label={priorityLabels[program.priority]} tone={program.priority <= 1 ? 'warning' : 'neutral'} /></span>
               <span><StatusBadge label={targetStatusLabels[program.status]} tone={statusTone(program.status)} /></span>
-              <span class="font-mono text-sm text-zinc-300">{targetCount(program.id)}</span>
-              <span class="font-mono text-sm text-zinc-300">{findingCount(program.id)}</span>
+              <span class="font-mono text-sm text-zinc-300">{targetCounts.get(program.id) ?? 0}</span>
+              <span class="font-mono text-sm text-zinc-300">{findingCounts.get(program.id) ?? 0}</span>
               <span class="text-xs text-zinc-500">{formatRelativeDate(program.lastSessionAt ?? program.updatedAt)}</span>
               <span class="text-right text-xs font-medium text-zinc-500">Open</span>
             </a>

@@ -5,7 +5,7 @@
   import { noteStore, sessionStore, targetStore, timerStore } from '$lib/stores';
   import type { Note, Session, Target } from '$lib/types';
   import { formatDate, formatDuration, formatTimer, platformLabels, statusTone } from '$lib/utils/workspace';
-  import { Clock, FileText, Plus, ShieldAlert, Timer } from 'lucide-svelte';
+  import { Clock, FileText, ShieldAlert, Timer } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
   let loaded = false;
@@ -16,9 +16,7 @@
     loaded = true;
   });
 
-  function programFor(id: string): Target | undefined {
-    return $targetStore.find((program) => program.id === id);
-  }
+  $: programFor = (id: string): Target | undefined => $targetStore.find((program) => program.id === id);
 
   async function saveQuickNote(): Promise<void> {
     if (!activeSession || !quickNote.trim()) return;
@@ -55,7 +53,7 @@
 </script>
 
 <svelte:head>
-  <title>Sessions | HuntFlow bug bounty command center</title>
+  <title>Session History | HuntFlow</title>
   <meta name="description" content="Timed bug bounty hunt sessions with goals, quick notes, evidence links, and outcomes." />
 </svelte:head>
 
@@ -63,16 +61,13 @@
   <div class="hf-page-inner">
     <header class="hf-page-header">
       <div>
-        <p class="hf-eyebrow">Sessions</p>
-        <h1 class="hf-title">Focused hunt sessions</h1>
-        <p class="hf-description">
-          Start a clean block, capture notes while testing, and review what worked when the session ends.
-        </p>
+        <h1 class="hf-title">History</h1>
+        <p class="hf-description">Every focused session, what you tested and how it went.</p>
       </div>
-      <a href="/timer" class="hf-button-primary">
-        <Plus size={17} aria-hidden="true" />
-        New Session
-      </a>
+      <nav class="hf-segmented" aria-label="Sessions">
+        <a href="/timer" class="hf-segment px-4">Timer</a>
+        <a href="/sessions" class="hf-segment hf-segment-active px-4" aria-current="page">History</a>
+      </nav>
     </header>
 
     <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">

@@ -81,9 +81,9 @@
         </label>
 
         <label class="block">
-          <span class="hf-label">Target</span>
+          <span class="hf-label">Program</span>
           <select bind:value={targetFilter} class="hf-select mt-2">
-            <option value="all">All targets</option>
+            <option value="all">All programs</option>
             {#each $targetStore as target}
               <option value={target.id}>{targetName(target)}</option>
             {/each}

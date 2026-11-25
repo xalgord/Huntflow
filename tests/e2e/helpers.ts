@@ -14,7 +14,7 @@ export const seedIds = {
 // Public marketing root (`/`) and the in-app dashboard (`/dashboard`) are
 // both smoke-tested. `/landing` is kept as a redirect for back-compat but
 // not exercised here because Playwright would just chase the 302 to `/`.
-export const routes = ['/', '/dashboard', '/timer', '/targets', '/notes', '/assets', '/stats', '/income', '/settings'];
+export const routes = ['/', '/dashboard', '/programs', '/targets', '/findings', '/timer', '/notes', '/assets', '/analytics', '/payouts', '/settings'];
 
 export interface ConsoleWatcher {
   errors: string[];

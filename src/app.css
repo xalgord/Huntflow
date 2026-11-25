@@ -177,6 +177,13 @@
     }
   }
 
+  /* Grid items default to `min-width: auto`, so one long unbreakable string
+     (a URL, a hostname) can push a whole column past the viewport on
+     phones. Zero-specificity so any explicit min-width still wins. */
+  :where(.grid) > * {
+    min-width: 0;
+  }
+
   input[type='checkbox'],
   input[type='radio'] {
     accent-color: hsl(var(--primary));

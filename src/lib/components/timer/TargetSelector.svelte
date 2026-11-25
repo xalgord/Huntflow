@@ -33,7 +33,7 @@
   async function createTarget() {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      error = 'Target name is required';
+      error = 'Program name is required';
       return;
     }
 
@@ -64,13 +64,13 @@
 
 <div class="space-y-3">
   <label class="block">
-    <span class="hf-label">Target</span>
+    <span class="hf-label">Program</span>
     <select
       bind:value={selectedTargetId}
       {disabled}
       class="hf-select mt-2"
     >
-      <option value="">Select target</option>
+      <option value="">Choose a program</option>
       {#each $targetStore as target}
         <option value={target.id}>{target.name}</option>
       {/each}
@@ -80,11 +80,11 @@
   {#if !disabled}
     <button
       type="button"
-      class="hf-button-secondary px-3 py-2"
+      class="hf-button-ghost -ml-2 text-primary"
       on:click={() => (creating = !creating)}
     >
-      <Plus size={18} aria-hidden="true" />
-      Add Target
+      <Plus size={15} aria-hidden="true" />
+      New Program
     </button>
   {/if}
 
@@ -95,7 +95,7 @@
       column with explicit w-full controls — bulletproof against any parent
       grid-template propagation.
     -->
-    <div class="flex flex-col gap-3 rounded-lg border border-border/70 bg-background/50 p-3 shadow-inner-line">
+    <div class="flex flex-col gap-3 rounded-[10px] p-3" style="background: var(--hf-fill)">
       <label class="flex w-full flex-col gap-1">
         <span class="text-xs font-medium text-muted-foreground">Name</span>
         <input
@@ -134,10 +134,10 @@
         class="hf-button-primary w-full justify-center"
         on:click={createTarget}
       >
-        Save
+        Create Program
       </button>
       {#if error}
-        <p class="text-xs text-red-300">{error}</p>
+        <p class="text-xs text-red-400" role="alert">{error}</p>
       {/if}
     </div>
   {/if}

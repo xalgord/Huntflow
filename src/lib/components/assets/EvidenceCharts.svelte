@@ -25,7 +25,7 @@
 
   const modes: { label: string; value: ChartMode }[] = [
     { label: 'Type', value: 'kind' },
-    { label: 'Target', value: 'target' },
+    { label: 'Program', value: 'target' },
     { label: 'Timeline', value: 'timeline' },
     { label: 'Readiness', value: 'readiness' }
   ];

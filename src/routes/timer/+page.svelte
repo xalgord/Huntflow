@@ -335,89 +335,85 @@
 </svelte:head>
 
 <main class="hf-page">
-  <div class="mx-auto grid max-w-6xl gap-6 lg:grid-cols-[360px_1fr]">
-    <aside class="hf-card space-y-4 p-4">
+  <div class="hf-page-inner max-w-5xl">
+    <header class="hf-page-header">
       <div>
-        <p class="hf-eyebrow">Focus Session</p>
-        <h1 class="mt-2 text-2xl font-semibold tracking-normal text-foreground">Timer</h1>
+        <h1 class="hf-title">Timer</h1>
+        <p class="hf-description">Time-box your testing. Completed sessions feed your streak and analytics.</p>
       </div>
+      <nav class="hf-segmented" aria-label="Sessions">
+        <a href="/timer" class="hf-segment hf-segment-active px-4" aria-current="page">Timer</a>
+        <a href="/sessions" class="hf-segment px-4">History</a>
+      </nav>
+    </header>
 
-      <TargetSelector bind:selectedTargetId disabled={!canEditSetup} />
-      <TemplateSelector bind:selectedTemplateId disabled={!canEditSetup} />
+    <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <section class="hf-card flex flex-col items-center px-4 py-8 sm:px-8">
+        <TimerRing remainingMs={$timerStore.remainingMs} totalMs={$timerStore.totalMs} status={$timerStore.status} />
 
-      <fieldset class="space-y-3" disabled={!canEditSetup}>
-        <legend class="hf-label">Duration</legend>
-        <div class="grid grid-cols-3 gap-2">
-          {#each durationOptions as option}
-            <button
-              type="button"
-              class="min-h-[44px] rounded-md border px-3 py-2 text-sm font-medium transition {selectedDuration ===
-              option.value
-                ? 'border-primary/30 bg-primary/10 text-primary shadow-inner-line'
-                : 'border-border bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground'}"
-              on:click={() => (selectedDuration = option.value)}
-            >
-              {option.label}
-            </button>
-          {/each}
+        <p class="mt-5 text-[0.9375rem] font-semibold text-zinc-100">
+          {activeTarget?.name ?? 'Choose a program to start'}
+        </p>
+        <p class="mt-0.5 text-xs text-zinc-500">
+          {activeTemplate?.name ? `${activeTemplate.name} · ` : ''}Session #{totalSessionCount +
+            ($timerStore.status === 'idle' ? 1 : 0)} · {completedCount} completed · {$streakStore}-day streak (best {$bestStreakStore})
+        </p>
+
+        {#if canEditSetup}
+          <fieldset class="mt-6 w-full max-w-md" disabled={!canEditSetup}>
+            <legend class="sr-only">Duration</legend>
+            <div class="flex flex-wrap items-center justify-center gap-2">
+              {#each durationOptions as option}
+                <button
+                  type="button"
+                  class="h-9 min-w-[3.5rem] rounded-full px-3.5 text-[0.8125rem] font-semibold tabular-nums transition {selectedDuration ===
+                  option.value
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-zinc-300 hover:text-zinc-100'}"
+                  style={selectedDuration === option.value ? '' : 'background: var(--hf-fill)'}
+                  aria-pressed={selectedDuration === option.value}
+                  on:click={() => (selectedDuration = option.value)}
+                >
+                  {option.label}
+                </button>
+              {/each}
+            </div>
+            {#if selectedDuration === 0}
+              <label class="mx-auto mt-3 flex max-w-[12rem] items-center gap-2">
+                <span class="text-xs font-medium text-zinc-500">Minutes</span>
+                <input bind:value={customMinutes} type="number" min="1" max="240" class="hf-input text-center" />
+              </label>
+            {/if}
+          </fieldset>
+        {/if}
+
+        <div class="mt-7">
+          <TimerControls
+            status={$timerStore.status}
+            canStart={Boolean(selectedTargetId)}
+            on:start={startSession}
+            on:pause={pauseSession}
+            on:resume={resumeSession}
+            on:abandon={abandonSession}
+            on:complete={completeSession}
+            on:reset={resetTimer}
+          />
         </div>
 
-        {#if selectedDuration === 0}
-          <label class="block">
-            <span class="text-xs font-medium text-muted-foreground">Minutes</span>
-            <input
-              bind:value={customMinutes}
-              type="number"
-              min="1"
-              max="240"
-              class="hf-input mt-1"
-            />
-          </label>
+        {#if error}
+          <p class="mt-4 rounded-lg bg-red-500/[0.12] px-3 py-2 text-[0.8125rem] text-red-400" role="alert">{error}</p>
         {/if}
-      </fieldset>
+      </section>
 
-      {#if error}
-        <p class="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-red-300">
-          {error}
-        </p>
-      {/if}
-    </aside>
-
-    <section class="hf-card p-4 text-center sm:p-6">
-      <TimerRing
-        remainingMs={$timerStore.remainingMs}
-        totalMs={$timerStore.totalMs}
-        status={$timerStore.status}
-      />
-
-      <div class="mt-4 space-y-1">
-        <p class="text-sm text-muted-foreground">
-          Target:
-          <span class="font-medium text-foreground">{activeTarget?.name ?? 'None selected'}</span>
-        </p>
-        <p class="text-xs text-primary">
-          Template:
-          <span>{activeTemplate?.name ?? 'None'}</span>
-        </p>
-        <p class="pt-3 text-xs text-muted-foreground">
-          Session #{totalSessionCount + ($timerStore.status === 'idle' ? 1 : 0)} | Completed:
-          {completedCount} | Streak: {$streakStore} | Best: {$bestStreakStore}
-        </p>
-      </div>
-
-      <div class="mt-6">
-        <TimerControls
-          status={$timerStore.status}
-          canStart={Boolean(selectedTargetId)}
-          on:start={startSession}
-          on:pause={pauseSession}
-          on:resume={resumeSession}
-          on:abandon={abandonSession}
-          on:complete={completeSession}
-          on:reset={resetTimer}
-        />
-      </div>
-    </section>
+      <aside class="hf-card space-y-4 self-start p-4" aria-label="Session setup">
+        <h2 class="hf-section-title">Setup</h2>
+        <TargetSelector bind:selectedTargetId disabled={!canEditSetup} />
+        <TemplateSelector bind:selectedTemplateId disabled={!canEditSetup} />
+        {#if !canEditSetup}
+          <p class="text-xs text-zinc-500">Setup is locked while a session is running.</p>
+        {/if}
+      </aside>
+    </div>
   </div>
 </main>
 

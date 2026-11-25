@@ -1,6 +1,7 @@
 <script lang="ts">
   import AnalyticsCard from '$lib/components/workspace/AnalyticsCard.svelte';
   import BarRow from '$lib/components/workspace/BarRow.svelte';
+  import HuntingActivity from '$lib/components/stats/HuntingActivity.svelte';
   import EmptyState from '$lib/components/workspace/EmptyState.svelte';
   import MetricCard from '$lib/components/workspace/MetricCard.svelte';
   import { payoutStore, reconAssetStore, sessionStore, submissionStore, targetStore } from '$lib/stores';
@@ -10,6 +11,7 @@
   import { onMount } from 'svelte';
 
   let loaded = false;
+  let view: 'outcomes' | 'activity' = 'outcomes';
 
   onMount(async () => {
     await Promise.all([
@@ -19,8 +21,17 @@
       payoutStore.load(),
       reconAssetStore.load()
     ]);
+    if (new URLSearchParams(location.search).get('view') === 'activity') view = 'activity';
     loaded = true;
   });
+
+  function setView(next: typeof view): void {
+    view = next;
+    const url = new URL(location.href);
+    if (next === 'activity') url.searchParams.set('view', 'activity');
+    else url.searchParams.delete('view');
+    history.replaceState(history.state, '', url);
+  }
 
   function weekKey(timestamp: number): string {
     const date = new Date(timestamp);
@@ -144,17 +155,30 @@
   <div class="hf-page-inner">
     <header class="hf-page-header">
       <div>
-        <p class="hf-eyebrow">Analytics</p>
-        <h1 class="hf-title">Improve your hunting strategy</h1>
-        <p class="hf-description">
-          Analytics are computed from local sessions, targets, reports, and payouts. Empty charts stay empty until real data exists.
-        </p>
+        <h1 class="hf-title">Analytics</h1>
+        <p class="hf-description">Outcomes, earnings and hunting habits — computed locally from your own data.</p>
       </div>
-      <a href="/sessions" class="hf-button-primary">
-        <Timer size={17} aria-hidden="true" />
-        Start from sessions
-      </a>
+      <div class="hf-segmented" role="tablist" aria-label="Analytics view">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'outcomes'}
+          class="hf-segment px-4 {view === 'outcomes' ? 'hf-segment-active' : ''}"
+          on:click={() => setView('outcomes')}>Outcomes</button
+        >
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'activity'}
+          class="hf-segment px-4 {view === 'activity' ? 'hf-segment-active' : ''}"
+          on:click={() => setView('activity')}>Activity</button
+        >
+      </div>
     </header>
+
+    {#if view === 'activity'}
+      <HuntingActivity />
+    {:else}
 
     <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={Clock} label="Total hunt time" value={formatDuration(totalSeconds)} detail={`${completedSessions.length} completed sessions`} />
@@ -250,5 +274,6 @@
         {/if}
       </AnalyticsCard>
     </section>
+    {/if}
   </div>
 </main>

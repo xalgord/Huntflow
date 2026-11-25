@@ -86,9 +86,10 @@
     loaded = true;
   });
 
-  function programFor(id: string): Target | undefined {
-    return $targetStore.find((program) => program.id === id);
-  }
+  // Declared reactively so markup and `$:` blocks that call it re-run when
+  // programs load or change (a plain function would be read once).
+  $: programsById = new Map($targetStore.map((program) => [program.id, program]));
+  $: programFor = (id: string): Target | undefined => programsById.get(id);
 
   function resetForm(): void {
     identifier = '';
@@ -208,18 +209,20 @@
     void updateAsset(selectedAsset, { notes: (event.currentTarget as HTMLTextAreaElement).value });
   }
 
-  function linkedNotes(asset: ReconAsset): number {
+  $: linkedNotes = (asset: ReconAsset): number => {
     const haystack = `${asset.hostname} ${asset.url ?? ''}`;
     return $noteStore.filter((note) => note.targetId === asset.targetId && note.content.includes(haystack)).length;
-  }
+  };
 
-  function linkedFindings(asset: ReconAsset): number {
+  $: linkedFindings = (asset: ReconAsset): number => {
     const haystack = `${asset.hostname} ${asset.url ?? ''}`.toLowerCase();
-    return $submissionStore.filter((submission) =>
-      submission.targetId === asset.targetId &&
-      [submission.title, submission.reportMarkdown ?? '', submission.notes ?? ''].join(' ').toLowerCase().includes(haystack)
+    return $submissionStore.filter(
+      (submission) =>
+        submission.targetId === asset.targetId &&
+        [submission.title, submission.reportMarkdown ?? '', submission.notes ?? ''].join(' ').toLowerCase().includes(haystack)
     ).length;
-  }
+  };
+
 
   $: if (!formProgramId && $targetStore.length > 0) formProgramId = programFilter !== 'all' ? programFilter : $targetStore[0].id;
   $: allTags = Array.from(new Set($reconAssetStore.flatMap((asset) => asset.tags ?? []))).sort();

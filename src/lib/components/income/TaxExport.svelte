@@ -78,49 +78,36 @@
   }
 </script>
 
-<section class="hf-card p-4">
-  <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-    <div>
-      <h2 class="text-lg font-semibold text-zinc-100">Tax Export</h2>
-      <p class="mt-1 text-sm text-zinc-400">CSV includes date, program, amount, and platform for paid payouts.</p>
-    </div>
+<section class="hf-card flex flex-col p-4">
+  <h2 class="hf-section-title">Tax Export</h2>
+  <p class="mt-0.5 text-xs leading-5 text-zinc-500">A CSV of paid payouts — date, program, amount and platform — for your accountant.</p>
 
-    <div class="flex flex-col gap-3 sm:flex-row">
-      <label class="block">
-        <span class="sr-only">Tax year</span>
-        <select
-          bind:value={year}
-          class="hf-select"
-        >
-          {#each years as option}
-            <option value={option}>{option}</option>
-          {/each}
-        </select>
-      </label>
-      <button
-        type="button"
-        class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
-        disabled={exportRows.length === 0}
-        on:click={exportCsv}
-      >
-        <Download size={18} aria-hidden="true" />
-        Export CSV
-      </button>
+  <dl class="hf-list mt-4 overflow-hidden rounded-[10px]" style="background: var(--hf-fill)">
+    <div class="flex items-center justify-between px-3 py-2.5 text-[0.8125rem]">
+      <dt class="text-zinc-400">Tax year</dt>
+      <dd>
+        <label>
+          <span class="sr-only">Tax year</span>
+          <select bind:value={year} class="hf-select h-7 min-h-0 w-auto py-0 pl-2.5 text-[0.8125rem]">
+            {#each years as option}
+              <option value={option}>{option}</option>
+            {/each}
+          </select>
+        </label>
+      </dd>
     </div>
-  </div>
-
-  <dl class="mt-4 grid gap-3 sm:grid-cols-3">
-    <div class="rounded-md border border-zinc-700 bg-zinc-850 p-3">
-      <dt class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Rows</dt>
-      <dd class="mt-1 text-xl font-bold text-zinc-100">{exportRows.length}</dd>
+    <div class="flex items-center justify-between px-3 py-2.5 text-[0.8125rem]">
+      <dt class="text-zinc-400">Rows</dt>
+      <dd class="font-semibold tabular-nums text-zinc-100">{exportRows.length}</dd>
     </div>
-    <div class="rounded-md border border-zinc-700 bg-zinc-850 p-3">
-      <dt class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Paid Total</dt>
-      <dd class="mt-1 text-xl font-bold text-zinc-100">{money(exportTotal)}</dd>
-    </div>
-    <div class="rounded-md border border-zinc-700 bg-zinc-850 p-3">
-      <dt class="text-xs font-semibold uppercase tracking-wide text-zinc-500">Year</dt>
-      <dd class="mt-1 text-xl font-bold text-zinc-100">{year}</dd>
+    <div class="flex items-center justify-between px-3 py-2.5 text-[0.8125rem]">
+      <dt class="text-zinc-400">Paid total</dt>
+      <dd class="font-semibold tabular-nums text-zinc-100">{money(exportTotal)}</dd>
     </div>
   </dl>
+
+  <button type="button" class="hf-button-primary mt-4 w-full" disabled={exportRows.length === 0} on:click={exportCsv}>
+    <Download size={15} aria-hidden="true" />
+    Export CSV
+  </button>
 </section>

@@ -680,9 +680,9 @@
         <!-- Context fields -->
         <div class="grid gap-3 sm:grid-cols-2">
           <label class="block">
-            <span class="hf-label text-xs">Target</span>
+            <span class="hf-label text-xs">Program</span>
             <select bind:value={targetId} class="hf-select mt-1.5">
-              <option value="">No target</option>
+              <option value="">No program</option>
               {#each targets as target}
                 <option value={target.id}>{targetName(target)}</option>
               {/each}
