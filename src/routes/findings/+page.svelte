@@ -55,7 +55,6 @@
       evidenceAssetStore.load(),
       payoutStore.load()
     ]);
-    programFilter = new URLSearchParams(location.search).get('target') ?? 'all';
     await handleParams(new URLSearchParams(location.search));
     loaded = true;
   });
@@ -69,6 +68,9 @@
   });
 
   async function handleParams(params: URLSearchParams): Promise<void> {
+    if (params.has('target') || !loaded) programFilter = params.get('target') ?? 'all';
+    const requestedBucket = params.get('bucket');
+    if (requestedBucket && buckets.some((option) => option.id === requestedBucket)) bucket = requestedBucket as BucketFilter;
     const fromNote = params.get('fromNote');
     if (fromNote) {
       await promoteNote(fromNote);

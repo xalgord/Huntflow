@@ -1,0 +1,7 @@
+identifier,asset_type,instruction,eligible_for_bounty,eligible_for_submission,availability_requirement,confidentiality_requirement,integrity_requirement,max_severity,system_tags,created_at,updated_at
+*.acme.com,WILDCARD,"Any subdomain, except those listed below.",true,true,high,high,high,critical,,2024-01-03 10:00:00 UTC,2024-01-03 10:00:00 UTC
+api.acme.com,URL,"Primary REST API. Use your @wearehackerone.com alias.",true,true,high,high,high,critical,api,2024-01-03 10:00:00 UTC,2024-01-03 10:00:00 UTC
+https://app.acme.com,URL,,true,true,,,,critical,,2024-01-03 10:00:00 UTC,2024-01-03 10:00:00 UTC
+status.acme.com,URL,Third-party status page.,false,false,,,,none,,2024-01-03 10:00:00 UTC,2024-01-03 10:00:00 UTC
+com.acme.android,GOOGLE_PLAY_APP_ID,,true,true,,,,high,,2024-01-03 10:00:00 UTC,2024-01-03 10:00:00 UTC
+10.20.0.0/16,CIDR,Lab network,false,true,,,,medium,,2024-01-03 10:00:00 UTC,2024-01-03 10:00:00 UTC

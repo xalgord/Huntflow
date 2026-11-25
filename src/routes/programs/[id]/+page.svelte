@@ -1,6 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
+  import ImportSheet from '$lib/components/imports/ImportSheet.svelte';
   import TargetForm from '$lib/components/targets/TargetForm.svelte';
   import CopyButton from '$lib/components/workspace/CopyButton.svelte';
   import EmptyState from '$lib/components/workspace/EmptyState.svelte';
@@ -31,8 +32,11 @@
     statusTone,
     targetStatusLabels
   } from '$lib/utils/workspace';
+  import { STATUS_LABELS } from '$lib/utils/findingWorkflow';
+  import { evaluateScope, parseScopeRules } from '$lib/utils/scopeValidator';
   import {
     ArrowLeft,
+    Download,
     CircleDollarSign,
     ExternalLink,
     FileText,
@@ -45,7 +49,7 @@
   } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
-  type Tab = 'overview' | 'scope' | 'targets' | 'sessions' | 'notes' | 'findings' | 'reports' | 'payouts';
+  type Tab = 'overview' | 'scope' | 'targets' | 'sessions' | 'notes' | 'findings' | 'payouts';
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
@@ -54,7 +58,6 @@
     { id: 'sessions', label: 'Sessions' },
     { id: 'notes', label: 'Notes' },
     { id: 'findings', label: 'Findings' },
-    { id: 'reports', label: 'Reports' },
     { id: 'payouts', label: 'Payouts' }
   ];
 
@@ -75,7 +78,8 @@
       submissionStore.load(),
       payoutStore.load()
     ]);
-    const hash = location.hash.replace('#', '') as Tab;
+    // "#reports" predates drafts living alongside findings.
+    const hash = (location.hash === '#reports' ? 'findings' : location.hash.replace('#', '')) as Tab;
     if (tabs.some((tab) => tab.id === hash)) activeTab = hash;
     loaded = true;
   });
@@ -91,8 +95,7 @@
   $: programSessions = $sessionStore.filter((session) => session.targetId === programId).sort((a, b) => b.startedAt - a.startedAt);
   $: programNotes = $noteStore.filter((note) => note.targetId === programId).sort((a, b) => b.updatedAt - a.updatedAt);
   $: programSubmissions = $submissionStore.filter((submission) => submission.targetId === programId).sort((a, b) => b.updatedAt - a.updatedAt);
-  $: programFindings = programSubmissions.filter((submission) => submission.status !== 'draft');
-  $: programReports = programSubmissions.filter((submission) => submission.status === 'draft');
+  $: programFindings = programSubmissions;
   $: programPayouts = program
     ? $payoutStore.filter((payout) => payout.program.toLowerCase() === program.name.toLowerCase() || payout.platform === program.platform)
     : [];
@@ -100,7 +103,25 @@
     .filter((session) => session.status === 'completed')
     .reduce((sum, session) => sum + session.durationActual, 0);
   $: paidTotal = programPayouts.filter((payout) => payout.status === 'paid').reduce((sum, payout) => sum + payout.amount, 0);
-  $: scopeLines = scopeDraft.split('\n').map((line) => line.trim()).filter(Boolean);
+  $: scopeRules = parseScopeRules(scopeDraft).filter((rule) => rule.pattern.type !== 'unknown');
+  $: includeRules = scopeRules.filter((rule) => rule.kind === 'include');
+  $: excludeRules = scopeRules.filter((rule) => rule.kind === 'exclude');
+  let scopeProbe = '';
+  $: probeResult = scopeProbe.trim() ? evaluateScope(scopeProbe.trim(), scopeRules) : null;
+  $: scopeDirty = Boolean(program) && scopeDraft !== program?.scope;
+
+  let showImport = false;
+
+  async function openImport(): Promise<void> {
+    // Save edits first so the import appends to what's on screen.
+    if (scopeDirty) await saveScope();
+    showImport = true;
+  }
+
+  function afterImport(): void {
+    const latest = $targetStore.find((candidate) => candidate.id === programId);
+    if (latest) scopeDraft = latest.scope;
+  }
 
   function selectTab(tab: Tab): void {
     activeTab = tab;
@@ -255,35 +276,66 @@
           <article class="hf-card p-5">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 class="text-base font-semibold text-zinc-100">Scope organizer</h2>
-                <p class="mt-1 text-sm text-zinc-500">Paste scope from HackerOne, Bugcrowd, or a private policy page and organize it manually.</p>
+                <h2 class="text-base font-semibold text-zinc-100">Scope</h2>
+                <p class="mt-1 text-sm text-zinc-500">One rule per line. Prefix exclusions with <code class="font-mono">-</code>. Everything else is kept as notes.</p>
               </div>
-              <button type="button" class="hf-button-primary" on:click={saveScope}>
-                <Save size={16} aria-hidden="true" />
-                Save Scope
-              </button>
+              <div class="flex shrink-0 gap-2">
+                <button type="button" class="hf-button-secondary" on:click={openImport}>
+                  <Download size={16} aria-hidden="true" />
+                  Import…
+                </button>
+                <button type="button" class="hf-button-primary" disabled={!scopeDirty && notesDraft === program.notes} on:click={saveScope}>
+                  <Save size={16} aria-hidden="true" />
+                  Save
+                </button>
+              </div>
             </div>
             <label class="mt-5 block">
-              <span class="hf-label">In-scope assets, out-of-scope notes, rules, rate limits, credentials</span>
-              <textarea bind:value={scopeDraft} class="hf-input mt-2 min-h-[320px] font-mono text-xs leading-6" placeholder="*.example.com&#10;api.example.com&#10;Out of scope: staging.example.com&#10;Rate limit: 5 req/sec" />
+              <span class="hf-label">Scope rules</span>
+              <textarea bind:value={scopeDraft} class="hf-input mt-2 min-h-[200px] font-mono sm:min-h-[320px] text-xs leading-6" placeholder="*.example.com&#10;api.example.com&#10;- staging.example.com&#10;# Rate limit: 5 req/sec" />
             </label>
             <label class="mt-4 block">
               <span class="hf-label">Safe testing notes and program-specific rules</span>
-              <textarea bind:value={notesDraft} class="hf-input mt-2 min-h-[180px] leading-6" placeholder="Credentials, roles, forbidden tests, disclosure notes..." />
+              <textarea bind:value={notesDraft} class="hf-input mt-2 min-h-[120px] leading-6 sm:min-h-[180px]" placeholder="Credentials, roles, forbidden tests, disclosure notes..." />
             </label>
           </article>
           <article class="hf-card p-5">
-            <h2 class="text-base font-semibold text-zinc-100">Parsed scope lines</h2>
-            {#if scopeLines.length > 0}
-              <div class="mt-4 space-y-2">
-                {#each scopeLines.slice(0, 20) as line}
-                  <div class="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-                    <p class="break-all font-mono text-xs text-zinc-300">{line}</p>
-                  </div>
-                {/each}
-              </div>
+            <h2 class="text-base font-semibold text-zinc-100">Check a URL</h2>
+            <input bind:value={scopeProbe} class="hf-input mt-3 font-mono text-xs" placeholder="https://admin.example.com/login" aria-label="URL to check against scope" />
+            {#if probeResult}
+              <p
+                class="mt-2 rounded-[10px] px-3 py-2 text-[0.8125rem] {probeResult.verdict === 'in-scope'
+                  ? 'bg-green-500/[0.12] text-green-600 dark:text-green-400'
+                  : probeResult.verdict === 'out-of-scope'
+                    ? 'bg-red-500/[0.12] text-red-600 dark:text-red-400'
+                    : 'bg-zinc-500/[0.12] text-zinc-400'}"
+                role="status"
+              >
+                <span class="font-semibold">{probeResult.verdict === 'in-scope' ? 'In scope' : probeResult.verdict === 'out-of-scope' ? 'Out of scope' : 'No rules yet'}.</span>
+                {probeResult.matchedRule ? `Matches ${probeResult.matchedRule.raw.replace(/^\s*(?:[-!+]|in:|out:)\s*/i, '')}` : probeResult.reason}
+              </p>
+            {/if}
+            {#if scopeRules.length > 0}
+              {#each [{ title: 'In scope', rules: includeRules, dot: 'bg-green-500' }, { title: 'Out of scope', rules: excludeRules, dot: 'bg-red-500' }] as group}
+                {#if group.rules.length}
+                  <h3 class="mt-5 text-xs font-semibold text-zinc-400">{group.title} · {group.rules.length}</h3>
+                  <ul class="hf-list mt-2 overflow-hidden rounded-[10px]" style="background: var(--hf-fill)">
+                    {#each group.rules.slice(0, 30) as rule}
+                      <li class="flex items-center gap-2.5 px-3 py-2">
+                        <span class="h-1.5 w-1.5 shrink-0 rounded-full {group.dot}" aria-hidden="true"></span>
+                        <span class="min-w-0 break-all font-mono text-xs text-zinc-200">{rule.raw.replace(/^\s*(?:[-!+]|in:|out:)\s*/i, '')}</span>
+                      </li>
+                    {/each}
+                    {#if group.rules.length > 30}
+                      <li class="px-3 py-2 text-xs text-zinc-500">and {group.rules.length - 30} more</li>
+                    {/if}
+                  </ul>
+                {/if}
+              {/each}
             {:else}
-              <p class="mt-4 rounded-xl border border-dashed border-zinc-800 p-5 text-sm text-zinc-500">No scope pasted yet.</p>
+              <p class="mt-5 rounded-[10px] px-3 py-3 text-[0.8125rem] text-zinc-500" style="background: var(--hf-fill)">
+                No rules yet. Import the program's scope to flag out-of-scope hosts automatically.
+              </p>
             {/if}
           </article>
         </section>
@@ -303,7 +355,7 @@
             {/each}
           </section>
         {:else}
-          <EmptyState icon={Network} title="No targets yet" description="Add in-scope assets manually or paste scope from a program page." actionLabel="Add Targets" href={`/targets?program=${program.id}&new=1`} />
+          <EmptyState icon={Network} title="No targets yet" description="Import scope or recon output, or add targets by hand." actionLabel="Import Targets" href={`/targets?program=${program.id}&import=1`} />
         {/if}
       {:else if activeTab === 'sessions'}
         {#if programSessions.length > 0}
@@ -345,25 +397,12 @@
                   <span class="block truncate text-sm font-medium text-zinc-100">{finding.title}</span>
                   <span class="text-xs text-zinc-500">{finding.vulnerabilityType ?? 'Unclassified'} · {formatRelativeDate(finding.updatedAt)}</span>
                 </span>
-                <StatusBadge label={finding.status} tone={statusTone(finding.status)} />
+                <StatusBadge label={STATUS_LABELS[finding.status]} tone={statusTone(finding.status)} />
               </a>
             {/each}
           </section>
         {:else}
-          <EmptyState icon={ShieldAlert} title="No findings yet" description="Capture leads here before turning them into report-ready submissions." actionLabel="New Finding" href={`/findings?target=${program.id}&new=1`} />
-        {/if}
-      {:else if activeTab === 'reports'}
-        {#if programReports.length > 0}
-          <section class="grid gap-3 lg:grid-cols-2">
-            {#each programReports as report}
-              <a href={`/findings?id=${report.id}`} class="hf-card hf-interactive block p-4">
-                <p class="truncate text-sm font-medium text-zinc-100">{report.title}</p>
-                <p class="mt-1 text-xs text-zinc-500">{report.vulnerabilityType ?? 'Generic report'} · Updated {formatRelativeDate(report.updatedAt)}</p>
-              </a>
-            {/each}
-          </section>
-        {:else}
-          <EmptyState icon={FileText} title="No reports yet" description="Link a confirmed finding and generate a structured draft." actionLabel="New Report" href={`/reports?target=${program.id}&new=1`} />
+          <EmptyState icon={ShieldAlert} title="No findings yet" description="Capture leads as drafts, turn them into report-ready write-ups, or import nuclei and Burp results." actionLabel="New Finding" href={`/findings?target=${program.id}&new=1`} />
         {/if}
       {:else if activeTab === 'payouts'}
         {#if programPayouts.length > 0}
@@ -388,3 +427,7 @@
     {/if}
   </div>
 </main>
+
+{#if program}
+  <ImportSheet open={showImport} programId={program.id} lockProgram on:close={() => (showImport = false)} on:imported={afterImport} />
+{/if}

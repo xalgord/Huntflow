@@ -110,6 +110,9 @@ const RECON_ASSET_SOURCES: ReconAssetSource[] = [
   'amass',
   'crt-sh',
   'wayback',
+  'nuclei',
+  'nmap',
+  'burp',
   'other'
 ];
 const PAYLOAD_CATEGORIES: PayloadCategory[] = [

@@ -368,8 +368,8 @@ export function buildSetupSteps(input: {
     {
       id: 'scope',
       title: 'Add in-scope targets',
-      detail: 'Paste domains or import scope so every note and finding knows where it belongs.',
-      href: '/targets?new=1',
+      detail: 'Import scope from HackerOne or Bugcrowd, or subfinder and httpx results, so every note and finding knows where it belongs.',
+      href: '/targets?import=1',
       done: input.assets.length > 0
     },
     {
