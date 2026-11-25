@@ -17,6 +17,7 @@
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
   import { quickCaptureStore } from '$lib/stores/quickCaptureStore';
   import { installGlobalShortcuts } from '$lib/utils/shortcuts';
+  import { startDataSafety } from '$lib/db/autoBackup';
   import { onMount } from 'svelte';
   import '../app.css';
 
@@ -273,6 +274,12 @@
   $: if (browser && navReady) {
     localStorage.setItem('huntflow-side-nav-collapsed', String(navCollapsed));
   }
+
+  // Data safety: persistent-storage request and, when served by
+  // `npx huntflow`, automatic backups to ~/.huntflow/backups. Starts the
+  // first time the user enters the app (not on marketing pages) and is
+  // idempotent across navigations.
+  $: if (browser && navReady && !isMarketing) startDataSafety();
 </script>
 
 <svelte:head>

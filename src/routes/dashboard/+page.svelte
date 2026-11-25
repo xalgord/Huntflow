@@ -1,11 +1,13 @@
 <script lang="ts">
   import MetricCard from '$lib/components/workspace/MetricCard.svelte';
+  import { diskBackupState } from '$lib/db/autoBackup';
   import StatusBadge from '$lib/components/workspace/StatusBadge.svelte';
   import {
     noteStore,
     payoutStore,
     reconAssetStore,
     sessionStore,
+    settingsStore,
     submissionStore,
     targetStore,
     timerStore
@@ -37,6 +39,7 @@
     Clock,
     FileText,
     FolderKanban,
+    HardDrive,
     Lightbulb,
     PenLine,
     Play,
@@ -71,7 +74,8 @@
     lead: Lightbulb,
     'record-bounty': CircleDollarSign,
     'payout-pending': CircleDollarSign,
-    target: TargetIcon
+    target: TargetIcon,
+    backup: HardDrive
   };
 
   const toneBg: Record<AttentionTone, string> = {
@@ -97,7 +101,11 @@
     submissions: $submissionStore,
     notes: $noteStore,
     payouts: $payoutStore,
-    assets: $reconAssetStore
+    assets: $reconAssetStore,
+    // Only once the disk-backup check has finished, to avoid a flash.
+    backup: $diskBackupState.checked
+      ? { automatic: $diskBackupState.available, lastBackupAt: $settingsStore.lastExportAt }
+      : undefined
   });
   $: visibleAttention = showAllAttention ? attention : attention.slice(0, 7);
   $: summary = buildWeekSummary($sessionStore, $submissionStore, $payoutStore);

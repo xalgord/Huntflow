@@ -1,5 +1,6 @@
 <script lang="ts">
   import { navItems, tabNavItems } from '$lib/components/layout/navItems';
+  import StorageStatusBanner from '$lib/components/pwa/StorageStatusBanner.svelte';
   import { MoreHorizontal } from 'lucide-svelte';
   import Sidebar from './Sidebar.svelte';
   import Topbar from './Topbar.svelte';
@@ -27,6 +28,7 @@
   >
     <Topbar title={current?.label ?? ''} on:openMobileNav={() => (mobileOpen = true)} />
     <main id="main-content" class="min-h-screen pb-[calc(3.5rem+env(safe-area-inset-bottom))] pt-[3.25rem] lg:pb-0">
+      <StorageStatusBanner />
       <slot />
     </main>
   </div>

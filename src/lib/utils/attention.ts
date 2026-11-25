@@ -15,7 +15,8 @@ export type AttentionKind =
   | 'lead'
   | 'record-bounty'
   | 'payout-pending'
-  | 'target';
+  | 'target'
+  | 'backup';
 
 export type AttentionTone = 'red' | 'orange' | 'yellow' | 'green' | 'blue' | 'purple' | 'gray';
 
@@ -37,10 +38,13 @@ export interface AttentionInput {
   notes: Note[];
   payouts: Payout[];
   assets: ReconAsset[];
+  /** Backup state; omit to skip the backup reminder. */
+  backup?: { lastBackupAt?: number; automatic: boolean };
   now?: number;
 }
 
 const DAY = 86_400_000;
+const BACKUP_REMINDER_AFTER = 14 * DAY;
 const CLOSED_TARGET_STATUSES = new Set(['tested', 'safe', 'dead', 'out-of-scope']);
 
 const severityWeight: Record<string, number> = {
@@ -179,6 +183,25 @@ export function buildAttentionQueue(input: AttentionInput): AttentionItem[] {
       rank: 70 + priority,
       at: asset.updatedAt
     });
+  }
+
+  const hasWork = input.programs.length > 0 && input.submissions.length + input.notes.length + input.assets.length > 0;
+  if (input.backup && !input.backup.automatic && hasWork) {
+    const last = input.backup.lastBackupAt;
+    if (!last || now - last > BACKUP_REMINDER_AFTER) {
+      items.push({
+        id: 'backup',
+        kind: 'backup',
+        title: 'Back up your workspace',
+        detail: last
+          ? `Last backup ${days(now - last)} days ago — everything lives only in this browser`
+          : 'No backup yet — everything lives only in this browser',
+        href: '/settings#storage-safety-heading',
+        tone: 'gray',
+        rank: 80,
+        at: last ?? 0
+      });
+    }
   }
 
   return items.sort((a, b) => a.rank - b.rank || b.at - a.at);

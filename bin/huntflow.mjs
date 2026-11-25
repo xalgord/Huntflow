@@ -18,6 +18,7 @@ import { readFileSync, existsSync, statSync } from 'fs';
 import { join, extname, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { exec } from 'child_process';
+import { createLocalApi, defaultBackupDir, DEFAULT_KEEP } from './local-api.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BUILD_DIR = join(__dirname, '..', 'build');
@@ -45,7 +46,15 @@ const MIME_TYPES = {
 function parseArgs() {
   const args = process.argv.slice(2);
   let port = 3000;
+  // Undefined keeps Node's default dual-stack bind, so `localhost` works
+  // whether it resolves to 127.0.0.1 or ::1. The backup API rejects any
+  // non-loopback client regardless of this setting.
+  let host;
   let help = false;
+  let backups = true;
+  let backupDir = defaultBackupDir();
+  let keep = DEFAULT_KEEP;
+  let open = true;
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -55,10 +64,32 @@ function parseArgs() {
       port = parseInt(args[++i], 10) || 3000;
     } else if (arg.startsWith('--port=')) {
       port = parseInt(arg.split('=')[1], 10) || 3000;
+    } else if (arg === '--host') {
+      host = args[++i] || host;
+    } else if (arg.startsWith('--host=')) {
+      host = arg.split('=')[1] || host;
+    } else if (arg === '--no-backup') {
+      backups = false;
+    } else if (arg === '--backup-dir') {
+      backupDir = args[++i] || backupDir;
+    } else if (arg.startsWith('--backup-dir=')) {
+      backupDir = arg.slice('--backup-dir='.length) || backupDir;
+    } else if (arg.startsWith('--keep=')) {
+      keep = Math.max(1, parseInt(arg.split('=')[1], 10) || DEFAULT_KEEP);
+    } else if (arg === '--no-open') {
+      open = false;
     }
   }
 
-  return { port, help };
+  return { port, host, help, backups, backupDir, keep, open };
+}
+
+function readVersion() {
+  try {
+    return JSON.parse(readFileSync(join(__dirname, '..', 'package.json'), 'utf8')).version ?? '0.0.0';
+  } catch {
+    return '0.0.0';
+  }
 }
 
 function showHelp() {
@@ -69,16 +100,24 @@ Usage:
   huntflow [options]
 
 Options:
-  -p, --port <number>   Port to run on (default: 3000)
-  -h, --help            Show this help message
+  -p, --port <number>     Port to run on (default: 3000)
+      --host <address>    Interface to listen on (default: all; use
+                          127.0.0.1 to keep the app off your network)
+      --backup-dir <dir>  Where automatic backups are written
+                          (default: ~/.huntflow/backups)
+      --keep=<n>          Number of backups to keep (default: ${DEFAULT_KEEP})
+      --no-backup         Don't write automatic backups to disk
+      --no-open           Don't open a browser window
+  -h, --help              Show this help message
 
 Examples:
   npx huntflow              Start on http://localhost:3000
   npx huntflow -p 8080      Start on http://localhost:8080
   huntflow --port=4000      Start on http://localhost:4000
 
-Your data is stored locally in your browser (IndexedDB).
-No account required. Works offline.
+Your data is stored locally in your browser (IndexedDB) and, while
+HuntFlow runs from this command, mirrored to rotating backup files on
+disk. No account required. Works offline.
 `);
 }
 
@@ -102,10 +141,17 @@ function openBrowser(url) {
   });
 }
 
+// Marks pages served by this CLI so the app knows the local backup API
+// exists (and never probes for it on the hosted site).
+const LOCAL_MARKER = '<meta name="huntflow-local" content="1" />';
+
 function serveFile(res, filePath) {
   try {
-    const content = readFileSync(filePath);
+    let content = readFileSync(filePath);
     const ext = extname(filePath).toLowerCase();
+    if (ext === '.html') {
+      content = Buffer.from(content.toString('utf8').replace('<head>', `<head>\n    ${LOCAL_MARKER}`));
+    }
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
     res.writeHead(200, {
@@ -120,7 +166,7 @@ function serveFile(res, filePath) {
   }
 }
 
-function startServer(port) {
+function startServer({ port, host, backups, backupDir, keep, open }) {
   if (!existsSync(BUILD_DIR)) {
     console.error(`
 Error: Build directory not found at ${BUILD_DIR}
@@ -131,7 +177,18 @@ If running from source, run 'npm run build' first.
     process.exit(1);
   }
 
-  const server = createServer((req, res) => {
+  const localApi = createLocalApi({ backupDir, keep, version: readVersion(), enabled: backups });
+
+  const server = createServer(async (req, res) => {
+    try {
+      if (await localApi(req, res)) return;
+    } catch (error) {
+      res.writeHead(500, { 'Content-Type': 'text/plain' });
+      res.end('Internal error');
+      console.error('[huntflow] local API error:', error);
+      return;
+    }
+
     let urlPath = req.url?.split('?')[0] || '/';
 
     // Decode URI components
@@ -191,7 +248,7 @@ If running from source, run 'npm run build' first.
     res.end('Not Found');
   });
 
-  server.listen(port, () => {
+  const onListening = () => {
     const url = `http://localhost:${port}`;
     console.log(`
   ╭──────────────────────────────────────────────╮
@@ -204,8 +261,15 @@ If running from source, run 'npm run build' first.
   │                                              │
   ╰──────────────────────────────────────────────╯
 `);
-    openBrowser(url);
-  });
+    console.log(
+      backups
+        ? `  Backups: ${backupDir} (keeps last ${keep})\n`
+        : '  Backups: disabled (--no-backup)\n'
+    );
+    if (open) openBrowser(url);
+  };
+  if (host) server.listen(port, host, onListening);
+  else server.listen(port, onListening);
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
@@ -226,11 +290,11 @@ If running from source, run 'npm run build' first.
 }
 
 // Main
-const { port, help } = parseArgs();
+const options = parseArgs();
 
-if (help) {
+if (options.help) {
   showHelp();
   process.exit(0);
 }
 
-startServer(port);
+startServer(options);
