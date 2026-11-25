@@ -11,13 +11,19 @@
     type ImportResult
   } from '$lib/utils/importers';
   import { describePlan, planImport, type ImportPlan } from '$lib/utils/importPlan';
-  import { AlertTriangle, CheckCircle2, ChevronRight, FileUp, Loader2 } from 'lucide-svelte';
+  import { AlertTriangle, CheckCircle2, ChevronRight, FileUp, Loader2, TerminalSquare } from 'lucide-svelte';
   import { createEventDispatcher } from 'svelte';
 
   export let open = false;
   /** Program to import into; the user can change it unless `lockProgram`. */
   export let programId = '';
   export let lockProgram = false;
+  /** Prefill (used for output sent from the terminal with `huntflow push`). */
+  export let initialText = '';
+  export let initialKind: ImportKind | 'auto' = 'auto';
+  export let initialFileName = '';
+  /** Shown above the input, e.g. "From your terminal". */
+  export let sourceLabel = '';
 
   const dispatch = createEventDispatcher<{ close: void; imported: { programId: string; summary: string; findings: number } }>();
 
@@ -41,9 +47,9 @@
   // Fresh sheet every time it opens.
   $: if (open && !wasOpen) {
     wasOpen = true;
-    text = '';
-    fileName = '';
-    kindOverride = 'auto';
+    text = initialText;
+    fileName = initialFileName;
+    kindOverride = initialKind;
     includeOutOfScope = false;
     createFindings = true;
     updateScope = true;
@@ -240,6 +246,12 @@
         </label>
       {/if}
 
+      {#if sourceLabel}
+        <p class="flex items-center gap-2 text-xs font-medium text-zinc-400">
+          <TerminalSquare size={14} aria-hidden="true" />
+          {sourceLabel}
+        </p>
+      {/if}
       <div
         class="relative rounded-[12px] transition {dragging ? 'ring-2 ring-primary' : ''}"
         style="background: var(--hf-fill)"

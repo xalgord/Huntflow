@@ -18,6 +18,7 @@
   import { quickCaptureStore } from '$lib/stores/quickCaptureStore';
   import { installGlobalShortcuts } from '$lib/utils/shortcuts';
   import { startDataSafety } from '$lib/db/autoBackup';
+  import InboxWatcher from '$lib/components/imports/InboxWatcher.svelte';
   import { onMount } from 'svelte';
   import '../app.css';
 
@@ -322,6 +323,7 @@
 {/if}
 
 {#if !isLanding}
+  <InboxWatcher />
   <InstallPrompt />
   <CommandPalette />
   <QuickCaptureModal />

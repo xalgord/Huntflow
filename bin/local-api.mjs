@@ -11,6 +11,10 @@
  *   GET    /api/huntflow/backups                 → [{ name, size, createdAt }]
  *   GET    /api/huntflow/backups/:name           → backup file
  *   POST   /api/huntflow/backups                 → write a backup, rotate old ones
+ *   GET    /api/huntflow/inbox                   → items queued by `huntflow push`
+ *   GET    /api/huntflow/inbox/:id               → one item, including its text
+ *   POST   /api/huntflow/inbox                   → queue tool output for import
+ *   DELETE /api/huntflow/inbox/:id               → remove an item once handled
  *
  * Security model:
  * - Requests must come from a loopback address.
@@ -21,6 +25,7 @@
  * - File names are generated server-side; requested names are validated
  *   against a strict pattern (no path traversal).
  */
+import { randomBytes } from 'node:crypto';
 import { mkdirSync, readdirSync, readFileSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -33,6 +38,95 @@ const NAME_PATTERN = /^huntflow-backup-\d{8}T\d{6}(?:\d{3})?Z\.json$/;
 
 export function defaultBackupDir() {
   return join(homedir(), '.huntflow', 'backups');
+}
+
+// ─── Inbox: tool output piped in with `huntflow push` ────────────────────
+
+export const MAX_INBOX_BYTES = 25 * 1024 * 1024;
+const INBOX_PATTERN = /^inbox-\d{8}T\d{9}Z-[0-9a-f]{8}$/;
+export const IMPORT_KINDS = ['h1-scope-csv', 'scope-text', 'hosts', 'httpx', 'nuclei', 'nmap', 'burp'];
+
+export function defaultInboxDir() {
+  return join(homedir(), '.huntflow', 'inbox');
+}
+
+/** Validate and normalise an inbox submission. Returns null when invalid. */
+export function normaliseInboxItem(value) {
+  if (!value || typeof value !== 'object' || typeof value.text !== 'string' || !value.text.trim()) return null;
+  const clip = (input, max) => (typeof input === 'string' && input.trim() ? input.trim().slice(0, max) : undefined);
+  return {
+    text: value.text,
+    program: clip(value.program, 200),
+    kind: IMPORT_KINDS.includes(value.kind) ? value.kind : undefined,
+    fileName: clip(value.fileName, 200)?.replace(/[\\/]/g, '_'),
+    source: clip(value.source, 40) ?? 'cli'
+  };
+}
+
+/** Write an inbox item atomically and return its summary. */
+export function writeInboxItem(dir, value, now = new Date()) {
+  const item = normaliseInboxItem(value);
+  if (!item) throw Object.assign(new Error('Nothing to import: the body has no text.'), { status: 400 });
+  const id = `inbox-${now.toISOString().replace(/[-:]/g, '').replace('.', '')}-${randomBytes(4).toString('hex')}`;
+  const record = { id, receivedAt: now.getTime(), bytes: Buffer.byteLength(item.text), lines: item.text.split('\n').filter((line) => line.trim()).length, ...item };
+  mkdirSync(dir, { recursive: true, mode: 0o700 });
+  const finalPath = join(dir, `${id}.json`);
+  writeFileSync(`${finalPath}.partial`, JSON.stringify(record), { mode: 0o600 });
+  renameSync(`${finalPath}.partial`, finalPath);
+  return summarise(record);
+}
+
+function summarise(record) {
+  const { text, ...rest } = record;
+  const firstLine = text.split('\n').find((line) => line.trim()) ?? '';
+  return { ...rest, preview: firstLine.slice(0, 160) };
+}
+
+export function readInboxItem(dir, id) {
+  if (!INBOX_PATTERN.test(id)) return null;
+  try {
+    return JSON.parse(readFileSync(join(dir, `${id}.json`), 'utf8'));
+  } catch {
+    return null;
+  }
+}
+
+// The app polls the inbox; cache summaries so big items are parsed once.
+const summaryCache = new Map();
+
+export function listInbox(dir) {
+  let names = [];
+  try {
+    names = readdirSync(dir).filter((name) => name.endsWith('.json') && INBOX_PATTERN.test(name.slice(0, -5)));
+  } catch {
+    return [];
+  }
+  const items = [];
+  for (const name of names.sort()) {
+    const path = join(dir, name);
+    const cached = summaryCache.get(path);
+    if (cached) {
+      items.push(cached);
+      continue;
+    }
+    const record = readInboxItem(dir, name.slice(0, -5));
+    if (!record) continue;
+    const summary = summarise(record);
+    summaryCache.set(path, summary);
+    items.push(summary);
+  }
+  return items;
+}
+
+export function deleteInboxItem(dir, id) {
+  if (!INBOX_PATTERN.test(id)) return false;
+  try {
+    summaryCache.delete(join(dir, `${id}.json`));
+    unlinkSync(join(dir, `${id}.json`));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function isLoopback(address) {
@@ -103,7 +197,7 @@ function readBody(req, limit) {
     req.on('data', (chunk) => {
       size += chunk.length;
       if (size > limit) {
-        reject(Object.assign(new Error('Backup too large'), { status: 413 }));
+        reject(Object.assign(new Error('Request body too large'), { status: 413 }));
         req.destroy();
         return;
       }
@@ -118,7 +212,13 @@ function readBody(req, limit) {
  * Returns a request handler, or `null` when backups are disabled. The
  * handler returns `true` when it handled the request.
  */
-export function createLocalApi({ backupDir = defaultBackupDir(), keep = DEFAULT_KEEP, version = '0.0.0', enabled = true } = {}) {
+export function createLocalApi({
+  backupDir = defaultBackupDir(),
+  inboxDir = defaultInboxDir(),
+  keep = DEFAULT_KEEP,
+  version = '0.0.0',
+  enabled = true
+} = {}) {
   return async function handle(req, res) {
     const url = req.url?.split('?')[0] ?? '';
     if (!url.startsWith(API_PREFIX)) return false;
@@ -158,8 +258,44 @@ export function createLocalApi({ backupDir = defaultBackupDir(), keep = DEFAULT_
           count: backups.length,
           keep,
           latestAt: backups[0]?.createdAt ?? null
-        }
+        },
+        inbox: { count: listInbox(inboxDir).length }
       });
+      return true;
+    }
+
+    // The inbox works with or without disk backups.
+    if (route === '/inbox' || route.startsWith('/inbox/')) {
+      const id = route.startsWith('/inbox/') ? decodeURIComponent(route.slice('/inbox/'.length)) : '';
+      if (req.method === 'GET' && !id) {
+        json(res, 200, listInbox(inboxDir));
+      } else if (req.method === 'GET') {
+        const item = readInboxItem(inboxDir, id);
+        if (item) json(res, 200, item);
+        else json(res, 404, { error: 'Inbox item not found.' });
+      } else if (req.method === 'DELETE' && id) {
+        json(res, deleteInboxItem(inboxDir, id) ? 200 : 404, { id });
+      } else if (req.method === 'POST' && !id) {
+        try {
+          const body = await readBody(req, MAX_INBOX_BYTES + 64 * 1024);
+          let parsed;
+          try {
+            parsed = JSON.parse(body.toString('utf8'));
+          } catch {
+            json(res, 400, { error: 'Body is not valid JSON.' });
+            return true;
+          }
+          if (typeof parsed?.text === 'string' && Buffer.byteLength(parsed.text) > MAX_INBOX_BYTES) {
+            json(res, 413, { error: 'Output is larger than 25 MB. Filter it first.' });
+            return true;
+          }
+          json(res, 201, writeInboxItem(inboxDir, parsed));
+        } catch (error) {
+          json(res, error?.status ?? 500, { error: error?.message ?? 'Could not queue the import.' });
+        }
+      } else {
+        json(res, 405, { error: 'Method not allowed.' });
+      }
       return true;
     }
 
