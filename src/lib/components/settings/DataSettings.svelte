@@ -1,6 +1,6 @@
 <script lang="ts">
   import { browser } from '$app/environment';
-  import { IS_WEB } from '$lib/buildTarget';
+  import { APP_VERSION, IS_WEB } from '$lib/buildTarget';
   import { exportDataAsJson } from '$lib/db/export';
   import { importData, validateImportData, ImportValidationError } from '$lib/db/import';
   import { getHuntFlowDB, resetMemoryDB } from '$lib/db';
@@ -15,7 +15,8 @@
     targetStore
   } from '$lib/stores';
   import { DEFAULT_SETTINGS } from '$lib/types';
-  import { Download, RotateCcw, Sparkles, Trash2, Upload } from 'lucide-svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
+  import { Download, Loader2, RotateCcw, Sparkles, Trash2, Upload } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
   let storageText = 'Calculating...';
@@ -48,7 +49,7 @@
   }
 
   async function downloadExport(): Promise<void> {
-    const json = await exportDataAsJson('1.0.0');
+    const json = await exportDataAsJson(APP_VERSION);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
@@ -119,6 +120,9 @@
         noteStore.refresh(),
         targetStore.refresh(),
         payoutStore.refresh(),
+        reconAssetStore.refresh(),
+        submissionStore.refresh(),
+        checklistInstanceStore.refresh(),
         settingsStore.refresh()
       ]);
       await updateStorageUsage();
@@ -137,9 +141,10 @@
 
   async function confirmClear(): Promise<void> {
     if (clearConfirm !== 'CLEAR') return;
-    await clearStores();
+    // Close first: clearing resets settings, which brings back the welcome sheet.
     showClearModal = false;
     clearConfirm = '';
+    await clearStores();
     importStatus = 'All local data was cleared.';
   }
 
@@ -188,179 +193,119 @@
   });
 </script>
 
-<section class="hf-card p-4">
-  <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+<section class="hf-card overflow-hidden" aria-labelledby="data-heading">
+  <div class="flex items-start justify-between gap-3 px-4 pb-2 pt-4">
     <div>
-      <h2 class="text-lg font-semibold text-zinc-100">Data</h2>
-      <p class="mt-1 text-sm text-zinc-400">Export, import, and manage local IndexedDB storage.</p>
+      <h2 id="data-heading" class="hf-section-title">Data</h2>
+      <p class="mt-0.5 text-xs text-zinc-500">Move your workspace between browsers and machines.</p>
     </div>
-    <div class="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-400">
-      Storage: <span class="text-zinc-200">{storageText}</span>
-    </div>
+    <span class="shrink-0 text-xs tabular-nums text-zinc-500">{storageText}</span>
   </div>
 
-  <div class="mt-4 grid gap-4 lg:grid-cols-3">
-    <button
-      type="button"
-      class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 active:scale-[0.98]"
-      on:click={downloadExport}
-    >
-      <Download size={20} aria-hidden="true" />
-      Export JSON
-    </button>
+  <ul class="hf-list border-t-[0.5px] border-zinc-900">
+    <li class="hf-list-row flex-wrap justify-between gap-y-2">
+      <span class="flex items-center gap-2.5">
+        <Download size={17} class="text-blue-500" aria-hidden="true" />
+        <span>
+          <span class="block text-zinc-100">Export workspace</span>
+          <span class="block text-xs text-zinc-500">A JSON file with programs, targets, findings, notes and settings</span>
+        </span>
+      </span>
+      <button type="button" class="hf-button-tinted h-7 min-h-0 text-xs" on:click={downloadExport}>Export JSON</button>
+    </li>
 
-    <label class="block">
-      <span class="hf-label">Import mode</span>
-      <select
-        bind:value={importMode}
-        class="hf-select mt-2"
-      >
-        <option value="merge">Merge with existing data</option>
-        <option value="replace">Replace local data</option>
-      </select>
-    </label>
+    <li class="hf-list-row flex-wrap justify-between gap-y-2">
+      <span class="flex items-center gap-2.5">
+        <Upload size={17} class="text-blue-500" aria-hidden="true" />
+        <span>
+          <span class="block text-zinc-100">Import workspace</span>
+          <span class="block text-xs text-zinc-500">From a HuntFlow export or backup</span>
+        </span>
+      </span>
+      <span class="flex items-center gap-2">
+        <select bind:value={importMode} class="hf-select h-7 min-h-0 w-auto py-0 pl-2 pr-7 text-xs" aria-label="Import mode">
+          <option value="merge">Merge</option>
+          <option value="replace">Replace</option>
+        </select>
+        <label class="hf-button-tinted h-7 min-h-0 cursor-pointer text-xs">
+          Import JSON
+          <input class="sr-only" type="file" accept="application/json,.json" on:change={handleImport} />
+        </label>
+      </span>
+    </li>
 
-    <label class="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600">
-      <Upload size={20} aria-hidden="true" />
-      Import JSON
-      <input class="sr-only" type="file" accept="application/json,.json" on:change={handleImport} />
-    </label>
-  </div>
-
-  {#if IS_WEB}
-    <!-- Sample workspace block is web-only. The local app build ships
-         without the demo seeder so users always start with a clean,
-         empty workspace. The "Replay tour" button stays alongside it
-         here for layout consistency on the website; in the app build
-         it moves out into its own row below. -->
-    <div class="mt-4 rounded-lg border border-primary-500/20 bg-primary-500/5 p-4">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 class="flex items-center gap-2 text-sm font-semibold text-zinc-100">
-            <Sparkles size={16} aria-hidden="true" />
-            Sample workspace
-          </h3>
-          <p class="mt-1 text-sm text-zinc-400">
-            Adds 3 demo programs, sessions across two weeks, recon assets, notes, and a paid submission so you can explore every screen.
-          </p>
-        </div>
-        <div class="flex flex-col gap-2 sm:flex-row">
-          <button
-            type="button"
-            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-primary-500/30 bg-primary-500/10 px-4 py-2.5 text-sm font-medium text-primary-200 transition hover:bg-primary-500/15 disabled:cursor-not-allowed disabled:opacity-60"
-            on:click={handleLoadDemo}
-            disabled={demoLoading}
-          >
-            <Sparkles size={16} aria-hidden="true" />
-            {demoLoading ? 'Loading…' : 'Load demo data'}
-          </button>
-          <button
-            type="button"
-            class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
-            on:click={relaunchTour}
-          >
-            <RotateCcw size={16} aria-hidden="true" />
-            Replay tour
-          </button>
-        </div>
-      </div>
-      {#if demoStatus}
-        <p class="mt-3 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-300">{demoStatus}</p>
-      {/if}
-      {#if demoError}
-        <p class="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{demoError}</p>
-      {/if}
-      {#if tourStatus}
-        <p class="mt-3 rounded-md border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-zinc-300">{tourStatus}</p>
-      {/if}
-    </div>
-  {:else}
-    <!-- App-mode: the "Replay tour" affordance survives standalone so
-         users can re-trigger the onboarding modal from settings. The
-         demo seeder is intentionally absent. -->
-    <div class="mt-4 rounded-lg border border-zinc-700 bg-zinc-900/40 p-4">
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h3 class="flex items-center gap-2 text-sm font-semibold text-zinc-100">
-            <RotateCcw size={16} aria-hidden="true" />
-            Onboarding tour
-          </h3>
-          <p class="mt-1 text-sm text-zinc-400">
-            Replay the welcome tour the next time you load the app.
-          </p>
-        </div>
-        <button
-          type="button"
-          class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
-          on:click={relaunchTour}
-        >
-          <RotateCcw size={16} aria-hidden="true" />
-          Replay tour
+    {#if IS_WEB}
+      <!-- The local app build ships without the demo seeder. -->
+      <li class="hf-list-row flex-wrap justify-between gap-y-2">
+        <span class="flex items-center gap-2.5">
+          <Sparkles size={17} class="text-purple-500" aria-hidden="true" />
+          <span>
+            <span class="block text-zinc-100">Sample workspace</span>
+            <span class="block text-xs text-zinc-500">Three demo programs with sessions, recon, notes and findings</span>
+          </span>
+        </span>
+        <button type="button" class="hf-button-tinted h-7 min-h-0 text-xs" on:click={handleLoadDemo} disabled={demoLoading}>
+          {#if demoLoading}<Loader2 size={12} class="animate-spin" aria-hidden="true" />{/if}
+          {demoLoading ? 'Loading…' : 'Load demo data'}
         </button>
-      </div>
-      {#if tourStatus}
-        <p class="mt-3 rounded-md border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm text-zinc-300">{tourStatus}</p>
-      {/if}
-    </div>
-  {/if}
+      </li>
+    {/if}
 
-  <div class="mt-4 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
-    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h3 class="text-sm font-semibold text-red-300">Clear local data</h3>
-        <p class="mt-1 text-sm text-red-200/80">Deletes sessions, notes, targets, and resets settings.</p>
-      </div>
-      <button
-        type="button"
-        class="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700"
-        on:click={() => (showClearModal = true)}
-      >
-        <Trash2 size={18} aria-hidden="true" />
-        Clear Data
-      </button>
-    </div>
-  </div>
+    <li class="hf-list-row flex-wrap justify-between gap-y-2">
+      <span class="flex items-center gap-2.5">
+        <RotateCcw size={17} class="text-zinc-500" aria-hidden="true" />
+        <span>
+          <span class="block text-zinc-100">Welcome screen</span>
+          <span class="block text-xs text-zinc-500">Show it again the next time HuntFlow opens</span>
+        </span>
+      </span>
+      <button type="button" class="hf-button-ghost h-7 min-h-0 text-xs" on:click={relaunchTour}>Replay tour</button>
+    </li>
 
-  {#if importStatus}
-    <p class="mt-3 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-sm text-green-300">{importStatus}</p>
-  {/if}
-  {#if importError}
-    <p class="mt-3 rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">{importError}</p>
+    <li class="hf-list-row flex-wrap justify-between gap-y-2">
+      <span class="flex items-center gap-2.5">
+        <Trash2 size={17} class="text-red-500" aria-hidden="true" />
+        <span>
+          <span class="block text-red-500">Clear local data</span>
+          <span class="block text-xs text-zinc-500">Deletes programs, targets, findings, notes and sessions on this device</span>
+        </span>
+      </span>
+      <button type="button" class="hf-button-ghost h-7 min-h-0 text-xs text-red-500" on:click={() => (showClearModal = true)}>Clear Data</button>
+    </li>
+  </ul>
+
+  {#if importStatus || importError || demoStatus || demoError || tourStatus}
+    <p
+      class="border-t-[0.5px] border-zinc-900 px-4 py-2.5 text-xs {importError || demoError ? 'text-red-500' : 'text-green-600 dark:text-green-400'}"
+      role="status"
+    >
+      {importError || demoError || importStatus || demoStatus || tourStatus}
+    </p>
   {/if}
 </section>
 
-{#if showClearModal}
-  <div class="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/80 px-4">
-    <section class="w-full max-w-md rounded-lg border border-red-500/30 bg-zinc-800 p-4 shadow-dark-xl">
-      <h2 class="text-lg font-semibold text-red-300">Clear all local data?</h2>
-      <p class="mt-2 text-sm leading-6 text-zinc-400">
-        This cannot be undone. Type <span class="font-mono text-red-300">CLEAR</span> to confirm.
-      </p>
-      <input
-        bind:value={clearConfirm}
-        class="mt-4 w-full rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-red-500 focus:outline-none focus:ring-1 focus:ring-red-500/50"
-        placeholder="CLEAR"
-      />
-      <div class="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-end">
-        <button
-          type="button"
-          class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
-          on:click={() => {
-            showClearModal = false;
-            clearConfirm = '';
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          type="button"
-          class="inline-flex min-h-[44px] items-center justify-center rounded-md bg-red-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
-          disabled={clearConfirm !== 'CLEAR'}
-          on:click={confirmClear}
-        >
-          Clear Everything
-        </button>
-      </div>
-    </section>
+<Modal
+  open={showClearModal}
+  title="Clear all local data?"
+  description="This can't be undone. Export a backup first if you might need anything."
+  on:close={() => {
+    showClearModal = false;
+    clearConfirm = '';
+  }}
+>
+  <label class="block">
+    <span class="hf-label">Type CLEAR to confirm</span>
+    <input bind:value={clearConfirm} class="hf-input mt-1.5 font-mono" placeholder="CLEAR" autocomplete="off" />
+  </label>
+  <div class="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+    <button
+      type="button"
+      class="hf-button-secondary"
+      on:click={() => {
+        showClearModal = false;
+        clearConfirm = '';
+      }}>Cancel</button
+    >
+    <button type="button" class="hf-button-danger" disabled={clearConfirm !== 'CLEAR'} on:click={confirmClear}>Clear Everything</button>
   </div>
-{/if}
+</Modal>

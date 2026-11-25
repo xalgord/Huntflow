@@ -358,7 +358,7 @@
         subtitle: `${checklist.templateKind} · ${Object.keys(checklist.itemStates).length} items`,
         icon: ListChecks,
         keywords: checklist.templateKind,
-        href: `/targets/${checklist.targetId}/methodology?id=${checklist.id}`
+        href: `/programs/${checklist.targetId}#checklists`
       });
     }
 

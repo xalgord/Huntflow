@@ -12,7 +12,14 @@
   export let label = 'the new page';
 
   onMount(() => {
-    void goto(`${to}${location.search}${location.hash}`, { replaceState: true });
+    // `to` may carry its own query or #tab; the old URL's query is merged
+    // in and its hash only applies when `to` has none.
+    const url = new URL(to, location.origin);
+    new URLSearchParams(location.search).forEach((value, key) => {
+      if (!url.searchParams.has(key)) url.searchParams.set(key, value);
+    });
+    if (!url.hash && location.hash) url.hash = location.hash;
+    void goto(`${url.pathname}${url.search}${url.hash}`, { replaceState: true });
   });
 </script>
 
