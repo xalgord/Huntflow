@@ -253,7 +253,7 @@
       </button>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={FileText} label="Reports" value={String(reports.length)} detail="Drafts and submissions" />
       <MetricCard icon={FileText} label="Draft" value={String(draftReports.length)} detail="Not submitted yet" />
       <MetricCard icon={Send} label="Ready/submitted" value={String(readyReports.length)} detail="Has report text" tone="warning" />

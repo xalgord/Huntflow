@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { ComponentType } from 'svelte';
-  import { ArrowRight, BarChart3 } from 'lucide-svelte';
+  import { BarChart3, ChevronRight } from 'lucide-svelte';
 
   type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info';
 
@@ -11,47 +11,35 @@
   export let icon: ComponentType = BarChart3;
   export let tone: Tone = 'neutral';
 
+  // Apple widget style: a tinted SF-symbol-like glyph, a small label and a
+  // large rounded numeral.
   const toneClass: Record<Tone, string> = {
-    neutral: 'text-zinc-300',
-    success: 'text-emerald-300',
-    warning: 'text-amber-300',
-    danger: 'text-red-300',
-    info: 'text-blue-300'
+    neutral: 'text-primary',
+    success: 'text-green-500',
+    warning: 'text-orange-500',
+    danger: 'text-red-500',
+    info: 'text-blue-500'
   };
 </script>
 
-{#if href}
-  <a href={href} class="hf-card hf-interactive group block p-4">
-    <div class="flex items-start justify-between gap-4">
-      <div>
-        <p class="text-xs font-medium text-zinc-500">{label}</p>
-        <p class="mt-2 text-2xl font-semibold tracking-normal text-zinc-50">{value}</p>
-      </div>
-      <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 {toneClass[tone]}">
-        <svelte:component this={icon} size={17} aria-hidden="true" />
-      </span>
-    </div>
-    {#if detail}
-      <p class="mt-3 truncate text-xs text-zinc-500">{detail}</p>
+<svelte:element
+  this={href ? 'a' : 'article'}
+  href={href}
+  class="hf-card group block px-4 py-3.5 {href ? 'hf-interactive' : ''}"
+>
+  <div class="flex items-center gap-1.5">
+    <svelte:component this={icon} size={14} strokeWidth={2.3} class="shrink-0 {toneClass[tone]}" aria-hidden="true" />
+    <p class="min-w-0 flex-1 truncate text-[0.75rem] font-semibold text-zinc-500">{label}</p>
+    {#if href}
+      <ChevronRight
+        size={14}
+        class="shrink-0 text-zinc-600 transition group-hover:translate-x-0.5 group-hover:text-zinc-400"
+        aria-hidden="true"
+      />
     {/if}
-    <span class="mt-4 inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition group-hover:text-zinc-200">
-      Open
-      <ArrowRight size={13} aria-hidden="true" />
-    </span>
-  </a>
-{:else}
-  <article class="hf-card p-4">
-    <div class="flex items-start justify-between gap-4">
-      <div>
-        <p class="text-xs font-medium text-zinc-500">{label}</p>
-        <p class="mt-2 text-2xl font-semibold tracking-normal text-zinc-50">{value}</p>
-      </div>
-      <span class="flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-950 {toneClass[tone]}">
-        <svelte:component this={icon} size={17} aria-hidden="true" />
-      </span>
-    </div>
-    {#if detail}
-      <p class="mt-3 truncate text-xs text-zinc-500">{detail}</p>
-    {/if}
-  </article>
-{/if}
+  </div>
+  <p class="mt-1.5 text-[1.625rem] font-semibold leading-8 tracking-[-0.02em] tabular-nums text-zinc-50">{value}</p>
+  {#if detail}
+    <p class="mt-0.5 truncate text-[0.75rem] text-zinc-500">{detail}</p>
+  {/if}
+</svelte:element>

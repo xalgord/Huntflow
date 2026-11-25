@@ -4,141 +4,144 @@ import {
   CircleDollarSign,
   Crosshair,
   FileText,
-  Flag,
   FolderKanban,
+  LayoutGrid,
   Network,
   Send,
   Settings,
   ShieldAlert,
-  TableProperties,
+  Target,
   Timer,
   Wrench
 } from 'lucide-svelte';
 import type { ComponentType } from 'svelte';
+
+export type NavSection = 'home' | 'hunt' | 'earnings' | 'library' | 'system';
 
 export interface NavItemConfig {
   href: string;
   label: string;
   icon: ComponentType;
   match: (pathname: string) => boolean;
-  // primary = visible in mobile bottom nav; all items are visible in side nav
-  primary?: boolean;
-  section?: 'main' | 'resources';
+  section: NavSection;
+  /** Shown in the iPhone-style tab bar (max 4 + "More"). */
+  tab?: boolean;
 }
+
+export const navSections: Array<{ id: NavSection; label: string | null }> = [
+  { id: 'home', label: null },
+  { id: 'hunt', label: 'Hunt' },
+  { id: 'earnings', label: 'Earnings' },
+  { id: 'library', label: 'Library' },
+  { id: 'system', label: null }
+];
 
 export const navItems: NavItemConfig[] = [
   {
     href: '/dashboard',
-    label: 'Dashboard',
-    icon: TableProperties,
+    label: 'Today',
+    icon: LayoutGrid,
     match: (pathname) => pathname === '/dashboard' || pathname === '/account',
-    primary: true,
-    section: 'main'
+    section: 'home',
+    tab: true
   },
   {
     href: '/programs',
     label: 'Programs',
     icon: FolderKanban,
     match: (pathname) => pathname.startsWith('/programs'),
-    primary: true,
-    section: 'main'
+    section: 'hunt',
+    tab: true
   },
   {
     href: '/targets',
     label: 'Targets',
-    icon: Flag,
+    icon: Target,
     match: (pathname) => pathname.startsWith('/targets'),
-    primary: true,
-    section: 'main'
-  },
-  {
-    href: '/timer',
-    label: 'Sessions',
-    icon: Timer,
-    match: (pathname) => pathname.startsWith('/timer') || pathname.startsWith('/sessions'),
-    primary: true,
-    section: 'main'
-  },
-  {
-    href: '/notes',
-    label: 'Notes',
-    icon: FileText,
-    match: (pathname) => pathname.startsWith('/notes'),
-    primary: true,
-    section: 'main'
+    section: 'hunt'
   },
   {
     href: '/findings',
     label: 'Findings',
     icon: ShieldAlert,
     match: (pathname) => pathname.startsWith('/findings'),
-    primary: true,
-    section: 'main'
+    section: 'hunt',
+    tab: true
   },
   {
     href: '/reports',
     label: 'Reports',
     icon: Send,
     match: (pathname) => pathname.startsWith('/reports') || pathname.startsWith('/submissions'),
-    primary: true,
-    section: 'main'
+    section: 'hunt'
+  },
+  {
+    href: '/notes',
+    label: 'Notes',
+    icon: FileText,
+    match: (pathname) => pathname.startsWith('/notes'),
+    section: 'hunt',
+    tab: true
+  },
+  {
+    href: '/timer',
+    label: 'Sessions',
+    icon: Timer,
+    match: (pathname) => pathname.startsWith('/timer') || pathname.startsWith('/sessions'),
+    section: 'hunt'
   },
   {
     href: '/payouts',
     label: 'Payouts',
     icon: CircleDollarSign,
     match: (pathname) => pathname.startsWith('/payouts') || pathname.startsWith('/income'),
-    primary: true,
-    section: 'main'
+    section: 'earnings'
   },
   {
     href: '/analytics',
     label: 'Analytics',
     icon: BarChart3,
     match: (pathname) => pathname.startsWith('/analytics') || pathname.startsWith('/stats'),
-    primary: true,
-    section: 'main'
-  },
-  {
-    href: '/settings',
-    label: 'Settings',
-    icon: Settings,
-    match: (pathname) => pathname.startsWith('/settings'),
-    primary: true,
-    section: 'main'
+    section: 'earnings'
   },
   {
     href: '/assets',
     label: 'Evidence',
     icon: Network,
     match: (pathname) => pathname.startsWith('/assets'),
-    primary: false,
-    section: 'resources'
+    section: 'library'
   },
   {
     href: '/payloads',
     label: 'Payloads',
     icon: Crosshair,
     match: (pathname) => pathname.startsWith('/payloads'),
-    primary: false,
-    section: 'resources'
+    section: 'library'
   },
   {
     href: '/bookmarks',
     label: 'References',
     icon: BookMarked,
     match: (pathname) => pathname.startsWith('/bookmarks'),
-    primary: false,
-    section: 'resources'
+    section: 'library'
   },
   {
     href: '/tools',
     label: 'Toolkit',
     icon: Wrench,
     match: (pathname) => pathname.startsWith('/tools'),
-    primary: false,
-    section: 'resources'
+    section: 'library'
+  },
+  {
+    href: '/settings',
+    label: 'Settings',
+    icon: Settings,
+    match: (pathname) => pathname.startsWith('/settings'),
+    section: 'system'
   }
 ];
 
-export const primaryNavItems = navItems.filter((item) => item.primary !== false);
+export const tabNavItems = navItems.filter((item) => item.tab);
+
+/** @deprecated kept for older imports; use `tabNavItems`. */
+export const primaryNavItems = tabNavItems;

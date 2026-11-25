@@ -28,12 +28,6 @@
   // don't repeatedly clear the flag on subsequent reactive re-evaluations.
   let welcomeNewHandled = false;
 
-  const themeColors = {
-    dark: '#000000',
-    light: '#fafafa',
-    system: '#000000'
-  };
-
   function normalizePathname(path: string): string {
     if (path === '/') return path;
     return path.replace(/\/+$/, '') || '/';
@@ -282,7 +276,6 @@
 </script>
 
 <svelte:head>
-  <meta name="theme-color" content={themeColors[$settingsStore.theme]} />
   {#if !isLanding}
     <link rel="canonical" href={canonicalUrl} />
     <meta name="robots" content="index,follow" />
@@ -294,7 +287,9 @@
 
 <div class="hf-shell">
   {#if isLanding}
-    <main class="relative min-h-screen">
+    <!-- Marketing and auth surfaces are designed dark; they opt into the
+         dark appearance regardless of the in-app theme. -->
+    <main class="dark relative min-h-screen bg-black text-white">
       <PageTransition name={pathname}>
         <slot />
       </PageTransition>

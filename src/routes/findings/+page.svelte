@@ -154,7 +154,7 @@
       </button>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={ShieldAlert} label="Findings" value={String(findings.length)} detail="Leads through paid outcomes" />
       <MetricCard icon={ShieldAlert} label="Critical/high" value={String(criticalHigh)} detail="Needs careful validation" tone="danger" />
       <MetricCard icon={Clock} label="Confirmed/submitted" value={String(confirmed)} detail="Submitted or beyond" tone="warning" />

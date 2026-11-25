@@ -75,7 +75,7 @@
       </a>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={Timer} label="Total sessions" value={String($sessionStore.length)} detail="All local sessions" />
       <MetricCard icon={Clock} label="Completed" value={String(completedSessions.length)} detail={formatDuration(totalSeconds)} />
       <MetricCard icon={Clock} label="Today" value={String(todaySessions.length)} detail={formatDuration(todaySessions.reduce((sum, session) => sum + session.durationActual, 0))} />

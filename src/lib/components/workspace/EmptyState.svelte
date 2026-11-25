@@ -9,13 +9,12 @@
   export let icon: ComponentType = Inbox;
 </script>
 
-<section class="hf-card flex min-h-[260px] flex-col items-center justify-center p-8 text-center">
-  <span class="flex h-12 w-12 items-center justify-center rounded-xl border border-zinc-800 bg-zinc-950 text-zinc-500">
-    <svelte:component this={icon} size={21} aria-hidden="true" />
-  </span>
-  <h2 class="mt-4 text-base font-semibold text-zinc-100">{title}</h2>
-  <p class="mt-2 max-w-lg text-sm leading-6 text-zinc-500">{description}</p>
+<section class="flex min-h-[240px] flex-col items-center justify-center px-6 py-10 text-center">
+  <svelte:component this={icon} size={40} strokeWidth={1.4} class="text-zinc-600" aria-hidden="true" />
+  <h2 class="mt-3 text-[1.0625rem] font-semibold tracking-[-0.01em] text-zinc-100">{title}</h2>
+  <p class="mt-1 max-w-md text-[0.8125rem] leading-5 text-zinc-500">{description}</p>
   {#if actionLabel && href}
-    <a href={href} class="hf-button-primary mt-5">{actionLabel}</a>
+    <a href={href} class="hf-button-tinted mt-4">{actionLabel}</a>
   {/if}
+  <slot />
 </section>

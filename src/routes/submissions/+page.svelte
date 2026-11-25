@@ -251,7 +251,7 @@
       </button>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={Send} label="Reports" value={String(submissionsCount)} detail="all submissions" href="/findings" />
       <MetricCard icon={Clock} label="In triage" value={String(pendingCount)} detail="awaiting decision" href="/findings" tone="warning" />
       <MetricCard icon={Award} label="Resolved" value={String(rewardedCount)} detail="incl. rewarded" href="/findings" tone="info" />

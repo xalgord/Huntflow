@@ -223,7 +223,7 @@
       </button>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={DollarSign} label="Total paid" value={money(paidTotal)} detail={`${paidPayouts.length} paid payouts`} href="/payouts" />
       <MetricCard icon={TrendingUp} label={`${currentYear} paid`} value={money(yearPaidTotal)} detail="tax year view" href="/payouts" tone="info" />
       <MetricCard icon={Banknote} label="Pipeline value" value={money(pendingTotal)} detail="pending + triaged" href="/payouts" tone="warning" />

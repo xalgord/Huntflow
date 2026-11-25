@@ -2,15 +2,18 @@
   import { goto } from '$app/navigation';
   import GlobalSearch from '$lib/components/workspace/GlobalSearch.svelte';
   import QuickAddMenu from '$lib/components/workspace/QuickAddMenu.svelte';
-  import { sessionStore, settingsStore, targetStore, timerStore } from '$lib/stores';
+  import { sessionStore, targetStore, timerStore } from '$lib/stores';
+  import { quickCaptureStore } from '$lib/stores/quickCaptureStore';
   import { formatTimer } from '$lib/utils/workspace';
-  import { Menu, Play, Settings, SunMoon, Timer } from 'lucide-svelte';
+  import { PanelLeft, PenSquare, Play } from 'lucide-svelte';
   import { createEventDispatcher, onMount } from 'svelte';
+
+  export let title = '';
 
   const dispatch = createEventDispatcher<{ openMobileNav: void }>();
 
   onMount(() => {
-    void Promise.all([sessionStore.load(), targetStore.load(), settingsStore.load()]);
+    void Promise.all([sessionStore.load(), targetStore.load()]);
   });
 
   $: activeSession = $timerStore.sessionId
@@ -18,51 +21,73 @@
     : undefined;
   $: activeProgram = activeSession ? $targetStore.find((target) => target.id === activeSession?.targetId) : undefined;
   $: timerActive = $timerStore.status === 'running' || $timerStore.status === 'paused';
-
-  async function toggleTheme(): Promise<void> {
-    const next = $settingsStore.theme === 'dark' ? 'light' : $settingsStore.theme === 'light' ? 'system' : 'dark';
-    await settingsStore.update((settings) => ({ ...settings, theme: next }));
-  }
 </script>
 
-<header class="fixed left-0 right-0 top-0 z-30 h-16 border-b border-zinc-900 bg-black/85 backdrop-blur-xl transition-[left] lg:left-[var(--hf-sidebar-width)]">
-  <div class="flex h-full w-full items-center gap-2.5 px-4 sm:px-5 xl:px-6">
-    <button type="button" class="hf-icon-button lg:hidden" aria-label="Open navigation" on:click={() => dispatch('openMobileNav')}>
-      <Menu size={17} aria-hidden="true" />
+<header
+  class="hf-toolbar-material hf-hairline-b fixed left-0 right-0 top-0 z-30 h-[3.25rem] transition-[left] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:left-[var(--hf-sidebar-width)]"
+>
+  <div class="flex h-full w-full items-center gap-1.5 px-3 sm:px-4">
+    <button
+      type="button"
+      class="hf-icon-button lg:hidden"
+      aria-label="Open navigation"
+      on:click={() => dispatch('openMobileNav')}
+    >
+      <PanelLeft size={18} aria-hidden="true" />
     </button>
 
-    <div class="hidden min-w-0 flex-1 md:block">
+    {#if title}
+      <p class="min-w-0 truncate text-[0.8125rem] font-semibold text-zinc-100 lg:hidden">{title}</p>
+    {/if}
+
+    <div class="flex-1"></div>
+
+    {#if timerActive}
+      <a
+        href="/timer"
+        class="hidden h-8 max-w-[15rem] items-center gap-2 rounded-full px-3 text-xs text-zinc-200 transition sm:flex"
+        style="background: var(--hf-fill)"
+        title="Open the running session"
+      >
+        <span
+          class="h-2 w-2 shrink-0 rounded-full {$timerStore.status === 'running'
+            ? 'bg-green-500 animate-priority-pulse'
+            : 'bg-orange-500'}"
+          aria-hidden="true"
+        ></span>
+        <span class="font-mono font-medium tabular-nums text-zinc-50">{formatTimer($timerStore.remainingMs)}</span>
+        <span class="truncate text-zinc-500">{activeProgram?.name ?? 'Session'}</span>
+      </a>
+    {/if}
+
+    <button
+      type="button"
+      class="hf-icon-button"
+      aria-label="Quick capture (Shift ⌘K)"
+      title="Quick capture  ⇧⌘K"
+      on:click={() => quickCaptureStore.open()}
+    >
+      <PenSquare size={17} aria-hidden="true" />
+    </button>
+
+    <QuickAddMenu />
+
+    {#if !timerActive}
+      <button
+        type="button"
+        class="hf-button-primary hidden h-8 min-h-0 sm:inline-flex"
+        on:click={() => goto('/timer')}
+      >
+        <Play size={13} fill="currentColor" aria-hidden="true" />
+        Start Session
+      </button>
+    {/if}
+
+    <div class="ml-1 hidden w-56 md:block xl:w-64">
       <GlobalSearch />
     </div>
     <div class="md:hidden">
       <GlobalSearch compact />
     </div>
-
-    {#if timerActive}
-      <a
-        href="/timer"
-        class="hidden min-h-[40px] max-w-[260px] items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 text-sm text-zinc-300 shadow-inner-line sm:flex"
-      >
-        <span class="flex h-2 w-2 rounded-full bg-emerald-400"></span>
-        <Timer size={15} aria-hidden="true" />
-        <span class="font-mono text-xs text-zinc-100">{formatTimer($timerStore.remainingMs)}</span>
-        <span class="truncate text-xs text-zinc-500">{activeProgram?.name ?? 'Active session'}</span>
-      </a>
-    {/if}
-
-    <QuickAddMenu />
-
-    <button type="button" class="hf-button-primary hidden min-h-[40px] sm:inline-flex" on:click={() => goto('/timer')}>
-      <Play size={15} aria-hidden="true" />
-      New Session
-    </button>
-
-    <button type="button" class="hf-icon-button" aria-label="Cycle theme" title="Cycle theme" on:click={toggleTheme}>
-      <SunMoon size={16} aria-hidden="true" />
-    </button>
-
-    <a href="/settings" class="hf-icon-button" aria-label="Settings" title="Settings">
-      <Settings size={16} aria-hidden="true" />
-    </a>
   </div>
 </header>

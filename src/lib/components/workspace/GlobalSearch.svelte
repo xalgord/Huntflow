@@ -1,23 +1,32 @@
 <script lang="ts">
+  import { browser } from '$app/environment';
   import { commandPaletteStore } from '$lib/stores/commandPaletteStore';
   import { Search } from 'lucide-svelte';
 
   export let compact = false;
+
+  const isMac = browser && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 </script>
 
-<button
-  type="button"
-  class="flex min-h-[40px] min-w-0 items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950/80 px-3 text-left text-sm text-zinc-500 shadow-inner-line transition hover:border-zinc-700 hover:text-zinc-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-500/40 {compact
-    ? 'w-10 justify-center px-0'
-    : 'w-full'}"
-  aria-label="Open global search"
-  on:click={() => commandPaletteStore.open()}
->
-  <Search size={16} aria-hidden="true" />
-  {#if !compact}
-    <span class="min-w-0 flex-1 truncate">Search programs, targets, notes, findings...</span>
-    <kbd class="hidden rounded border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 sm:inline-flex">
-      Ctrl K
-    </kbd>
-  {/if}
-</button>
+{#if compact}
+  <button
+    type="button"
+    class="hf-icon-button"
+    aria-label="Search"
+    on:click={() => commandPaletteStore.open()}
+  >
+    <Search size={17} aria-hidden="true" />
+  </button>
+{:else}
+  <button
+    type="button"
+    class="flex h-8 w-full min-w-0 items-center gap-1.5 rounded-lg px-2.5 text-left text-[0.8125rem] text-zinc-500 transition hover:text-zinc-400"
+    style="background: var(--hf-fill)"
+    aria-label="Search everything"
+    on:click={() => commandPaletteStore.open()}
+  >
+    <Search size={14} strokeWidth={2.2} aria-hidden="true" />
+    <span class="min-w-0 flex-1 truncate">Search</span>
+    <kbd class="hf-kbd">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
+  </button>
+{/if}

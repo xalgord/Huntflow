@@ -35,27 +35,41 @@ function resolveTheme(theme: Settings['theme']): boolean {
 
 function applyTheme(theme: Settings['theme']): void {
   if (!browser) return;
-  document.documentElement.classList.toggle('dark', resolveTheme(theme));
-  document.documentElement.classList.toggle('light', !resolveTheme(theme));
+  const dark = resolveTheme(theme);
+  document.documentElement.classList.toggle('dark', dark);
+  document.documentElement.classList.toggle('light', !dark);
+  const meta = document.querySelector('meta[name="theme-color"]:not([media])');
+  meta?.setAttribute('content', dark ? '#000000' : '#f5f5f7');
 }
 
-const accentPalettes: Record<Settings['accentColor'], { accent: string; hover: string; link: string }> = {
-  green: { accent: '#fafafa', hover: '#ffffff', link: '#e4e4e7' },
-  blue: { accent: '#3b82f6', hover: '#2563eb', link: '#60a5fa' },
-  orange: { accent: '#f97316', hover: '#ea580c', link: '#fb923c' },
-  purple: { accent: '#8b5cf6', hover: '#7c3aed', link: '#a78bfa' }
-};
+/** Normalise legacy values written by earlier versions. */
+export function normalizeSettings(settings: Settings): Settings {
+  if (settings.accentColor === 'green') return { ...settings, accentColor: 'crimson' };
+  return settings;
+}
+
+/**
+ * Key used by the inline boot script in app.html to paint the right
+ * appearance before the app hydrates (IndexedDB is async, so without this
+ * light-mode users would see a dark flash on every load).
+ */
+export const APPEARANCE_CACHE_KEY = 'huntflow-appearance';
 
 function applyAppearance(settings: Settings): void {
   if (!browser) return;
   applyTheme(settings.theme);
 
-  const palette = accentPalettes[settings.accentColor];
-  document.documentElement.style.setProperty('--color-accent', palette.accent);
-  document.documentElement.style.setProperty('--color-accent-hover', palette.hover);
-  document.documentElement.style.setProperty('--color-link', palette.link);
-  document.documentElement.dataset.accent = settings.accentColor;
+  const accent = settings.accentColor === 'green' ? 'crimson' : settings.accentColor;
+  document.documentElement.dataset.accent = accent;
   document.documentElement.dataset.fontSize = settings.fontSize;
+  try {
+    localStorage.setItem(
+      APPEARANCE_CACHE_KEY,
+      JSON.stringify({ theme: settings.theme, accent, fontSize: settings.fontSize })
+    );
+  } catch {
+    /* storage disabled — the boot script falls back to system appearance */
+  }
 }
 
 async function flush(): Promise<void> {
@@ -82,7 +96,8 @@ async function load(): Promise<Settings> {
   if (loaded) return value;
   if (loading) return loading;
 
-    loading = settingsDB.getSettings().then((settings) => {
+  loading = settingsDB.getSettings().then((stored) => {
+    const settings = normalizeSettings(stored);
     loaded = true;
     source.set(settings);
     applyAppearance(settings);

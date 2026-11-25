@@ -1,3 +1,38 @@
+import plugin from 'tailwindcss/plugin';
+import { buildCssVariables, hueAliases, scaleRefs } from './tailwind.tokens.js';
+
+const grayBg = scaleRefs('gray-bg');
+const grayText = scaleRefs('gray-text');
+const grayBorder = scaleRefs('gray-border');
+const grayNames = ['zinc', 'slate', 'neutral', 'gray', 'stone'];
+
+const withGrays = (scale) => Object.fromEntries(grayNames.map((name) => [name, scale]));
+const hueColors = Object.fromEntries(
+  Object.entries(hueAliases).map(([tailwindName, systemName]) => [tailwindName, scaleRefs(systemName)])
+);
+
+const { light, dark, accentBlocks } = buildCssVariables();
+
+/**
+ * Emits every design token as a CSS custom property. Light values live on
+ * `:root`, dark values on `.dark`, and each accent overrides the
+ * `--hf-accent-*` / `--primary` family for both appearances.
+ */
+const tokenPlugin = plugin(({ addBase }) => {
+  addBase({
+    ':root': { ...light, ...accentBlocks.crimson.light },
+    // `.dark` (not just `:root.dark`) so a subtree can opt into dark
+    // appearance — the marketing pages use this.
+    '.dark': { ...dark, ...accentBlocks.crimson.dark }
+  });
+  for (const [name, block] of Object.entries(accentBlocks)) {
+    addBase({
+      [`:root[data-accent='${name}']`]: block.light,
+      [`:root[data-accent='${name}'].dark, :root[data-accent='${name}'] .dark`]: block.dark
+    });
+  }
+});
+
 /** @type {import('tailwindcss').Config} */
 const config = {
   darkMode: 'class',
@@ -5,6 +40,8 @@ const config = {
   theme: {
     extend: {
       colors: {
+        ...withGrays(grayBg),
+        ...hueColors,
         border: 'hsl(var(--border) / <alpha-value>)',
         input: 'hsl(var(--input) / <alpha-value>)',
         ring: 'hsl(var(--ring) / <alpha-value>)',
@@ -33,78 +70,100 @@ const config = {
         primary: {
           DEFAULT: 'hsl(var(--primary) / <alpha-value>)',
           foreground: 'hsl(var(--primary-foreground) / <alpha-value>)',
-          50: '#fff1f2',
-          100: '#ffe4e6',
-          200: '#fecdd3',
-          300: '#fda4af',
-          400: '#fb7185',
-          500: '#e11d34',
-          600: '#c81530',
-          700: '#a5122a',
-          800: '#881425',
-          900: '#731423'
-        },
-        slate: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          750: '#27364a',
-          800: '#1e293b',
-          850: '#172033',
-          900: '#0f172a',
-          950: '#020617'
+          ...scaleRefs('accent')
         },
         priority: {
-          p0: '#ef4444',
-          p1: '#f97316',
-          p2: '#eab308',
-          p3: '#64748b'
+          p0: 'hsl(var(--hf-red-500) / <alpha-value>)',
+          p1: 'hsl(var(--hf-orange-500) / <alpha-value>)',
+          p2: 'hsl(var(--hf-yellow-500) / <alpha-value>)',
+          p3: 'hsl(var(--hf-gray-text-500) / <alpha-value>)'
         },
         status: {
-          recon: '#3b82f6',
-          testing: '#f59e0b',
-          reported: '#8b5cf6',
-          paid: '#22c55e',
-          closed: '#64748b',
-          archived: '#475569'
+          recon: 'hsl(var(--hf-blue-500) / <alpha-value>)',
+          testing: 'hsl(var(--hf-orange-500) / <alpha-value>)',
+          reported: 'hsl(var(--hf-indigo-500) / <alpha-value>)',
+          paid: 'hsl(var(--hf-green-500) / <alpha-value>)',
+          closed: 'hsl(var(--hf-gray-text-500) / <alpha-value>)',
+          archived: 'hsl(var(--hf-gray-text-600) / <alpha-value>)'
         },
         severity: {
-          critical: '#dc2626',
-          high: '#ea580c',
-          medium: '#ca8a04',
-          low: '#525252',
-          info: '#2563eb'
+          critical: 'hsl(var(--hf-red-500) / <alpha-value>)',
+          high: 'hsl(var(--hf-orange-500) / <alpha-value>)',
+          medium: 'hsl(var(--hf-yellow-500) / <alpha-value>)',
+          low: 'hsl(var(--hf-blue-500) / <alpha-value>)',
+          info: 'hsl(var(--hf-gray-text-500) / <alpha-value>)'
         }
       },
+      // Role-specific gray scales: labels, separators and placeholders use
+      // Apple's label/separator ramps; everything else uses the fill ramp.
+      textColor: {
+        ...withGrays(grayText),
+        primary: {
+          DEFAULT: 'hsl(var(--primary-text) / <alpha-value>)',
+          foreground: 'hsl(var(--primary-foreground) / <alpha-value>)',
+          ...scaleRefs('accent')
+        }
+      },
+      placeholderColor: withGrays(grayText),
+      borderColor: withGrays(grayBorder),
+      divideColor: withGrays(grayBorder),
+      ringColor: withGrays(grayBorder),
+      outlineColor: withGrays(grayBorder),
       fontFamily: {
         sans: [
-          'Inter',
-          'Inter Fallback',
-          'Geist',
-          'ui-sans-serif',
-          'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
+          '"SF Pro Text"',
+          '"SF Pro Display"',
+          '"Helvetica Neue"',
+          'Inter',
+          '"Segoe UI Variable Text"',
+          '"Segoe UI"',
+          'Roboto',
+          'system-ui',
           'sans-serif'
         ],
-        mono: ['JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'monospace']
+        mono: [
+          '"SF Mono"',
+          'ui-monospace',
+          'SFMono-Regular',
+          'Menlo',
+          '"JetBrains Mono"',
+          '"Cascadia Code"',
+          'Consolas',
+          'monospace'
+        ]
+      },
+      fontSize: {
+        // Apple-ish type ramp (desktop sizes).
+        caption: ['0.6875rem', { lineHeight: '0.875rem', letterSpacing: '0.01em' }],
+        footnote: ['0.75rem', { lineHeight: '1rem' }],
+        subhead: ['0.8125rem', { lineHeight: '1.125rem' }],
+        callout: ['0.875rem', { lineHeight: '1.25rem' }],
+        body: ['0.9375rem', { lineHeight: '1.375rem' }],
+        headline: ['0.9375rem', { lineHeight: '1.375rem', fontWeight: '600' }],
+        title3: ['1.25rem', { lineHeight: '1.625rem', letterSpacing: '-0.01em' }],
+        title2: ['1.375rem', { lineHeight: '1.75rem', letterSpacing: '-0.015em' }],
+        title1: ['1.75rem', { lineHeight: '2.125rem', letterSpacing: '-0.02em' }],
+        'large-title': ['2.125rem', { lineHeight: '2.5rem', letterSpacing: '-0.025em' }]
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)'
+        sm: 'calc(var(--radius) - 4px)',
+        xl: 'calc(var(--radius) + 2px)',
+        '2xl': 'calc(var(--radius) + 6px)'
       },
       boxShadow: {
-        'dark-sm': '0 1px 0 rgba(255, 255, 255, 0.03), 0 12px 30px rgba(0, 0, 0, 0.22)',
-        'dark-md': '0 1px 0 rgba(255, 255, 255, 0.04), 0 18px 48px rgba(0, 0, 0, 0.32)',
-        'dark-lg': '0 1px 0 rgba(255, 255, 255, 0.04), 0 24px 70px rgba(0, 0, 0, 0.42)',
-        'dark-xl': '0 1px 0 rgba(255, 255, 255, 0.05), 0 34px 90px rgba(0, 0, 0, 0.52)',
-        'inner-line': 'inset 0 1px 0 rgba(255, 255, 255, 0.04)'
+        'dark-sm': 'var(--hf-shadow-sm)',
+        'dark-md': 'var(--hf-shadow-md)',
+        'dark-lg': 'var(--hf-shadow-lg)',
+        'dark-xl': 'var(--hf-shadow-xl)',
+        'inner-line': 'none',
+        sheet: 'var(--hf-shadow-xl)'
+      },
+      backdropBlur: {
+        material: '30px'
       },
       keyframes: {
         'fade-in': {
@@ -112,24 +171,24 @@ const config = {
           to: { opacity: '1' }
         },
         'slide-up': {
-          from: { opacity: '0', transform: 'translateY(8px)' },
+          from: { opacity: '0', transform: 'translateY(6px)' },
           to: { opacity: '1', transform: 'translateY(0)' }
         },
         'scale-in': {
-          from: { opacity: '0', transform: 'scale(0.95)' },
+          from: { opacity: '0', transform: 'scale(0.97)' },
           to: { opacity: '1', transform: 'scale(1)' }
         },
         'priority-pulse': {
-          '0%, 100%': { transform: 'scale(1)' },
-          '50%': { transform: 'scale(1.05)' }
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.6' }
         },
         'fade-up': {
-          from: { opacity: '0', transform: 'translateY(14px)' },
+          from: { opacity: '0', transform: 'translateY(8px)' },
           to: { opacity: '1', transform: 'translateY(0)' }
         },
         'panel-in': {
-          from: { opacity: '0', transform: 'translateY(10px) scale(0.985)' },
-          to: { opacity: '1', transform: 'translateY(0) scale(1)' }
+          from: { opacity: '0', transform: 'translateY(4px)' },
+          to: { opacity: '1', transform: 'translateY(0)' }
         },
         'subtle-shimmer': {
           '0%': { transform: 'translateX(-120%)' },
@@ -140,18 +199,18 @@ const config = {
         }
       },
       animation: {
-        'fade-in': 'fade-in 150ms ease-out',
-        'slide-up': 'slide-up 200ms ease-out',
-        'scale-in': 'scale-in 150ms ease-out',
+        'fade-in': 'fade-in 180ms ease-out',
+        'slide-up': 'slide-up 240ms cubic-bezier(0.32, 0.72, 0, 1)',
+        'scale-in': 'scale-in 240ms cubic-bezier(0.32, 0.72, 0, 1)',
         'priority-pulse': 'priority-pulse 2s infinite',
-        'fade-up': 'fade-up 420ms cubic-bezier(0.22, 1, 0.36, 1) both',
-        'panel-in': 'panel-in 360ms cubic-bezier(0.22, 1, 0.36, 1) both',
+        'fade-up': 'fade-up 360ms cubic-bezier(0.32, 0.72, 0, 1) both',
+        'panel-in': 'panel-in 280ms cubic-bezier(0.32, 0.72, 0, 1) both',
         'subtle-shimmer': 'subtle-shimmer 2.8s ease-in-out infinite',
         'radar-scan': 'radar-scan 7s linear infinite'
       }
     }
   },
-  plugins: []
+  plugins: [tokenPlugin]
 };
 
 export default config;

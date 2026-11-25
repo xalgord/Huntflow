@@ -146,7 +146,7 @@
       bestStreak={$bestStreakStore}
     />
 
-    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <MetricCard icon={Clock} label="Total hunting time" value={formatDuration($userStatsStore.totalTimeSeconds)} detail={`${formatDuration(monthSeconds)} this month`} href="/analytics" />
       <MetricCard icon={BarChart3} label="This week" value={formatDuration(weekSeconds)} detail={`${formatDuration(previousWeekSeconds)} prev`} href="/analytics" tone="info" />
       <MetricCard icon={Timer} label="Average session length" value={formatDuration($avgSessionLengthStore)} detail={`${$userStatsStore.completedSessions} completed`} href="/analytics" tone="warning" />
