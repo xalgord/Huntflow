@@ -43,6 +43,7 @@
     Lightbulb,
     PenLine,
     Play,
+    RotateCcw,
     Send,
     ShieldAlert,
     Target as TargetIcon,
@@ -70,6 +71,7 @@
   const kindIcon: Record<AttentionKind, ComponentType> = {
     'sla-overdue': AlarmClock,
     'sla-approaching': Clock,
+    retest: RotateCcw,
     draft: PenLine,
     lead: Lightbulb,
     'record-bounty': CircleDollarSign,

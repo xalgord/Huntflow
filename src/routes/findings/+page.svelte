@@ -281,6 +281,9 @@
                       {#if sla.state === 'overdue'}
                         <span class="shrink-0 font-semibold text-red-400">· overdue</span>
                       {/if}
+                      {#if finding.retestStatus === 'pending'}
+                        <span class="shrink-0 font-semibold text-blue-500">· retest</span>
+                      {/if}
                     </span>
                   </span>
                 </button>
