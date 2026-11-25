@@ -238,7 +238,7 @@
     if (!canSave) return;
     save();
     void tick().then(() => {
-      goto(`/submissions?fromNote=${note.id}`);
+      goto(`/findings?fromNote=${note.id}`);
     });
   }
 

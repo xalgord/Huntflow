@@ -356,7 +356,7 @@
         {#if programReports.length > 0}
           <section class="grid gap-3 lg:grid-cols-2">
             {#each programReports as report}
-              <a href={`/reports?id=${report.id}`} class="hf-card hf-interactive block p-4">
+              <a href={`/findings?id=${report.id}`} class="hf-card hf-interactive block p-4">
                 <p class="truncate text-sm font-medium text-zinc-100">{report.title}</p>
                 <p class="mt-1 text-xs text-zinc-500">{report.vulnerabilityType ?? 'Generic report'} · Updated {formatRelativeDate(report.updatedAt)}</p>
               </a>

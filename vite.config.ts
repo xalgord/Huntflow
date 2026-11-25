@@ -16,6 +16,11 @@ export default defineConfig({
     // which Vite/esbuild then tree-shake throughout the bundle.
     __BUILD_TARGET__: JSON.stringify(buildTarget)
   },
+  // Pre-bundle lazily imported deps so the dev server never triggers a
+  // full-page "optimized dependencies changed" reload mid-session.
+  optimizeDeps: {
+    include: ['ae-cvss-calculator']
+  },
   plugins: [
     sveltekit(),
     VitePWA({

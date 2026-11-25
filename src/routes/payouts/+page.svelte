@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { goto } from '$app/navigation';
+  import { afterNavigate, goto } from '$app/navigation';
   import IncomeChart from '$lib/components/income/IncomeChart.svelte';
   import PayoutForm from '$lib/components/income/PayoutForm.svelte';
   import TaxExport from '$lib/components/income/TaxExport.svelte';
@@ -33,6 +33,14 @@
   let platformFilter: Platform | 'all' = 'all';
   let severityFilter: PayoutSeverity | 'all' = 'all';
   let yearFilter = 'all';
+
+  // Re-read ?new=1 when a link targets this page while it's already open
+  // (the + menu, command palette), since that doesn't remount the page.
+  afterNavigate(({ type }) => {
+    if (type === 'enter') return;
+    const params = new URLSearchParams(location.search);
+    if (params.get('new') === '1') startCreate(params.get('submission') ?? undefined);
+  });
 
   onMount(async () => {
     await Promise.all([payoutStore.load(), submissionStore.load(), targetStore.load()]);
