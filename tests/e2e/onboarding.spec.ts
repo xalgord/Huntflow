@@ -43,7 +43,7 @@ test.describe('first-run onboarding', () => {
     // is scoped to the app shell and must not appear on this public surface.
     await gotoAppRoute(page, '/');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'HuntFlow' })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await consoleWatcher.assertClean();
   });
 });

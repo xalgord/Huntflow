@@ -85,7 +85,7 @@
       </button>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={CircleDollarSign} label="Total payout" value={formatMoney(totalPaid)} detail={`${paidPayouts.length} paid records`} tone="success" />
       <MetricCard icon={Banknote} label="Pending payout" value={formatMoney(pendingTotal)} detail="Pending or triaged" tone="warning" />
       <MetricCard icon={TrendingUp} label="Accepted rate" value={`${acceptedRate}%`} detail={`${acceptedReports}/${decidedReports || 0} decided reports`} />

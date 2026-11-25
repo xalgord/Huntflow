@@ -51,6 +51,7 @@ import {
   type TargetAssetType,
   type TargetStatus
 } from './schema';
+import { ACCENT_COLORS } from '$lib/types';
 
 const SESSION_STATUSES: Session['status'][] = ['running', 'paused', 'completed', 'abandoned'];
 const SESSION_TAGS: SessionTag[] = [
@@ -89,7 +90,6 @@ const EVIDENCE_RELATIONSHIPS: EvidenceRelationship[] = [
   'belongs-to'
 ];
 const THEMES: Settings['theme'][] = ['light', 'dark', 'system'];
-const ACCENT_COLORS: Settings['accentColor'][] = ['green', 'blue', 'orange', 'purple'];
 const FONT_SIZES: Settings['fontSize'][] = ['small', 'medium', 'large'];
 const RECON_ASSET_STATUSES: ReconAssetStatus[] = [
   'untested',

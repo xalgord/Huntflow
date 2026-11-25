@@ -528,6 +528,28 @@ export interface AppSettings {
   value: unknown;
 }
 
+export type AccentColor =
+  | 'crimson'
+  | 'blue'
+  | 'indigo'
+  | 'purple'
+  | 'orange'
+  | 'teal'
+  | 'graphite'
+  | 'green';
+
+/** Every accent value accepted on import (includes the legacy `green`). */
+export const ACCENT_COLORS: AccentColor[] = [
+  'crimson',
+  'blue',
+  'indigo',
+  'purple',
+  'orange',
+  'teal',
+  'graphite',
+  'green'
+];
+
 export interface Settings {
   defaultDuration: number;
   autoStartBreak: boolean;
@@ -537,7 +559,12 @@ export interface Settings {
   soundEnabled: boolean;
   vibrationEnabled: boolean;
   theme: 'light' | 'dark' | 'system';
-  accentColor: 'green' | 'blue' | 'orange' | 'purple';
+  /**
+   * Tint colour. `green` is a legacy value from before the Apple-style
+   * appearance; it always rendered as the brand crimson and is normalised
+   * to `crimson` on load.
+   */
+  accentColor: AccentColor;
   fontSize: 'small' | 'medium' | 'large';
   onboardingCompleted: boolean;
   lastExportAt?: number;
@@ -551,8 +578,8 @@ export const DEFAULT_SETTINGS: Settings = {
   longBreakDuration: 900,
   soundEnabled: true,
   vibrationEnabled: true,
-  theme: 'dark',
-  accentColor: 'green',
+  theme: 'system',
+  accentColor: 'crimson',
   fontSize: 'medium',
   onboardingCompleted: false
 };

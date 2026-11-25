@@ -282,7 +282,7 @@
       </button>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={TargetIcon} label="All targets" value={String($reconAssetStore.length)} detail="Recon assets tracked" />
       <MetricCard icon={ShieldCheck} label="In scope" value={String(inScopeCount)} detail="Safe to test when policy allows" />
       <MetricCard icon={Filter} label="Needs attention" value={String(testingCount)} detail="New, testing, or potential finding" tone="warning" />

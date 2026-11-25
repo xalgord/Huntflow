@@ -30,18 +30,24 @@
   aria-checked={checked}
   aria-label={label}
   {disabled}
-  class="flex min-h-[44px] w-full items-center justify-between gap-4 rounded-md border border-zinc-700 bg-zinc-850 px-3 py-2.5 text-left transition hover:border-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50 disabled:cursor-not-allowed disabled:opacity-60"
+  class="flex min-h-[44px] w-full items-center justify-between gap-4 rounded-[10px] px-3 py-2 text-left transition focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
   on:click={toggle}
 >
   <span>
-    <span class="block text-sm font-medium text-zinc-100">{label}</span>
+    <span class="block text-[0.8125rem] font-medium text-zinc-100">{label}</span>
     {#if description}
-      <span class="mt-1 block text-xs leading-5 text-zinc-400">{description}</span>
+      <span class="mt-0.5 block text-xs leading-5 text-zinc-500">{description}</span>
     {/if}
   </span>
-  <span class="relative h-6 w-11 shrink-0 rounded-full transition {checked ? 'bg-primary-600' : 'bg-zinc-700'}">
+  <span
+    class="relative h-[1.375rem] w-[2.375rem] shrink-0 rounded-full transition-colors duration-200 {checked ? 'bg-green-500' : ''}"
+    style={checked ? '' : 'background: var(--hf-fill-strong)'}
+    aria-hidden="true"
+  >
     <span
-      class="absolute top-1 h-4 w-4 rounded-full bg-white shadow-sm transition {checked ? 'left-6' : 'left-1'}"
+      class="absolute top-[2px] h-[1.125rem] w-[1.125rem] rounded-full bg-white shadow-[0_2px_4px_rgb(0_0_0/0.2),0_0_0_0.5px_rgb(0_0_0/0.04)] transition-all duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] {checked
+        ? 'left-[calc(100%-1.125rem-2px)]'
+        : 'left-[2px]'}"
     ></span>
   </span>
 </button>

@@ -1,4 +1,5 @@
 import {
+  ACCENT_COLORS,
   DEFAULT_SETTINGS,
   type EvidenceAsset,
   type EvidenceAssetKind,
@@ -70,7 +71,6 @@ const EVIDENCE_RELATIONSHIPS: EvidenceRelationship[] = [
   'belongs-to'
 ];
 const THEMES: Settings['theme'][] = ['light', 'dark', 'system'];
-const ACCENT_COLORS: Settings['accentColor'][] = ['green', 'blue', 'orange', 'purple'];
 const FONT_SIZES: Settings['fontSize'][] = ['small', 'medium', 'large'];
 
 function result(errors: string[]): ValidationResult {

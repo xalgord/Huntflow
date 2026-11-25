@@ -148,7 +148,7 @@
       </div>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={FolderKanban} label="Active programs" value={String(activePrograms.length)} detail="Watching, hunting, or paused" href="/programs" />
       <MetricCard icon={TargetIcon} label="Open targets" value={String(openTargets.length)} detail="In-scope assets needing work" href="/targets" />
       <MetricCard icon={Clock} label="Hunt hours this week" value={formatDuration(weekSeconds($sessionStore))} detail="Completed focused sessions" href="/analytics" />

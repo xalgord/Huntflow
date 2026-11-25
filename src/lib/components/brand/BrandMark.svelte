@@ -5,7 +5,7 @@
    *
    * The logo art is a self-contained transparent PNG, so it reads
    * correctly on any dark surface (sidebar, footer) or pre-tinted chip
-   * (SideNav / MobileHeader brand badge) without needing a tile — the
+   * without needing a tile — the
    * same mark is used at every entry point so the brand stays consistent.
    */
   export let size = 32;

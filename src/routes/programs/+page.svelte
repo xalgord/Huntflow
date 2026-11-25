@@ -105,7 +105,7 @@
       </button>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={FolderKanban} label="All programs" value={String($targetStore.length)} detail="Stored locally" />
       <MetricCard icon={TargetIcon} label="Active programs" value={String(activePrograms.length)} detail="Not archived or closed" />
       <MetricCard icon={Filter} label="High priority" value={String(highPriority)} detail="P0/P1 focus queue" />

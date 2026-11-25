@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -11,8 +11,7 @@
       name="keywords"
       content="pentest, penetration testing, vulnerability research, security notes, pentest workflow, report builder, security testing"
     />
-    <meta name="theme-color" content="#09090b" />
-    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#000000" />
     <meta name="color-scheme" content="dark light" />
     <meta name="application-name" content="HuntFlow" />
     <meta name="creator" content="xalgorix" />
@@ -43,6 +42,26 @@
     <link rel="icon" href="%sveltekit.assets%/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="%sveltekit.assets%/icons/favicon-32.png" />
     <link rel="apple-touch-icon" href="%sveltekit.assets%/icons/apple-touch-icon.png" />
+    <script>
+      // Paint the saved appearance before hydration (settings live in
+      // IndexedDB, which is async). Mirrors settingsStore.applyAppearance.
+      (function () {
+        var root = document.documentElement;
+        var prefs = {};
+        try {
+          prefs = JSON.parse(localStorage.getItem('huntflow-appearance') || '{}') || {};
+        } catch (e) {}
+        var theme = prefs.theme || 'system';
+        var dark =
+          theme === 'dark' ||
+          (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        root.classList.add(dark ? 'dark' : 'light');
+        root.dataset.accent = prefs.accent || 'crimson';
+        if (prefs.fontSize) root.dataset.fontSize = prefs.fontSize;
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', dark ? '#000000' : '#f5f5f7');
+      })();
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">

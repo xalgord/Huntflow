@@ -156,7 +156,7 @@
       </a>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
       <MetricCard icon={Clock} label="Total hunt time" value={formatDuration(totalSeconds)} detail={`${completedSessions.length} completed sessions`} />
       <MetricCard icon={CircleDollarSign} label="Paid bounty" value={formatMoney(totalPayout)} detail="Paid payout records" tone="success" />
       <MetricCard icon={TrendingUp} label="Accepted rate" value={`${acceptedRate}%`} detail={`${acceptedReports.length}/${decidedReports.length} decided`} />

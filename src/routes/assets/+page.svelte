@@ -840,7 +840,7 @@
       </div>
     </header>
 
-    <section class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 lg:grid-cols-4">
       <div class="hf-card px-5 py-6">
         <p class="op-kicker">Vault</p>
         <p class="mt-3 text-3xl font-bold tabular-nums tracking-tight text-foreground">{$evidenceAssetStore.length}</p>
