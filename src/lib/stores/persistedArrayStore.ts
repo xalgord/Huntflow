@@ -95,14 +95,25 @@ export function createPersistedArrayStore<T extends { id: string }>(
     }
   }
 
-  function scheduleSave(): void {
+  let failedAttempts = 0;
+
+  function scheduleSave(delay = 500): void {
     if (!browser || !loaded) return;
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
-      void flush().catch(() => {
-        /* flush re-queues dirty ids on failure; swallow to avoid unhandled rejection */
-      });
-    }, 500);
+      void flush()
+        .then(() => {
+          failedAttempts = 0;
+        })
+        .catch((error) => {
+          // flush() re-queued the failed ids. Retry with backoff so a
+          // transient failure (closed connection, full disk being cleaned
+          // up) is persisted without waiting for the user's next edit.
+          failedAttempts += 1;
+          console.warn('[persistedArrayStore] save failed, retrying:', error);
+          scheduleSave(Math.min(30_000, 1_000 * 2 ** Math.min(failedAttempts, 5)));
+        });
+    }, delay);
   }
 
   async function load(): Promise<T[]> {

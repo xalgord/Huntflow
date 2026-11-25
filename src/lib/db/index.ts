@@ -1,4 +1,10 @@
 import { openDB, type IDBPDatabase } from 'idb';
+import {
+  classifyStorageError,
+  clearStorageHealth,
+  describeStorageError,
+  reportStorageHealth
+} from './health';
 import type {
   AppSettings,
   Bookmark,
@@ -193,7 +199,38 @@ function createStores(db: IDBPDatabase<HuntFlowDB>) {
  * for fresh installs (see `createStores` above).
  */
 
+/**
+ * Called by every DB helper when an IndexedDB operation fails.
+ *
+ * Policy (previously *every* error silently switched the whole app to an
+ * in-memory store, so a single closed connection could make the workspace
+ * look empty and quietly discard everything typed afterwards):
+ *
+ * - connection errors: drop the cached connection so the next call reopens
+ *   it, and rethrow so the caller's write is retried instead of being
+ *   parked in memory (persisted stores re-queue failed writes).
+ * - quota errors: surface "storage full" and rethrow; nothing is lost from
+ *   the live session, and the next flush retries.
+ * - anything else: IndexedDB is unusable — switch to memory and tell the
+ *   user loudly that changes are not being saved.
+ */
 export function enableMemoryFallback(reason?: unknown): void {
+  const kind = reason === undefined ? 'fatal' : classifyStorageError(reason);
+
+  if (kind === 'connection') {
+    dbPromise = null;
+    throw reason;
+  }
+
+  if (kind === 'quota') {
+    reportStorageHealth('quota', describeStorageError(reason));
+    throw reason;
+  }
+
+  switchToMemory(reason);
+}
+
+function switchToMemory(reason: unknown): void {
   if (!memoryFallback) {
     console.warn('IndexedDB failed, using memory fallback:', reason);
   }
@@ -201,6 +238,7 @@ export function enableMemoryFallback(reason?: unknown): void {
   memoryFallback = true;
   fallbackReason = reason;
   dbPromise = null;
+  reportStorageHealth('memory', describeStorageError(reason));
 }
 
 export function isMemoryFallback(): boolean {
@@ -213,6 +251,64 @@ export function getMemoryFallbackReason(): unknown {
 
 export function getMemoryDB(): MemoryHuntFlowDB {
   return memoryDB;
+}
+
+/** Promise-returning IDBPDatabase methods that are safe to retry once. */
+const RETRYABLE_METHODS = new Set([
+  'get',
+  'getAll',
+  'getAllKeys',
+  'getKey',
+  'count',
+  'put',
+  'add',
+  'delete',
+  'clear',
+  'getFromIndex',
+  'getAllFromIndex',
+  'getAllKeysFromIndex',
+  'getKeyFromIndex',
+  'countFromIndex'
+]);
+
+/**
+ * Wrap a connection so single-shot operations survive a dropped
+ * connection: on a connection-class error the handle is reopened and the
+ * call retried once. `transaction()` can't be retried synchronously, so it
+ * just invalidates the cached handle for the caller's next attempt.
+ */
+function resilient(db: IDBPDatabase<HuntFlowDB>): IDBPDatabase<HuntFlowDB> {
+  return new Proxy(db, {
+    get(target, prop, receiver) {
+      const value = Reflect.get(target, prop, receiver);
+      if (typeof value !== 'function') return value;
+      if (prop === 'transaction') {
+        return (...args: unknown[]) => {
+          try {
+            return (value as (...a: unknown[]) => unknown).apply(target, args);
+          } catch (error) {
+            if (classifyStorageError(error) === 'connection') dbPromise = null;
+            throw error;
+          }
+        };
+      }
+      if (typeof prop === 'string' && RETRYABLE_METHODS.has(prop)) {
+        return async (...args: unknown[]) => {
+          try {
+            return await (value as (...a: unknown[]) => Promise<unknown>).apply(target, args);
+          } catch (error) {
+            if (classifyStorageError(error) !== 'connection') throw error;
+            dbPromise = null;
+            const fresh = await getHuntFlowDB();
+            if (!fresh) throw error;
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            return (fresh as any)[prop](...args);
+          }
+        };
+      }
+      return (value as (...a: unknown[]) => unknown).bind(target);
+    }
+  });
 }
 
 export async function getHuntFlowDB(): Promise<IDBPDatabase<HuntFlowDB> | null> {
@@ -248,19 +344,37 @@ export async function getHuntFlowDB(): Promise<IDBPDatabase<HuntFlowDB> | null> 
         }
       },
       blocked() {
-        console.warn('HuntFlow IndexedDB upgrade is blocked by another open tab.');
+        // Another tab still has the previous version open. The open request
+        // stays pending until it closes, so tell the user what to do.
+        reportStorageHealth('blocked', 'Another HuntFlow tab is using an older version of your data.');
       },
       blocking() {
-        console.warn('HuntFlow IndexedDB connection is blocking a newer version.');
+        // A newer HuntFlow in another tab wants to upgrade. Release our
+        // handle so we never hold the user's data hostage, and ask this tab
+        // to reload into the new version.
+        void dbPromise?.then((db) => db.close()).catch(() => undefined);
+        dbPromise = null;
+        reportStorageHealth('version-changed', 'HuntFlow was updated in another tab.');
       },
       terminated() {
-        enableMemoryFallback(new Error('HuntFlow IndexedDB connection terminated'));
+        // The browser closed the connection (storage pressure, crash
+        // recovery). The data is still on disk: reconnect on next use.
+        dbPromise = null;
       }
+    }).then((db) => {
+      clearStorageHealth('blocked');
+      return resilient(db);
     });
 
     return await dbPromise;
   } catch (error) {
-    enableMemoryFallback(error);
+    dbPromise = null;
+    // Opening failed outright: there is no connection to retry against.
+    if ((error as { name?: string } | null)?.name === 'VersionError') {
+      // Another tab already upgraded the schema past this build.
+      reportStorageHealth('version-changed', 'HuntFlow was updated in another tab.');
+    }
+    switchToMemory(error);
     return null;
   }
 }

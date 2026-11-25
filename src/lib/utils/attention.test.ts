@@ -148,6 +148,23 @@ describe('buildAttentionQueue', () => {
   });
 });
 
+describe('backup reminder', () => {
+  const withWork = { ...empty, assets: [asset({ status: 'tested' })] };
+
+  it('reminds when there is work and no recent backup', () => {
+    expect(buildAttentionQueue({ ...withWork, backup: { automatic: false } }).map((item) => item.kind)).toEqual(['backup']);
+    expect(
+      buildAttentionQueue({ ...withWork, backup: { automatic: false, lastBackupAt: NOW - 20 * DAY } })[0].detail
+    ).toContain('20 days ago');
+  });
+
+  it('stays quiet with automatic backups, a recent backup or no work', () => {
+    expect(buildAttentionQueue({ ...withWork, backup: { automatic: true } })).toEqual([]);
+    expect(buildAttentionQueue({ ...withWork, backup: { automatic: false, lastBackupAt: NOW - DAY } })).toEqual([]);
+    expect(buildAttentionQueue({ ...empty, backup: { automatic: false } })).toEqual([]);
+  });
+});
+
 describe('buildWeekSummary', () => {
   it('summarises hunt time, pipeline and earnings', () => {
     const sessions: Session[] = [

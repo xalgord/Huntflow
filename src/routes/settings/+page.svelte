@@ -4,9 +4,10 @@
   import AppearanceSettings from '$lib/components/settings/AppearanceSettings.svelte';
   import BackupRestore from '$lib/components/settings/BackupRestore.svelte';
   import DataSettings from '$lib/components/settings/DataSettings.svelte';
+  import StorageSafety from '$lib/components/settings/StorageSafety.svelte';
   import TimerSettings from '$lib/components/settings/TimerSettings.svelte';
   import { settingsStore } from '$lib/stores';
-  import { ArrowRight, BadgeCheck, Settings, UserRound } from 'lucide-svelte';
+  import { BadgeCheck, ChevronRight, UserRound } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
   onMount(() => {
@@ -26,17 +27,9 @@
 <main class="hf-page">
   <div class="hf-page-inner max-w-5xl">
     <header class="hf-page-header">
-      <div class="flex items-start gap-3">
-      <div class="rounded-lg border border-primary/25 bg-primary/10 p-2 text-primary shadow-inner-line">
-        <Settings size={28} aria-hidden="true" />
-      </div>
       <div>
-        <p class="hf-eyebrow">Preferences</p>
         <h1 class="hf-title">Settings</h1>
-        <p class="hf-description">
-          Changes save immediately to IndexedDB and apply locally on this device.
-        </p>
-      </div>
+        <p class="hf-description">Changes apply instantly and stay on this device.</p>
       </div>
     </header>
 
@@ -48,14 +41,15 @@
     -->
     <a
       href="/account"
-      class="hf-card flex flex-col gap-3 p-4 transition hover:border-primary/30 hover:bg-muted/40 sm:flex-row sm:items-center sm:gap-4"
+      class="hf-card hf-interactive flex items-center gap-4 p-4"
     >
       <span
-        class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border {isPro
-          ? 'border-primary/30 bg-primary/10 text-primary'
-          : 'border-border bg-muted text-muted-foreground'} shadow-inner-line"
+        class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full {isPro
+          ? 'bg-primary text-primary-foreground'
+          : 'text-zinc-400'}"
+        style={isPro ? '' : 'background: var(--hf-fill-strong)'}
       >
-        <UserRound size={22} aria-hidden="true" />
+        <UserRound size={24} aria-hidden="true" />
       </span>
       <div class="min-w-0 flex-1">
         <div class="flex flex-wrap items-center gap-2">
@@ -85,14 +79,15 @@
             : 'Optional account and cloud sync controls live outside the local-first workspace.'}
         </p>
       </div>
-      <span class="hidden text-muted-foreground sm:inline-flex">
-        <ArrowRight size={18} aria-hidden="true" />
+      <span class="text-zinc-600">
+        <ChevronRight size={18} aria-hidden="true" />
       </span>
     </a>
 
-    <TimerSettings settings={$settingsStore} />
     <AppearanceSettings settings={$settingsStore} />
+    <StorageSafety />
     <BackupRestore />
+    <TimerSettings settings={$settingsStore} />
     <DataSettings />
     <AboutSection />
   </div>

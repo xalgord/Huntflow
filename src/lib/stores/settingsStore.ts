@@ -83,12 +83,22 @@ async function flush(): Promise<void> {
   await settingsDB.putSettings(value);
 }
 
-function scheduleSave(): void {
+let failedAttempts = 0;
+
+function scheduleSave(delay = 500): void {
   if (!browser || !loaded) return;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    void flush();
-  }, 500);
+    void flush()
+      .then(() => {
+        failedAttempts = 0;
+      })
+      .catch((error) => {
+        failedAttempts += 1;
+        console.warn('[settingsStore] save failed, retrying:', error);
+        scheduleSave(Math.min(30_000, 1_000 * 2 ** Math.min(failedAttempts, 5)));
+      });
+  }, delay);
 }
 
 async function load(): Promise<Settings> {

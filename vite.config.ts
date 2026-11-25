@@ -39,7 +39,8 @@ export default defineConfig({
   test: {
     include: [
       'src/**/*.{test,spec}.{js,ts}',
-      'convex/**/*.{test,spec}.{js,ts}'
+      'convex/**/*.{test,spec}.{js,ts}',
+      'tests/cli/**/*.{test,spec}.{js,ts}'
     ],
     setupFiles: ['./vitest.setup.ts'],
     // Component tests use `@testing-library/svelte`, which renders into
