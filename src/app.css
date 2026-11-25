@@ -637,3 +637,34 @@
     background: var(--hf-surface);
   }
 }
+
+/* ─── Print ───────────────────────────────────────────────────────────────
+   App chrome never prints. Pages that are meant to print (the engagement
+   report) mark everything else with data-print="hide". */
+@media print {
+  @page {
+    size: A4;
+    margin: 16mm 15mm;
+  }
+
+  html,
+  body,
+  .hf-shell {
+    background: #fff !important;
+  }
+
+  [data-print='hide'] {
+    display: none !important;
+  }
+
+  [data-print='flat'] {
+    padding: 0 !important;
+    margin: 0 !important;
+    min-height: 0 !important;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}

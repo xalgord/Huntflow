@@ -291,7 +291,7 @@
   {/if}
 </svelte:head>
 
-<OfflineBanner />
+<div data-print="hide" class="contents"><OfflineBanner /></div>
 
 <div class="hf-shell">
   {#if isLanding}
@@ -313,6 +313,7 @@
 
 <div
   id="toast-container"
+  data-print="hide"
   class="pointer-events-none fixed inset-x-4 top-4 z-[60] flex flex-col gap-3 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto sm:w-96"
   aria-live="polite"
   aria-atomic="true"
