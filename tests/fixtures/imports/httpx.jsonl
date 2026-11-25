@@ -1,0 +1,2 @@
+{"timestamp":"2026-11-20T10:00:00Z","url":"https://api.acme.com","input":"api.acme.com","title":"Acme API","scheme":"https","webserver":"nginx","content_type":"application/json","method":"GET","host":"104.18.2.3","port":"443","path":"/","a":["104.18.2.3"],"tech":["Cloudflare","Express"],"status_code":200,"failed":false}
+{"timestamp":"2026-11-20T10:00:01Z","url":"https://dev.acme.com","input":"dev.acme.com","title":"Dev Portal","webserver":"Apache","host":"10.0.0.5","port":"443","tech":["PHP:7.4"],"status_code":403}

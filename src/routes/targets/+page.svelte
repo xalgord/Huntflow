@@ -1,4 +1,5 @@
 <script lang="ts">
+  import ImportSheet from '$lib/components/imports/ImportSheet.svelte';
   import CopyButton from '$lib/components/workspace/CopyButton.svelte';
   import EmptyState from '$lib/components/workspace/EmptyState.svelte';
   import MetricCard from '$lib/components/workspace/MetricCard.svelte';
@@ -23,7 +24,7 @@
     scopeStatusLabels,
     statusTone
   } from '$lib/utils/workspace';
-  import { Filter, Plus, Search, ShieldCheck, Target as TargetIcon } from 'lucide-svelte';
+  import { Download, Filter, Plus, Search, ShieldCheck, Target as TargetIcon } from 'lucide-svelte';
   import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
 
@@ -77,8 +78,28 @@
   // Re-read ?new=1 when a link targets this page while it's already open
   // (the + menu, command palette), since that doesn't remount the page.
   afterNavigate(({ type }) => {
-    if (type !== 'enter' && new URLSearchParams(location.search).get('new') === '1') showForm = true;
+    if (type === 'enter') return;
+    const params = new URLSearchParams(location.search);
+    if (params.get('new') === '1') showForm = true;
+    if (params.get('import') === '1') openImport();
   });
+
+  let showImport = false;
+  let importProgramId = '';
+
+  function openImport(): void {
+    importProgramId = programFilter !== 'all' ? programFilter : formProgramId || ($targetStore[0]?.id ?? '');
+    showImport = true;
+  }
+
+  function closeImport(): void {
+    showImport = false;
+    const url = new URL(location.href);
+    if (url.searchParams.has('import')) {
+      url.searchParams.delete('import');
+      history.replaceState(history.state, '', url);
+    }
+  }
 
   onMount(async () => {
     await Promise.all([targetStore.load(), reconAssetStore.load(), noteStore.load(), submissionStore.load()]);
@@ -91,6 +112,7 @@
     selectedAssetId = params.get('asset') ?? '';
     showForm = params.get('new') === '1';
     loaded = true;
+    if (params.get('import') === '1') openImport();
   });
 
   // Declared reactively so markup and `$:` blocks that call it re-run when
@@ -286,10 +308,16 @@
           Manage the concrete domains, URLs, APIs, mobile apps, cloud assets, and repositories you test inside each program.
         </p>
       </div>
-      <button type="button" class="hf-button-primary" on:click={() => (showForm = !showForm)}>
-        <Plus size={17} aria-hidden="true" />
-        Add Target
-      </button>
+      <div class="flex flex-wrap gap-2">
+        <button type="button" class="hf-button-secondary" on:click={openImport}>
+          <Download size={16} aria-hidden="true" />
+          Import
+        </button>
+        <button type="button" class="hf-button-primary" on:click={() => (showForm = !showForm)}>
+          <Plus size={17} aria-hidden="true" />
+          Add Target
+        </button>
+      </div>
     </header>
 
     <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
@@ -547,11 +575,25 @@
         icon={TargetIcon}
         title={$reconAssetStore.length === 0 ? 'No targets yet' : 'No targets match the filters'}
         description={$reconAssetStore.length === 0
-          ? 'Add in-scope assets manually or paste scope from a program page.'
+          ? 'Import scope from HackerOne or Bugcrowd, or results from subfinder, httpx, nuclei and nmap. Out-of-scope hosts are flagged automatically.'
           : 'Adjust search, program, scope, type, priority, status, or tags.'}
-        actionLabel={$reconAssetStore.length === 0 ? 'Add Target' : undefined}
-        href={$reconAssetStore.length === 0 ? '/targets?new=1' : undefined}
-      />
+      >
+        {#if $reconAssetStore.length === 0}
+          <div class="mt-4 flex flex-wrap justify-center gap-2">
+            <button type="button" class="hf-button-tinted" on:click={openImport}>Import Scope or Recon</button>
+            <button type="button" class="hf-button-ghost" on:click={() => (showForm = true)}>Add by Hand</button>
+          </div>
+        {/if}
+      </EmptyState>
     {/if}
   </div>
 </main>
+
+<ImportSheet
+  open={showImport}
+  programId={importProgramId}
+  on:close={closeImport}
+  on:imported={(event) => {
+    if (programFilter !== 'all' && programFilter !== event.detail.programId) programFilter = event.detail.programId;
+  }}
+/>

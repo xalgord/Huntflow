@@ -1,6 +1,7 @@
 <script lang="ts">
   import {
     CircleDollarSign,
+    Download,
     FileText,
     FolderKanban,
     Plus,
@@ -24,7 +25,10 @@
       { label: 'New Target', href: '/targets?new=1', icon: Target },
       { label: 'Start Session', href: '/timer', icon: Timer }
     ],
-    [{ label: 'Record Payout', href: '/payouts?new=1', icon: CircleDollarSign }]
+    [
+      { label: 'Import Scope or Scan…', href: '/targets?import=1', icon: Download },
+      { label: 'Record Payout', href: '/payouts?new=1', icon: CircleDollarSign }
+    ]
   ];
 
   async function toggle(): Promise<void> {

@@ -266,6 +266,9 @@ export type ReconAssetSource =
   | 'amass'
   | 'crt-sh'
   | 'wayback'
+  | 'nuclei'
+  | 'nmap'
+  | 'burp'
   | 'other';
 
 export interface ReconAsset {
@@ -461,6 +464,12 @@ export interface Submission {
   cweId?: string;
   /** Built-in finding template this write-up started from. */
   templateId?: string;
+  /**
+   * Stable key of the scanner result this draft came from (e.g.
+   * `nuclei:<template-id>:<matched-at>`), so re-importing a scan never
+   * duplicates findings.
+   */
+  importKey?: string;
   /** Affected URLs / hosts / endpoints, one per entry. */
   affectedAssets?: string[];
   summary?: string;

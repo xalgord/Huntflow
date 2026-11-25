@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!DOCTYPE issues []>
+<issues burpVersion="2024.1" exportTime="Mon Nov 20 10:00:00 UTC 2026">
+  <issue>
+    <serialNumber>123</serialNumber>
+    <type>2097920</type>
+    <name>Cross-site scripting (reflected)</name>
+    <host ip="93.184.216.40">https://app.acme.com</host>
+    <path><![CDATA[/search]]></path>
+    <location><![CDATA[/search [q parameter]]]></location>
+    <severity>High</severity>
+    <confidence>Certain</confidence>
+    <issueBackground><![CDATA[<p>Reflected XSS arises when an application echoes input.</p>]]></issueBackground>
+    <remediationBackground><![CDATA[<p>Encode output &amp; validate input.</p>]]></remediationBackground>
+    <references><![CDATA[<ul><li><a href="https://portswigger.net/web-security/cross-site-scripting/reflected">Reflected XSS</a></li></ul>]]></references>
+    <vulnerabilityClassifications><![CDATA[<ul><li><a href="https://cwe.mitre.org/data/definitions/79.html">CWE-79: Improper Neutralization</a></li></ul>]]></vulnerabilityClassifications>
+    <issueDetail><![CDATA[The value of the <b>q</b> request parameter is copied into the HTML document.]]></issueDetail>
+    <requestresponse>
+      <request method="GET" base64="true"><![CDATA[R0VUIC9zZWFyY2g/cT0lM0NzY3JpcHQlM0UgSFRUUC8xLjENCkhvc3Q6IGFwcC5hY21lLmNvbQ0KDQo=]]></request>
+      <response base64="true"><![CDATA[SFRUUC8xLjEgMjAwIE9LDQpDb250ZW50LVR5cGU6IHRleHQvaHRtbA0KDQo8cD48c2NyaXB0PjwvcD4=]]></response>
+      <responseRedirected>false</responseRedirected>
+    </requestresponse>
+  </issue>
+</issues>

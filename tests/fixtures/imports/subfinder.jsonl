@@ -1,0 +1,2 @@
+{"host":"api.acme.com","input":"acme.com","source":"crtsh"}
+{"host":"cdn.acme.com","input":"acme.com","source":"alienvault"}

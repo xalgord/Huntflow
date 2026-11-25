@@ -22,6 +22,7 @@
     CircleDollarSign,
     Clipboard,
     Crosshair,
+    Download,
     FileText,
     Flag,
     FolderKanban,
@@ -161,6 +162,15 @@
         icon: Flag,
         keywords: 'add target asset domain url api mobile scope',
         href: '/targets?new=1'
+      },
+      {
+        id: 'action:import',
+        section: 'Actions',
+        title: 'Import scope or scan results',
+        subtitle: 'HackerOne CSV, Bugcrowd scope, subfinder, httpx, nuclei, nmap, Burp',
+        icon: Download,
+        keywords: 'import upload paste scope csv hackerone bugcrowd subfinder httpx nuclei nmap burp recon scan',
+        href: '/targets?import=1'
       },
       {
         id: 'action:new-note',

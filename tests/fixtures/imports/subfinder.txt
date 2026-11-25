@@ -1,0 +1,6 @@
+api.acme.com
+dev.acme.com
+blog.acme.com
+mail.acme.com
+API.ACME.COM
+not a host line

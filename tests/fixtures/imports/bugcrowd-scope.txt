@@ -1,0 +1,10 @@
+In scope
+Target	Type	Tags
+*.acme.com	Website Testing	
+api.acme.com	API Testing	REST
+https://portal.acme.com/app	Website Testing
+
+Out of scope
+Target	Type
+blog.acme.com	Website Testing
+*.staging.acme.com	Website Testing
