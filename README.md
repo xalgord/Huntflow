@@ -36,6 +36,20 @@ Override the default port:
 npx huntflow --port 4000
 ```
 
+## Pipe Your Tools In
+
+While HuntFlow runs from `npx huntflow`, send tool output straight from your terminal:
+
+```bash
+subfinder -d acme.com -silent | huntflow push -P acme
+httpx -l hosts.txt -json | huntflow push --tee -P acme
+nuclei -l urls.txt -jsonl | huntflow push -P acme
+nmap -sV -oX - acme.com | huntflow push -P acme
+huntflow push scope.csv -P acme          # HackerOne "Download CSV"
+```
+
+HuntFlow checks every host against the program's scope, merges duplicates, and shows a preview before anything is added. nuclei and Burp results become draft findings with the request and response attached. If HuntFlow isn't running, the output is queued and waiting the next time you start it. You can also paste or drop the same files on the Targets page with **Import**.
+
 ## What You Get
 
 - **Target Tracker** — Organize engagements by priority, status, and scope

@@ -18,7 +18,8 @@ import { readFileSync, existsSync, statSync } from 'fs';
 import { join, extname, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { exec } from 'child_process';
-import { createLocalApi, defaultBackupDir, DEFAULT_KEEP } from './local-api.mjs';
+import { createLocalApi, defaultBackupDir, defaultInboxDir, DEFAULT_KEEP } from './local-api.mjs';
+import { clearRuntime, push, writeRuntime } from './push.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BUILD_DIR = join(__dirname, '..', 'build');
@@ -55,6 +56,7 @@ function parseArgs() {
   let backupDir = defaultBackupDir();
   let keep = DEFAULT_KEEP;
   let open = true;
+  let inboxDir = defaultInboxDir();
 
   for (let i = 0; i < args.length; i++) {
     const arg = args[i];
@@ -78,10 +80,14 @@ function parseArgs() {
       keep = Math.max(1, parseInt(arg.split('=')[1], 10) || DEFAULT_KEEP);
     } else if (arg === '--no-open') {
       open = false;
+    } else if (arg === '--inbox-dir') {
+      inboxDir = args[++i] || inboxDir;
+    } else if (arg.startsWith('--inbox-dir=')) {
+      inboxDir = arg.slice('--inbox-dir='.length) || inboxDir;
     }
   }
 
-  return { port, host, help, backups, backupDir, keep, open };
+  return { port, host, help, backups, backupDir, keep, open, inboxDir };
 }
 
 function readVersion() {
@@ -94,10 +100,11 @@ function readVersion() {
 
 function showHelp() {
   console.log(`
-HuntFlow - Pentest Workflow Companion
+HuntFlow - Bug bounty and pentest workspace
 
 Usage:
-  huntflow [options]
+  huntflow [options]          Start HuntFlow
+  huntflow push [options]     Send tool output to HuntFlow (see huntflow push --help)
 
 Options:
   -p, --port <number>     Port to run on (default: 3000)
@@ -113,7 +120,7 @@ Options:
 Examples:
   npx huntflow              Start on http://localhost:3000
   npx huntflow -p 8080      Start on http://localhost:8080
-  huntflow --port=4000      Start on http://localhost:4000
+  subfinder -d acme.com | huntflow push -P acme
 
 Your data is stored locally in your browser (IndexedDB) and, while
 HuntFlow runs from this command, mirrored to rotating backup files on
@@ -166,7 +173,7 @@ function serveFile(res, filePath) {
   }
 }
 
-function startServer({ port, host, backups, backupDir, keep, open }) {
+function startServer({ port, host, backups, backupDir, keep, open, inboxDir }) {
   if (!existsSync(BUILD_DIR)) {
     console.error(`
 Error: Build directory not found at ${BUILD_DIR}
@@ -177,7 +184,7 @@ If running from source, run 'npm run build' first.
     process.exit(1);
   }
 
-  const localApi = createLocalApi({ backupDir, keep, version: readVersion(), enabled: backups });
+  const localApi = createLocalApi({ backupDir, inboxDir, keep, version: readVersion(), enabled: backups });
 
   const server = createServer(async (req, res) => {
     try {
@@ -255,7 +262,7 @@ If running from source, run 'npm run build' first.
   │                                              │
   │   HuntFlow is running!                       │
   │                                              │
-  │   Local:   ${url.padEnd(30)}│
+  │   Local:   ${url.padEnd(34)}│
   │                                              │
   │   Press Ctrl+C to stop                       │
   │                                              │
@@ -266,6 +273,8 @@ If running from source, run 'npm run build' first.
         ? `  Backups: ${backupDir} (keeps last ${keep})\n`
         : '  Backups: disabled (--no-backup)\n'
     );
+    console.log(`  Pipe tools in: subfinder -d acme.com | huntflow push -P acme\n`);
+    writeRuntime({ port, host });
     if (open) openBrowser(url);
   };
   if (host) server.listen(port, host, onListening);
@@ -281,20 +290,34 @@ If running from source, run 'npm run build' first.
   });
 
   // Graceful shutdown
-  process.on('SIGINT', () => {
+  const shutdown = () => {
     console.log('\nShutting down...');
+    clearRuntime();
     server.close(() => {
       process.exit(0);
     });
-  });
+  };
+  process.on('SIGINT', shutdown);
+  process.on('SIGTERM', shutdown);
+  process.on('exit', clearRuntime);
 }
 
 // Main
-const options = parseArgs();
+if (process.argv[2] === 'push') {
+  push(process.argv.slice(3)).then(
+    (code) => process.exit(code),
+    (error) => {
+      process.stderr.write(`✗ ${error.message}\n`);
+      process.exit(1);
+    }
+  );
+} else {
+  const options = parseArgs();
 
-if (options.help) {
-  showHelp();
-  process.exit(0);
+  if (options.help) {
+    showHelp();
+    process.exit(0);
+  }
+
+  startServer(options);
 }
-
-startServer(options);
