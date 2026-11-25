@@ -295,13 +295,13 @@
 
 <div class="hf-shell">
   {#if isLanding}
-    <!-- Marketing and auth surfaces are designed dark; they opt into the
-         dark appearance regardless of the in-app theme. -->
-    <main class="dark relative min-h-screen bg-black text-white">
+    <!-- The home page follows the visitor's appearance; auth and pricing
+         surfaces are designed dark. Each page renders its own <main>. -->
+    <div class="relative min-h-screen {pathname === '/' ? '' : 'dark bg-black text-white'}">
       <PageTransition name={pathname}>
         <slot />
       </PageTransition>
-    </main>
+    </div>
   {:else}
     <AppShell {pathname} bind:collapsed={navCollapsed}>
       <PageTransition name={pathname}>

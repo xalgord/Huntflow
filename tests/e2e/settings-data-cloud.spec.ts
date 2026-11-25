@@ -48,7 +48,7 @@ test.describe('settings, data management, account, and PWA surfaces', () => {
     await page.getByRole('button', { name: 'Clear Everything' }).click();
 
     await expect(page.getByRole('dialog')).toBeVisible();
-    await page.getByRole('button', { name: 'Skip' }).click();
+    await page.getByRole('button', { name: 'Not Now' }).click();
     await gotoAppRoute(page, '/targets');
     await expect(page.getByText('No targets yet')).toBeVisible();
     await consoleWatcher.assertClean();

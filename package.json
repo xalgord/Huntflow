@@ -1,7 +1,7 @@
 {
   "name": "huntflow",
   "version": "1.0.8",
-  "description": "Pentest workflow companion — track targets, sessions, notes, evidence, and findings. Offline-first, zero telemetry.",
+  "description": "Local-first workspace for bug bounty hunters and pentesters: import scope and recon (HackerOne, Bugcrowd, subfinder, httpx, nuclei, nmap, Burp), write findings that export to any platform, and deliver PDF reports.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -14,13 +14,23 @@
     "README.md"
   ],
   "keywords": [
+    "bug-bounty",
+    "bugbounty",
     "pentest",
     "penetration-testing",
+    "hackerone",
+    "bugcrowd",
+    "intigriti",
+    "yeswehack",
+    "recon",
+    "nuclei",
+    "subfinder",
+    "httpx",
+    "cvss",
+    "vulnerability-report",
     "security",
-    "vulnerability",
-    "tracker",
     "offline",
-    "pwa"
+    "local-first"
   ],
   "homepage": "https://huntflow.xalgorix.com",
   "repository": {
