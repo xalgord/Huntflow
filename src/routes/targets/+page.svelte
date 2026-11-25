@@ -24,6 +24,7 @@
     statusTone
   } from '$lib/utils/workspace';
   import { Filter, Plus, Search, ShieldCheck, Target as TargetIcon } from 'lucide-svelte';
+  import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
 
   type ScopeFilter = ScopeStatus | 'all';
@@ -72,6 +73,12 @@
     { value: 'out-of-scope', label: 'Out of scope' },
     { value: 'dead', label: 'Blocked / Dead' }
   ];
+
+  // Re-read ?new=1 when a link targets this page while it's already open
+  // (the + menu, command palette), since that doesn't remount the page.
+  afterNavigate(({ type }) => {
+    if (type !== 'enter' && new URLSearchParams(location.search).get('new') === '1') showForm = true;
+  });
 
   onMount(async () => {
     await Promise.all([targetStore.load(), reconAssetStore.load(), noteStore.load(), submissionStore.load()]);
@@ -529,7 +536,7 @@
 
             <div class="mt-5 grid gap-2">
               <a href={`/notes/new?target=${selectedAsset.targetId}`} class="hf-button-secondary">New linked note</a>
-              <a href={`/findings?target=${selectedAsset.targetId}&new=1`} class="hf-button-secondary">Capture finding</a>
+              <a href={`/findings?target=${selectedAsset.targetId}&new=1&asset=${encodeURIComponent(selectedAsset.url ?? selectedAsset.hostname)}`} class="hf-button-secondary">Capture finding</a>
               <button type="button" class="hf-button-secondary border-red-500/30 text-red-300 hover:bg-red-500/10" on:click={() => deleteAsset(selectedAsset)}>Delete target</button>
             </div>
           </aside>

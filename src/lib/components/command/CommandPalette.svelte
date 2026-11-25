@@ -181,15 +181,6 @@
         href: '/findings?new=1'
       },
       {
-        id: 'action:new-report',
-        section: 'Actions',
-        title: 'Draft new report',
-        subtitle: 'Open the structured bug bounty report builder',
-        icon: Send,
-        keywords: 'add report draft hackerone bugcrowd',
-        href: '/reports?new=1'
-      },
-      {
         id: 'action:new-payout',
         section: 'Actions',
         title: 'Log new payout',
@@ -240,7 +231,6 @@
       ['/timer', TimerIcon],
       ['/notes', FileText],
       ['/findings', ShieldAlert],
-      ['/reports', Send],
       ['/payouts', CircleDollarSign],
       ['/analytics', BarChart3],
       ['/assets', Network],
@@ -307,7 +297,7 @@
         subtitle: `${submission.status} · ${submission.severity}`,
         icon: submission.status === 'draft' ? Send : ShieldAlert,
         keywords: `${submission.platform} ${submission.vulnerabilityType ?? ''} ${(submission.tags ?? []).join(' ')}`,
-        href: submission.status === 'draft' ? `/reports?id=${submission.id}` : `/findings?id=${submission.id}`
+        href: `/findings?id=${submission.id}`
       });
     }
 
@@ -522,7 +512,7 @@
           bind:value={query}
           on:input={() => (activeIndex = 0)}
           type="text"
-          placeholder="Search programs, targets, notes, findings, reports, actions..."
+          placeholder="Search programs, targets, notes, findings and actions…"
           class="flex-1 bg-transparent py-4 text-sm text-foreground placeholder:text-muted-foreground/70 focus:outline-none"
           autocomplete="off"
           spellcheck="false"

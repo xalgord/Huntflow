@@ -14,6 +14,7 @@
     targetStatusLabels
   } from '$lib/utils/workspace';
   import { FileText, Filter, FolderKanban, Plus, Search, ShieldAlert, Target as TargetIcon } from 'lucide-svelte';
+  import { afterNavigate } from '$app/navigation';
   import { onMount } from 'svelte';
 
   type StatusFilter = TargetStatus | 'all';
@@ -36,6 +37,12 @@
     { value: 'self-hosted', label: 'Private' },
     { value: 'other', label: 'Other' }
   ];
+
+  // Re-read ?new=1 when a link targets this page while it's already open
+  // (the + menu, command palette), since that doesn't remount the page.
+  afterNavigate(({ type }) => {
+    if (type !== 'enter' && new URLSearchParams(location.search).get('new') === '1') showForm = true;
+  });
 
   onMount(async () => {
     await Promise.all([

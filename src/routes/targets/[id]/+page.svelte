@@ -242,7 +242,7 @@
           </span>
         </a>
         <a
-          href={`/submissions?target=${target.id}`}
+          href={`/findings?target=${target.id}`}
           class="hf-card hf-interactive flex items-center gap-3 p-4"
         >
           <span class="flex h-10 w-10 items-center justify-center rounded-lg border border-primary/30 bg-primary/10 text-primary">

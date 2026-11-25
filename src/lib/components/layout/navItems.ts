@@ -7,7 +7,6 @@ import {
   FolderKanban,
   LayoutGrid,
   Network,
-  Send,
   Settings,
   ShieldAlert,
   Target,
@@ -64,16 +63,10 @@ export const navItems: NavItemConfig[] = [
     href: '/findings',
     label: 'Findings',
     icon: ShieldAlert,
-    match: (pathname) => pathname.startsWith('/findings'),
+    match: (pathname) =>
+      pathname.startsWith('/findings') || pathname.startsWith('/reports') || pathname.startsWith('/submissions'),
     section: 'hunt',
     tab: true
-  },
-  {
-    href: '/reports',
-    label: 'Reports',
-    icon: Send,
-    match: (pathname) => pathname.startsWith('/reports') || pathname.startsWith('/submissions'),
-    section: 'hunt'
   },
   {
     href: '/notes',

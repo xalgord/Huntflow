@@ -458,7 +458,7 @@
                         </div>
                       </a>
                     {:else}
-                      <a href={`/submissions?target=${entry.submission.targetId}`} class="block rounded-md border border-transparent px-2 py-1.5 transition hover:border-zinc-700 hover:bg-zinc-800/60">
+                      <a href={`/findings?target=${entry.submission.targetId}`} class="block rounded-md border border-transparent px-2 py-1.5 transition hover:border-zinc-700 hover:bg-zinc-800/60">
                         <div class="flex flex-wrap items-center gap-2 text-sm">
                           <span class="text-xs font-mono text-zinc-500">{formatTime(entry.at)}</span>
                           <span class="font-medium text-zinc-100">{entry.submission.title}</span>
@@ -546,7 +546,7 @@
                         </a>
                         <span class="text-[11px] uppercase tracking-wide text-zinc-500">{entry.asset.kind.replace('-', ' ')}</span>
                       {:else}
-                        <a href={`/submissions?target=${entry.submission.targetId}`} class="font-medium text-zinc-100 hover:text-primary-300">
+                        <a href={`/findings?target=${entry.submission.targetId}`} class="font-medium text-zinc-100 hover:text-primary-300">
                           {entry.submission.title}
                         </a>
                         <span class="text-[11px] uppercase tracking-wide text-zinc-500">{entry.submission.status}</span>

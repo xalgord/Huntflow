@@ -118,6 +118,7 @@ function makeSubmission(
 ): Submission {
   const now = Date.now();
   return {
+    ...partial,
     id: randomId('demo-sub'),
     title: partial.title,
     targetId,
@@ -322,8 +323,22 @@ export async function loadDemoWorkspace(_options: DemoLoadOptions = {}): Promise
       title: 'Race condition allows coupon stacking',
       platform: 'bugcrowd',
       severity: 'medium',
-      vulnerabilityType: 'Business Logic',
+      vulnerabilityType: 'Race Condition',
+      cweId: 'CWE-362',
+      templateId: 'race-condition',
+      cvssVector: 'CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:H/A:N',
       cvssScore: 5.3,
+      affectedAssets: ['https://shop.globex.com/api/cart/apply-promo'],
+      summary:
+        'The apply-promo endpoint checks whether a single-use coupon was already redeemed before recording the redemption, without a lock. Concurrent requests all pass the check, so one coupon is applied several times to the same cart.',
+      stepsToReproduce:
+        "1. Add any item to the cart and copy the `POST /api/cart/apply-promo` request for the single-use code `WELCOME10`.\n2. Send 10 copies of the request in parallel (single-packet attack in Burp Repeater).\n3. Observe 4–6 responses return `200 {\"applied\":true}` and the cart total drops by 10% for each.",
+      impact:
+        'Any customer can stack a single-use discount to reach a 40–60% reduction per order. With public promo codes this is a direct, repeatable revenue loss.',
+      remediation:
+        'Make redemption atomic: insert the redemption row with a unique (coupon_id, cart_id) constraint and treat a conflict as "already used", or lock the coupon row for the check-and-update.',
+      references: 'https://portswigger.net/web-security/race-conditions\nhttps://cwe.mitre.org/data/definitions/362.html',
+      retestStatus: 'fixed',
       status: 'rewarded',
       submittedAt: Date.now() - 12 * DAY,
       triagedAt: Date.now() - 10 * DAY,
@@ -344,7 +359,22 @@ export async function loadDemoWorkspace(_options: DemoLoadOptions = {}): Promise
       platform: 'hackerone',
       severity: 'high',
       vulnerabilityType: 'IDOR',
-      cvssScore: 7.5,
+      cweId: 'CWE-639',
+      templateId: 'idor',
+      cvssVector: 'CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:L/A:N',
+      cvssScore: 7.1,
+      affectedAssets: ['https://api.acme.com/v1/users/{id}/orders'],
+      summary:
+        'The `GET /v1/users/{id}/orders` endpoint returns the order history of whichever user ID is requested, without checking that it matches the authenticated user. Any signed-in customer can read every other customer\'s orders.',
+      stepsToReproduce:
+        '1. Create two test accounts, **A** (attacker, id 4471) and **B** (victim, id 4472).\n2. Sign in as A and send:\n```http\nGET /v1/users/4472/orders HTTP/1.1\nHost: api.acme.com\nAuthorization: Bearer <token for A>\n```\n3. Observe a `200` response containing B\'s orders, including shipping address and phone number.',
+      impact:
+        'User IDs are sequential, so an attacker can enumerate the order history — names, shipping addresses, phone numbers and purchased items — of every customer (~1.2M accounts based on the latest ID).',
+      remediation:
+        'Resolve the user from the session instead of the path, or verify `id == session.user_id` (and return 404 otherwise) for every `/v1/users/{id}/*` route.',
+      references:
+        'https://owasp.org/API-Security/editions/2023/en/0xa1-broken-object-level-authorization/\nhttps://cwe.mitre.org/data/definitions/639.html',
+      reportUrl: 'https://hackerone.com/reports/0000000',
       status: 'triaged',
       submittedAt: Date.now() - 2 * DAY,
       triagedAt: Date.now() - 1 * DAY,

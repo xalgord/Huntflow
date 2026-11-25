@@ -436,6 +436,14 @@ export interface SubmissionTimelineEntry {
   note?: string;
 }
 
+export type RetestStatus = 'pending' | 'fixed' | 'not-fixed';
+
+/**
+ * A finding: anything from an early lead to a paid report. The structured
+ * report fields (summary → references) are the source of truth for the
+ * write-up; `reportMarkdown` holds free-form text from older versions and
+ * is migrated into `summary` the first time the finding is edited.
+ */
 export interface Submission {
   id: string;
   title: string;
@@ -446,6 +454,25 @@ export interface Submission {
   severity: PayoutSeverity;
   cvssScore?: number;
   cvssVector?: string;
+  /** CVSS v4.0 base vector and score, when the program asks for v4. */
+  cvss4Vector?: string;
+  cvss4Score?: number;
+  /** CWE identifier, e.g. "CWE-639". */
+  cweId?: string;
+  /** Built-in finding template this write-up started from. */
+  templateId?: string;
+  /** Affected URLs / hosts / endpoints, one per entry. */
+  affectedAssets?: string[];
+  summary?: string;
+  stepsToReproduce?: string;
+  impact?: string;
+  remediation?: string;
+  /** Supporting links, one per line. */
+  references?: string;
+  /** Evidence vault assets attached to this finding. */
+  evidenceAssetIds?: string[];
+  retestStatus?: RetestStatus;
+  retestedAt?: number;
   reportUrl?: string;
   reportMarkdown?: string;
   status: SubmissionStatus;

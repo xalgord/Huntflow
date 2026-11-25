@@ -27,10 +27,11 @@
     class="min-h-screen transition-[padding] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:pl-[var(--hf-sidebar-width)]"
   >
     <Topbar title={current?.label ?? ''} on:openMobileNav={() => (mobileOpen = true)} />
-    <main id="main-content" class="min-h-screen pb-[calc(3.5rem+env(safe-area-inset-bottom))] pt-[3.25rem] lg:pb-0">
+    <!-- Each page renders its own <main> landmark; this is only the frame. -->
+    <div id="main-content" tabindex="-1" class="min-h-screen pb-[calc(3.5rem+env(safe-area-inset-bottom))] pt-[3.25rem] outline-none lg:pb-0">
       <StorageStatusBanner />
       <slot />
-    </main>
+    </div>
   </div>
 
   <!-- iPhone-style tab bar -->

@@ -92,14 +92,6 @@ export const navTargets: NavTarget[] = [
   {
     group: 'Navigation',
     prefix: 'g',
-    trigger: 'r',
-    keys: ['g', 'r'],
-    label: 'Reports',
-    href: '/reports'
-  },
-  {
-    group: 'Navigation',
-    prefix: 'g',
     trigger: 'y',
     keys: ['g', 'y'],
     label: 'Payouts',
@@ -166,7 +158,6 @@ const createRoutes: Array<{ match: (path: string) => boolean; href: string }> = 
   { match: (p) => p.startsWith('/notes') && p === '/notes', href: '/notes?new=1' },
   { match: (p) => p.startsWith('/payloads'), href: '/payloads?new=1' },
   { match: (p) => p.startsWith('/findings'), href: '/findings?new=1' },
-  { match: (p) => p.startsWith('/reports'), href: '/reports?new=1' },
   { match: (p) => p.startsWith('/payouts'), href: '/payouts?new=1' },
   { match: (p) => p.startsWith('/bookmarks'), href: '/bookmarks?new=1' },
   // Default: jump to the timer page so `c` always means "start hunting".
