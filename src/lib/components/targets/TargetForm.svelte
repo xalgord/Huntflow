@@ -67,6 +67,8 @@
     const now = Date.now();
     dispatch('submit', {
       target: {
+        // Keep fields this form doesn't edit (report settings, etc.).
+        ...(target ?? {}),
         id: target?.id ?? crypto.randomUUID(),
         name: name.trim(),
         platform,

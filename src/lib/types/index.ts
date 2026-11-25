@@ -34,6 +34,24 @@ export interface Target {
   updatedAt: number;
   lastSessionAt?: number;
   sessionCount: number;
+  /** Engagement report settings, remembered per program. */
+  report?: EngagementReportSettings;
+}
+
+export interface EngagementReportSettings {
+  title?: string;
+  preparedFor?: string;
+  preparedBy?: string;
+  /** ISO dates (yyyy-mm-dd). Default to the first and last session. */
+  periodStart?: string;
+  periodEnd?: string;
+  /** Replaces the generated executive summary when set. */
+  executiveSummary?: string;
+  includeDrafts?: boolean;
+  includeClosed?: boolean;
+  includeEvidence?: boolean;
+  findingPerPage?: boolean;
+  classification?: string;
 }
 
 export type SessionTag =

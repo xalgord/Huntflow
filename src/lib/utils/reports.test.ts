@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   getReportTemplate,
   parseNoteFields,
+  renderMarkdownToHtml,
   renderReportMarkdown,
   suggestSeverityFromTags
 } from './reports';
@@ -73,5 +74,13 @@ Account takeover is possible.`
 
     expect(renderReportMarkdown(template, fields)).toContain('## Vulnerability Details');
     expect(renderReportMarkdown(template, fields)).toContain('## Severity\n\nHigh');
+  });
+});
+
+describe('renderMarkdownToHtml lists', () => {
+  it('keeps numbering when a code block interrupts numbered steps', () => {
+    const html = renderMarkdownToHtml('1. Log in\n2. Send:\n\n```\nGET / HTTP/1.1\n```\n\n3. Observe the response');
+    expect(html).toContain('<ol><li>Log in</li><li>Send:</li></ol>');
+    expect(html).toContain('<ol start="3"><li>Observe the response</li></ol>');
   });
 });

@@ -18,24 +18,31 @@
 <div class="min-h-screen text-zinc-50" style={`--hf-sidebar-width: ${sidebarWidth}`}>
   <a
     href="#main-content"
+    data-print="hide"
     class="sr-only focus:not-sr-only focus:fixed focus:left-3 focus:top-3 focus:z-[70] focus:rounded-lg focus:bg-primary focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-white"
   >
     Skip to content
   </a>
-  <Sidebar {pathname} bind:collapsed {mobileOpen} on:closeMobile={() => (mobileOpen = false)} />
+  <div data-print="hide" class="contents">
+    <Sidebar {pathname} bind:collapsed {mobileOpen} on:closeMobile={() => (mobileOpen = false)} />
+  </div>
   <div
+    data-print="flat"
     class="min-h-screen transition-[padding] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:pl-[var(--hf-sidebar-width)]"
   >
-    <Topbar title={current?.label ?? ''} on:openMobileNav={() => (mobileOpen = true)} />
+    <div data-print="hide" class="contents">
+      <Topbar title={current?.label ?? ''} on:openMobileNav={() => (mobileOpen = true)} />
+    </div>
     <!-- Each page renders its own <main> landmark; this is only the frame. -->
-    <div id="main-content" tabindex="-1" class="min-h-screen pb-[calc(3.5rem+env(safe-area-inset-bottom))] pt-[3.25rem] outline-none lg:pb-0">
-      <StorageStatusBanner />
+    <div id="main-content" tabindex="-1" data-print="flat" class="min-h-screen pb-[calc(3.5rem+env(safe-area-inset-bottom))] pt-[3.25rem] outline-none lg:pb-0">
+      <div data-print="hide" class="contents"><StorageStatusBanner /></div>
       <slot />
     </div>
   </div>
 
   <!-- iPhone-style tab bar -->
   <nav
+    data-print="hide"
     class="hf-toolbar-material fixed inset-x-0 bottom-0 z-30 border-t-[0.5px] border-zinc-800 pb-[env(safe-area-inset-bottom)] lg:hidden"
     aria-label="Tab bar"
   >

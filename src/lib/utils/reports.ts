@@ -414,13 +414,15 @@ export function renderMarkdownToHtml(markdown: string): string {
   const paragraph: string[] = [];
   const listItems: string[] = [];
   let orderedList = false;
+  // Numbered steps often have a code block between them; keep counting.
+  let listStart = 1;
   let inCodeBlock = false;
   let codeLines: string[] = [];
 
   for (const line of markdown.split('\n')) {
     if (line.trim().startsWith('```')) {
       flushParagraph(paragraph, html);
-      flushList(listItems, html, orderedList);
+      flushList(listItems, html, orderedList, listStart);
 
       if (inCodeBlock) {
         html.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
@@ -441,14 +443,14 @@ export function renderMarkdownToHtml(markdown: string): string {
 
     if (!trimmed) {
       flushParagraph(paragraph, html);
-      flushList(listItems, html, orderedList);
+      flushList(listItems, html, orderedList, listStart);
       continue;
     }
 
     const heading = /^(#{1,4})\s+(.+)$/.exec(trimmed);
     if (heading) {
       flushParagraph(paragraph, html);
-      flushList(listItems, html, orderedList);
+      flushList(listItems, html, orderedList, listStart);
       const level = heading[1].length;
       html.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
       continue;
@@ -457,29 +459,30 @@ export function renderMarkdownToHtml(markdown: string): string {
     const quote = /^>\s?(.+)$/.exec(trimmed);
     if (quote) {
       flushParagraph(paragraph, html);
-      flushList(listItems, html, orderedList);
+      flushList(listItems, html, orderedList, listStart);
       html.push(`<blockquote>${renderInline(quote[1])}</blockquote>`);
       continue;
     }
 
     const unordered = /^[-*]\s+(.+)$/.exec(trimmed);
-    const ordered = /^\d+\.\s+(.+)$/.exec(trimmed);
+    const ordered = /^(\d+)\.\s+(.+)$/.exec(trimmed);
     if (unordered || ordered) {
       const nextOrdered = Boolean(ordered);
       if (listItems.length > 0 && nextOrdered !== orderedList) {
-        flushList(listItems, html, orderedList);
+        flushList(listItems, html, orderedList, listStart);
       }
+      if (listItems.length === 0) listStart = ordered ? Number(ordered[1]) : 1;
       orderedList = nextOrdered;
-      listItems.push((ordered ?? unordered)?.[1] ?? '');
+      listItems.push(ordered ? ordered[2] : unordered?.[1] ?? '');
       continue;
     }
 
-    flushList(listItems, html, orderedList);
+    flushList(listItems, html, orderedList, listStart);
     paragraph.push(trimmed);
   }
 
   flushParagraph(paragraph, html);
-  flushList(listItems, html, orderedList);
+  flushList(listItems, html, orderedList, listStart);
   if (inCodeBlock) html.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
 
   return html.join('\n');
@@ -713,9 +716,10 @@ function flushParagraph(lines: string[], html: string[]): void {
   lines.length = 0;
 }
 
-function flushList(items: string[], html: string[], ordered: boolean): void {
+function flushList(items: string[], html: string[], ordered: boolean, start = 1): void {
   if (items.length === 0) return;
   const tag = ordered ? 'ol' : 'ul';
-  html.push(`<${tag}>${items.map((item) => `<li>${renderInline(item)}</li>`).join('')}</${tag}>`);
+  const open = ordered && start > 1 ? `<ol start="${start}">` : `<${tag}>`;
+  html.push(`${open}${items.map((item) => `<li>${renderInline(item)}</li>`).join('')}</${tag}>`);
   items.length = 0;
 }

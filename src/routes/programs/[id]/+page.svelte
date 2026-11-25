@@ -180,6 +180,10 @@
               <Network size={17} aria-hidden="true" />
               Add Targets
             </a>
+            <a href={`/programs/${program.id}/report`} class="hf-button-secondary">
+              <FileText size={17} aria-hidden="true" />
+              Report
+            </a>
             {#if program.programUrl}
               <a href={program.programUrl} target="_blank" rel="noreferrer" class="hf-icon-button" aria-label="Open program">
                 <ExternalLink size={16} aria-hidden="true" />
