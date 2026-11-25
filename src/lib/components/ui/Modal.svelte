@@ -55,10 +55,10 @@
   >
     <div
       bind:this={dialog}
-      class="hf-material max-h-[92vh] w-full animate-scale-in overflow-y-auto rounded-t-[14px] p-5 text-card-foreground shadow-sheet outline-none sm:max-w-lg sm:rounded-[14px] lg:max-w-xl"
+      class="hf-material max-h-[92vh] w-full animate-scale-in overflow-y-auto rounded-t-[14px] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-card-foreground sm:pb-5 shadow-sheet outline-none sm:max-w-lg sm:rounded-[14px] lg:max-w-xl"
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? titleId : undefined}
+      aria-labelledby={title || labelledBy ? titleId : undefined}
       tabindex="-1"
     >
       <div class="flex items-start justify-between gap-4">
@@ -72,7 +72,7 @@
         </div>
         <button
           type="button"
-          class="-mr-1 -mt-1 inline-flex h-7 w-7 items-center justify-center rounded-full text-zinc-500 transition hover:text-zinc-200"
+          class="-mr-1 -mt-1 inline-flex h-7 min-h-0 w-7 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:text-zinc-200"
           style="background: var(--hf-fill)"
           aria-label="Close dialog"
           on:click={close}

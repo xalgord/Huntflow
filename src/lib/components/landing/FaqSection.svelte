@@ -8,46 +8,52 @@
 
   // Plain HTML in answers (not markdown) so we can render directly without
   // pulling in a markdown lib for one component on the landing page.
+  const link = (href: string, label: string) => `<a href="${href}" class="text-primary underline-offset-4 hover:underline">${label}</a>`;
+
   const faqs: Faq[] = [
     {
-      question: 'Do I need an account to use HuntFlow?',
+      question: 'Is HuntFlow free?',
       answer:
-        'No. Everything except cloud sync works without signing in. Your data lives in your browser via IndexedDB and stays on your device. Sign in only when you want to sync across devices.'
+        'Yes. Everything that runs on your machine is free and open source under the MIT license. Pro is optional and adds cloud sync between your devices.'
     },
     {
-      question: 'What data is stored in the browser?',
+      question: 'Do I need an account?',
       answer:
-        'Targets, sessions, notes, recon, evidence files, findings, settings — all of it. You can also export an encrypted backup at any time and restore it on another device.'
+        'No. Everything except cloud sync works without signing in. Sign in only when you want the same workspace on another device.'
     },
     {
-      question: 'How does cloud sync compare to a regular database?',
+      question: 'Where is my data stored?',
       answer:
-        'Cloud sync is real-time. Edits made on one device appear on every other signed-in device in under a second. Conflict resolution uses last-write-wins per record, with deletions tombstoned, so you never silently lose work.'
+        'In your browser (IndexedDB), on your machine. When you run <code>npx huntflow</code>, HuntFlow also writes rotating backups to <code>~/.huntflow/backups</code>, so clearing the browser never means losing findings. You can export a full backup from Settings at any time.'
+    },
+    {
+      question: 'Which platforms and tools does it work with?',
+      answer:
+        'Findings export field by field for HackerOne, Bugcrowd, Intigriti and YesWeHack, or as Markdown and PDF. Scope imports from HackerOne CSV and pasted Bugcrowd or Intigriti tables; recon imports from subfinder, amass, httpx, nuclei, nmap and Burp Suite, by paste, file or <code>huntflow push</code>.'
+    },
+    {
+      question: 'Is it only for bug bounty?',
+      answer:
+        'No. Solo pentesters use the same workspace for engagements: scope, time-boxed sessions, findings with CVSS 3.1 and 4.0, and a client-ready engagement report you can export as PDF.'
+    },
+    {
+      question: 'Does it work offline or air-gapped?',
+      answer:
+        'Yes. Run <code>npx huntflow</code> and the app is served from localhost. It also installs as an offline-capable web app. Cloud sync simply stays off.'
     },
     {
       question: 'Is my data encrypted in the cloud?',
       answer:
-        'Yes. Pro encrypts evidence files and note bodies client-side before they leave your device. Even we cannot read your reports.'
+        'Yes. Pro encrypts evidence files and note bodies client-side before they leave your device.'
     },
     {
       question: 'Can I cancel Pro any time?',
       answer:
-        'Yes. Cancel from your account page. You keep Pro until the end of the current period, and your local data stays intact even if you downgrade.'
+        'Yes. Cancel from your account page. You keep Pro until the end of the current period, and your local data stays intact if you downgrade.'
     },
     {
-      question: 'How is HuntFlow different from a generic note app?',
-      answer:
-        'It\u2019s built specifically for the pentest workflow: targets with scope rules, timed sessions tied to engagements, vulnerability-specific note templates, an evidence canvas, findings tracking, coverage per engagement, and a pentest toolkit (encoder/decoder, JWT, scope validator).'
-    },
-    {
-      question: 'Can I run HuntFlow locally without ever connecting to the internet?',
-      answer:
-        'Yes. Install with npx huntflow, run the binary, and the app serves entirely from localhost. Works air-gapped. Cloud sync just stays disabled.'
-    },
-    {
-      question: 'Is there a self-hosted Pro option?',
-      answer:
-        'Self-host coming Q3 — bring your own Convex deployment and you can run sync without our infrastructure. Use the contact form below or email <a href="mailto:huntflow@xalgorix.com" class="text-primary-300 underline-offset-4 hover:underline">huntflow@xalgorix.com</a> if you want early access.'
+      question: 'Can I self-host sync?',
+      answer: `Not yet. If you need it, email ${link('mailto:huntflow@xalgorix.com', 'huntflow@xalgorix.com')}.`
     }
   ];
 
@@ -58,37 +64,36 @@
   }
 </script>
 
-<section id="faq" class="border-b border-zinc-800 bg-zinc-950 px-4 py-20 sm:px-6 lg:px-8">
-  <div class="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[0.7fr_1.3fr]">
+<section id="faq" class="px-5 py-24 sm:py-32">
+  <div class="mx-auto grid max-w-[1024px] gap-10 lg:grid-cols-[0.8fr_1.2fr]">
     <div>
-      <p class="hf-eyebrow">FAQ</p>
-      <h2 class="mt-2 text-3xl font-bold leading-tight text-zinc-100 sm:text-4xl">Things people ask before they install.</h2>
-      <p class="mt-3 text-sm leading-6 text-zinc-400">
-        Still have questions? Email
-        <a href="mailto:huntflow@xalgorix.com" class="text-primary-300 underline-offset-4 hover:underline">huntflow@xalgorix.com</a>.
+      <h2 class="text-[2rem] font-semibold leading-tight tracking-[-0.02em] text-foreground sm:text-[2.5rem]">Questions</h2>
+      <p class="mt-3 text-[0.9375rem] leading-7 text-muted-foreground">
+        Anything else? Email
+        <a href="mailto:huntflow@xalgorix.com" class="text-primary underline-offset-4 hover:underline">huntflow@xalgorix.com</a>.
       </p>
     </div>
 
-    <ul class="divide-y divide-zinc-800 rounded-xl border border-zinc-800 bg-zinc-900/60">
+    <ul class="hf-list overflow-hidden rounded-[14px]" style="background: var(--hf-surface); box-shadow: var(--hf-shadow-sm)">
       {#each faqs as faq, index}
         {@const isOpen = openIndex === index}
         <li>
           <button
             type="button"
-            class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-zinc-900"
+            class="flex w-full items-center justify-between gap-4 px-5 py-4 text-left"
             aria-expanded={isOpen}
             aria-controls="faq-panel-{index}"
             on:click={() => toggle(index)}
           >
-            <span class="text-sm font-medium text-zinc-100 sm:text-base">{faq.question}</span>
+            <span class="text-[0.9375rem] font-medium text-foreground">{faq.question}</span>
             <ChevronDown
               size={18}
-              class="shrink-0 text-zinc-500 transition-transform duration-200 {isOpen ? 'rotate-180 text-primary-300' : ''}"
+              class="shrink-0 text-zinc-500 transition-transform duration-200 {isOpen ? 'rotate-180' : ''}"
               aria-hidden="true"
             />
           </button>
           {#if isOpen}
-            <div id="faq-panel-{index}" class="px-5 pb-5 text-sm leading-6 text-zinc-400">
+            <div id="faq-panel-{index}" class="hf-faq-answer px-5 pb-5 text-[0.875rem] leading-6 text-muted-foreground">
               <!-- Answers are author-controlled (no user input) so HTML is safe to render. -->
               {@html faq.answer}
             </div>
@@ -98,3 +103,13 @@
     </ul>
   </div>
 </section>
+
+<style>
+  .hf-faq-answer :global(code) {
+    font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+    font-size: 0.8125rem;
+    background: var(--hf-fill);
+    border-radius: 5px;
+    padding: 1px 5px;
+  }
+</style>

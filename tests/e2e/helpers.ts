@@ -42,7 +42,7 @@ export function watchConsole(page: Page): ConsoleWatcher {
 }
 
 export async function dismissOnboarding(page: Page): Promise<void> {
-  const skip = page.getByRole('button', { name: 'Skip' });
+  const skip = page.getByRole('button', { name: 'Not Now' });
   if (await skip.isVisible().catch(() => false)) {
     await skip.click();
     await expect(page.getByRole('dialog')).toHaveCount(0);

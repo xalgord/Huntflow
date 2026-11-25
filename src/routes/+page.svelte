@@ -1,11 +1,26 @@
 <script lang="ts">
   import BrandMark from '$lib/components/brand/BrandMark.svelte';
-  import ScreenshotShowcase from '$lib/components/landing/ScreenshotShowcase.svelte';
-  import FeatureGrid from '$lib/components/landing/FeatureGrid.svelte';
-  import ProSpotlight from '$lib/components/landing/ProSpotlight.svelte';
   import FaqSection from '$lib/components/landing/FaqSection.svelte';
-  import InstallCommand from '$lib/components/landing/InstallCommand.svelte';
-  import { ArrowRight, Github, Lock, Terminal } from 'lucide-svelte';
+  import ProductShot from '$lib/components/landing/ProductShot.svelte';
+  import TerminalDemo from '$lib/components/landing/TerminalDemo.svelte';
+  import {
+    ArrowRight,
+    Check,
+    CircleDollarSign,
+    Copy as CopyIcon,
+    DatabaseBackup,
+    Gauge,
+    Github,
+    HardDrive,
+    Layers,
+    Lock,
+    ScanSearch,
+    ShieldCheck,
+    Timer,
+    WifiOff
+  } from 'lucide-svelte';
+
+  const REPO = 'https://github.com/xalgord/huntflow';
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -14,250 +29,257 @@
     applicationCategory: 'SecurityApplication',
     operatingSystem: 'Web, Windows, macOS, Linux',
     description:
-      'Local-first pentest command center for tracking engagements, targets, test sessions, evidence, report drafts, and findings.',
+      'Local-first workspace for bug bounty hunters and pentesters: scope and recon imports, findings that export to HackerOne, Bugcrowd, Intigriti and YesWeHack, engagement reports and payouts.',
     url: 'https://huntflow.xalgorix.com',
-    offers: {
-      '@type': 'Offer',
-      price: '0',
-      priceCurrency: 'USD'
-    },
-    publisher: {
-      '@type': 'Organization',
-      name: 'xalgorix',
-      url: 'https://huntflow.xalgorix.com'
-    }
+    offers: { '@type': 'Offer', price: '0', priceCurrency: 'USD' },
+    publisher: { '@type': 'Organization', name: 'xalgorix', url: 'https://huntflow.xalgorix.com' }
   };
   const jsonLdScript = JSON.stringify(jsonLd).replace(/</g, '\\u003c');
+
+  const steps = [
+    {
+      eyebrow: 'Scope & recon',
+      title: 'Bring your scope and recon in.',
+      body: 'Drop in a HackerOne scope CSV or paste a Bugcrowd table, then pipe in subfinder, httpx, nuclei, nmap or Burp. Every host is checked against the program’s rules first, so out-of-scope assets never reach your test list.',
+      points: ['HackerOne, Bugcrowd and Intigriti scope', 'subfinder, amass, httpx, nmap', 'nuclei and Burp become draft findings'],
+      shot: 'import',
+      alt: 'Import sheet previewing httpx and subfinder output with out-of-scope hosts skipped'
+    },
+    {
+      eyebrow: 'Write-ups',
+      title: 'Reports triage accepts the first time.',
+      body: 'Start from one of 29 templates, score with CVSS 3.1 or 4.0, attach the exact request and response, and get warned about likely duplicates. Then copy each field straight into the platform’s form.',
+      points: ['HackerOne, Bugcrowd, Intigriti, YesWeHack', 'CVSS 3.1 and 4.0 calculators', 'Duplicate warnings before you submit'],
+      shot: 'findings',
+      alt: 'Findings editor with an IDOR write-up, severity and CWE'
+    },
+    {
+      eyebrow: 'Deliver',
+      title: 'A client-ready report in one click.',
+      body: 'For pentests and VDPs, HuntFlow writes the engagement report for you: executive summary, scope, findings overview and every finding with its evidence — exported as a clean PDF or Markdown.',
+      points: ['Executive summary written from your findings', 'Severity overview and overall risk', 'PDF and Markdown export'],
+      shot: 'report',
+      alt: 'Engagement report preview with cover page and executive summary'
+    }
+  ];
+
+  const features = [
+    { icon: ShieldCheck, title: 'Scope guard', body: 'Wildcards, exclusions, CIDRs and URL paths. Check any URL in a keystroke.' },
+    { icon: Timer, title: 'Focused sessions', body: 'Time-box your hunting per program and see where the hours actually go.' },
+    { icon: Layers, title: 'Evidence vault', body: 'Screenshots, requests and notes linked to the findings they prove.' },
+    { icon: ScanSearch, title: 'Duplicate warnings', body: 'Similar findings surface before you submit, not after triage closes them.' },
+    { icon: CircleDollarSign, title: 'Payouts & taxes', body: 'Bounties by program and platform, with a year-end export for your accountant.' },
+    { icon: Gauge, title: 'Today view', body: 'What needs you next: overdue triage, drafts, unpaid bounties, untested targets.' }
+  ];
+
+  let copied = false;
+  async function copyInstall(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText('npx huntflow');
+      copied = true;
+      setTimeout(() => (copied = false), 1400);
+    } catch {
+      /* clipboard unavailable */
+    }
+  }
 </script>
 
 <svelte:head>
-  <title>HuntFlow — Local-First Pentest Workflow App</title>
-  <meta
-    name="description"
-    content="HuntFlow is a local-first pentest command center for tracking engagements, targets, test sessions, evidence, report drafts, and findings."
-  />
+  <title>HuntFlow — The workspace for bug bounty hunters and pentesters</title>
   <link rel="canonical" href="https://huntflow.xalgorix.com/" />
   <meta name="robots" content="index,follow" />
-  <meta property="og:title" content="HuntFlow — Local-First Pentest Workflow App" />
-  <meta
-    property="og:description"
-    content="Track engagements, targets, test sessions, evidence, report drafts, and findings without spreadsheets or cloud lock-in."
-  />
-  <meta property="og:image" content="https://huntflow.xalgorix.com/screenshots/dashboard.png" />
-  <meta property="og:image:width" content="1899" />
-  <meta property="og:image:height" content="1070" />
-  <meta property="og:image:alt" content="HuntFlow dashboard — the bug bounty command center" />
-  <meta property="og:url" content="https://huntflow.xalgorix.com/" />
-  <meta property="og:type" content="website" />
-  <meta property="og:locale" content="en_US" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="HuntFlow — Local-First Pentest Workflow App" />
-  <meta
-    name="twitter:description"
-    content="A local-first command center for authorized security testing and pentest engagements."
-  />
-  <meta name="twitter:image" content="https://huntflow.xalgorix.com/screenshots/dashboard.png" />
-  <meta name="twitter:image:alt" content="HuntFlow dashboard — the bug bounty command center" />
   {@html `<script type="application/ld+json">${jsonLdScript}</script>`}
 </svelte:head>
 
-<main class="min-h-screen bg-black text-zinc-50">
-  <header class="sticky top-0 z-50 border-b border-zinc-900 bg-black/80 backdrop-blur-xl">
-    <nav class="mx-auto flex max-w-7xl items-center justify-between px-5 py-3.5">
-      <a href="/" class="flex items-center gap-3 transition hover:opacity-80">
-        <BrandMark size={30} />
-        <span>
-          <span class="block text-sm font-semibold">HuntFlow</span>
-          <span class="block text-[11px] text-zinc-500">pentest command center</span>
-        </span>
+<div class="min-h-screen text-foreground" style="background: var(--hf-window)">
+  <header class="hf-toolbar-material sticky top-0 z-50 border-b-[0.5px] border-zinc-800">
+    <nav class="mx-auto flex h-12 max-w-[1024px] items-center justify-between px-5" aria-label="Main">
+      <a href="/" class="flex items-center gap-2 text-[0.9375rem] font-semibold">
+        <BrandMark size={24} />
+        HuntFlow
       </a>
-      <nav class="hidden items-center gap-7 text-sm text-zinc-400 md:flex" aria-label="Main nav">
-        <a class="transition hover:text-zinc-100" href="/#features">Features</a>
-        <a class="transition hover:text-zinc-100" href="/#cloud-sync">Cloud Sync</a>
-        <a class="transition hover:text-zinc-100" href="/#faq">FAQ</a>
-        <a class="transition hover:text-zinc-100" href="/pricing">Pricing</a>
-      </nav>
-      <div class="flex items-center gap-2">
-        <a
-          href="https://github.com/xalgord"
-          class="hf-button-ghost hidden sm:inline-flex"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <Github size={16} aria-hidden="true" />
-          GitHub
+      <div class="hidden items-center gap-7 text-[0.8125rem] text-muted-foreground md:flex">
+        <a class="transition hover:text-foreground" href="/#workflow">Workflow</a>
+        <a class="transition hover:text-foreground" href="/#terminal">Terminal</a>
+        <a class="transition hover:text-foreground" href="/#private">Privacy</a>
+        <a class="transition hover:text-foreground" href="/#faq">FAQ</a>
+        <a class="transition hover:text-foreground" href="/pricing">Pricing</a>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <a href={REPO} class="hf-icon-button" target="_blank" rel="noreferrer" aria-label="HuntFlow on GitHub">
+          <Github size={17} aria-hidden="true" />
         </a>
-        <a href="/dashboard" class="hf-button-primary min-h-[40px]">Start using</a>
+        <a href="/dashboard" class="hf-button-primary h-8 min-h-0 px-3.5 text-[0.8125rem]">Open App</a>
       </div>
     </nav>
   </header>
 
-  <section class="relative overflow-hidden border-b border-zinc-900 bg-black">
-    <div class="mx-auto flex min-h-[calc(100vh-64px)] max-w-7xl flex-col justify-between px-5 py-14 sm:py-16">
-      <div class="mx-auto max-w-5xl text-center">
-        <p class="text-sm font-medium text-zinc-400">HuntFlow by xalgorix</p>
-        <h1
-          class="mx-auto mt-4 max-w-5xl text-5xl font-semibold leading-tight tracking-normal text-white sm:text-6xl lg:text-7xl"
+  <main>
+    <!-- Hero -->
+    <section class="overflow-hidden px-5 pb-16 pt-16 text-center sm:pt-24">
+      <p class="text-[0.9375rem] font-semibold text-primary">For bug bounty hunters and pentesters</p>
+      <h1 class="mx-auto mt-3 max-w-[900px] text-[2.75rem] font-semibold leading-[1.05] tracking-[-0.03em] sm:text-[4rem] lg:text-[5rem]">
+        Recon to report.<br />One calm workspace.
+      </h1>
+      <p class="mx-auto mt-6 max-w-[640px] text-[1.0625rem] leading-7 text-muted-foreground sm:text-[1.1875rem] sm:leading-8">
+        HuntFlow keeps scope, targets, findings and payouts together. Pipe in your tools, write reports triage accepts,
+        and never lose a lead — all on your own machine.
+      </p>
+      <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <a href="/demo?go=/dashboard" class="hf-button-primary h-11 px-6 text-[0.9375rem]">
+          Try the Demo
+          <ArrowRight size={16} aria-hidden="true" />
+        </a>
+        <button
+          type="button"
+          class="hf-button-secondary h-11 px-5 font-mono text-[0.875rem]"
+          on:click={copyInstall}
+          aria-label="Copy install command: npx huntflow"
         >
-          Your local-first command center for penetration testing.
-        </h1>
-        <p class="mx-auto mt-6 max-w-2xl text-lg leading-8 text-zinc-300">
-          Track engagements, targets, test sessions, evidence, report drafts, and findings
-          without spreadsheets or cloud lock-in.
+          <span class="select-none text-zinc-500">$</span> npx huntflow
+          {#if copied}<Check size={15} class="text-green-500" aria-hidden="true" />{:else}<CopyIcon size={15} class="text-zinc-500" aria-hidden="true" />{/if}
+        </button>
+      </div>
+      <p class="mt-4 text-[0.8125rem] text-zinc-500">Free and open source · No account · Works offline</p>
+
+      <div class="mx-auto mt-14 max-w-[1100px] sm:mt-20">
+        <ProductShot name="today" alt="HuntFlow Today view: hunting time, findings in flight, acceptance rate, earnings and what needs attention" eager />
+      </div>
+    </section>
+
+    <!-- Workflow -->
+    <section id="workflow" class="px-5 py-20 sm:py-28" style="background: var(--hf-surface)">
+      <div class="mx-auto max-w-[1024px] text-center">
+        <h2 class="text-[2.25rem] font-semibold leading-tight tracking-[-0.025em] sm:text-[3rem]">Built around how you actually hunt.</h2>
+        <p class="mx-auto mt-4 max-w-[620px] text-[1.0625rem] leading-7 text-muted-foreground">
+          Not a notes app with a security skin. Every screen follows the path from a program’s scope to a paid report.
         </p>
-        <div class="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-          <a href="/dashboard" class="hf-button-primary">
-            Start using
+      </div>
+
+      <div class="mx-auto mt-16 max-w-[1100px] space-y-24 sm:mt-24 sm:space-y-32">
+        {#each steps as step, index}
+          <article class="grid items-center gap-10 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-14">
+            <div class={index % 2 === 1 ? 'lg:order-2' : ''}>
+              <p class="text-[0.9375rem] font-semibold text-primary">{step.eyebrow}</p>
+              <h3 class="mt-2 text-[1.75rem] font-semibold leading-tight tracking-[-0.02em] sm:text-[2.25rem]">{step.title}</h3>
+              <p class="mt-4 text-[1rem] leading-7 text-muted-foreground">{step.body}</p>
+              <ul class="mt-6 space-y-2.5">
+                {#each step.points as point}
+                  <li class="flex items-start gap-2.5 text-[0.9375rem]">
+                    <Check size={18} class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
+                    {point}
+                  </li>
+                {/each}
+              </ul>
+            </div>
+            <div class={index % 2 === 1 ? 'lg:order-1' : ''}>
+              <ProductShot name={step.shot} alt={step.alt} />
+            </div>
+          </article>
+        {/each}
+      </div>
+    </section>
+
+    <!-- Terminal -->
+    <section id="terminal" class="dark bg-black px-5 py-20 text-white sm:py-28">
+      <div class="mx-auto grid max-w-[1024px] items-center gap-12 lg:grid-cols-2">
+        <div>
+          <p class="text-[0.9375rem] font-semibold text-[#ff6482]">huntflow push</p>
+          <h2 class="mt-2 text-[2.25rem] font-semibold leading-tight tracking-[-0.025em] sm:text-[3rem]">Pipe it in.</h2>
+          <p class="mt-4 text-[1.0625rem] leading-7 text-white/65">
+            Recon happens in the terminal, so that’s where HuntFlow listens. Add <code class="rounded bg-white/10 px-1.5 py-0.5 font-mono text-[0.9em]">| huntflow push</code>
+            to any command. The output waits for your review with the program already picked, the scope already checked and
+            duplicates already merged.
+          </p>
+          <p class="mt-4 text-[0.875rem] text-white/45">If HuntFlow isn’t running, it’s queued for next time.</p>
+        </div>
+        <TerminalDemo />
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="px-5 py-20 sm:py-28">
+      <div class="mx-auto max-w-[1024px]">
+        <h2 class="text-center text-[2.25rem] font-semibold leading-tight tracking-[-0.025em] sm:text-[3rem]">The details matter.</h2>
+        <div class="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {#each features as feature}
+            <article class="rounded-[18px] p-6" style="background: var(--hf-surface); box-shadow: var(--hf-shadow-sm)">
+              <svelte:component this={feature.icon} size={26} strokeWidth={1.8} class="text-primary" aria-hidden="true" />
+              <h3 class="mt-4 text-[1.0625rem] font-semibold">{feature.title}</h3>
+              <p class="mt-1.5 text-[0.9375rem] leading-6 text-muted-foreground">{feature.body}</p>
+            </article>
+          {/each}
+        </div>
+        <div class="mt-14">
+          <ProductShot name="scope" alt="Program scope with in-scope and out-of-scope rules and a URL checker" />
+        </div>
+      </div>
+    </section>
+
+    <!-- Privacy -->
+    <section id="private" class="px-5 py-20 sm:py-28" style="background: var(--hf-surface)">
+      <div class="mx-auto max-w-[1024px] text-center">
+        <Lock size={40} strokeWidth={1.6} class="mx-auto text-primary" aria-hidden="true" />
+        <h2 class="mt-5 text-[2.25rem] font-semibold leading-tight tracking-[-0.025em] sm:text-[3rem]">Your findings stay yours.</h2>
+        <p class="mx-auto mt-4 max-w-[640px] text-[1.0625rem] leading-7 text-muted-foreground">
+          Unreported vulnerabilities are the most sensitive thing you own. HuntFlow keeps them on your machine, with no
+          account and no telemetry.
+        </p>
+        <div class="mt-12 grid gap-4 text-left sm:grid-cols-3">
+          <article class="rounded-[18px] p-6" style="background: var(--hf-window)">
+            <HardDrive size={24} strokeWidth={1.8} class="text-primary" aria-hidden="true" />
+            <h3 class="mt-4 text-[1.0625rem] font-semibold">Local first</h3>
+            <p class="mt-1.5 text-[0.9375rem] leading-6 text-muted-foreground">Everything lives in your browser on your device. Nothing phones home.</p>
+          </article>
+          <article class="rounded-[18px] p-6" style="background: var(--hf-window)">
+            <DatabaseBackup size={24} strokeWidth={1.8} class="text-primary" aria-hidden="true" />
+            <h3 class="mt-4 text-[1.0625rem] font-semibold">Backed up to disk</h3>
+            <p class="mt-1.5 text-[0.9375rem] leading-6 text-muted-foreground">Run from <code class="font-mono text-[0.875em]">npx huntflow</code> and rotating backups are written to your home folder.</p>
+          </article>
+          <article class="rounded-[18px] p-6" style="background: var(--hf-window)">
+            <WifiOff size={24} strokeWidth={1.8} class="text-primary" aria-hidden="true" />
+            <h3 class="mt-4 text-[1.0625rem] font-semibold">Works offline</h3>
+            <p class="mt-1.5 text-[0.9375rem] leading-6 text-muted-foreground">Installable and air-gap friendly. Sync across devices only if you choose Pro.</p>
+          </article>
+        </div>
+        <a href="/pricing" class="hf-link mt-8 inline-flex items-center gap-1 text-[0.9375rem]">
+          Compare Free and Pro
+          <ArrowRight size={15} aria-hidden="true" />
+        </a>
+      </div>
+    </section>
+
+    <FaqSection />
+
+    <!-- Final CTA -->
+    <section class="px-5 pb-24 text-center sm:pb-32">
+      <div class="mx-auto max-w-[760px]">
+        <h2 class="text-[2.25rem] font-semibold leading-tight tracking-[-0.025em] sm:text-[3rem]">Start your next hunt here.</h2>
+        <p class="mt-4 text-[1.0625rem] leading-7 text-muted-foreground">Open it in your browser, or run it locally with one command.</p>
+        <div class="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+          <a href="/dashboard" class="hf-button-primary h-11 px-6 text-[0.9375rem]">
+            Open HuntFlow
             <ArrowRight size={16} aria-hidden="true" />
           </a>
-          <a
-            href="https://github.com/xalgord"
-            target="_blank"
-            rel="noreferrer"
-            class="hf-button-secondary"
-          >
+          <a href={REPO} target="_blank" rel="noreferrer" class="hf-button-secondary h-11 px-5 text-[0.9375rem]">
             <Github size={16} aria-hidden="true" />
-            View GitHub
-          </a>
-        </div>
-        <div
-          class="mx-auto mt-6 flex max-w-md flex-col gap-2"
-        >
-          <p class="text-center text-[11px] font-medium uppercase tracking-[0.2em] text-zinc-600">
-            Install
-          </p>
-          <InstallCommand />
-        </div>
-      </div>
-
-      <div class="mt-12">
-        <ScreenshotShowcase />
-      </div>
-    </div>
-  </section>
-
-  <FeatureGrid />
-
-  <section
-    class="mx-auto grid max-w-7xl gap-4 px-5 py-16 md:grid-cols-3"
-  >
-    <article class="hf-card p-5">
-      <Lock class="text-zinc-400" size={22} aria-hidden="true" />
-      <h2 class="mt-4 text-lg font-semibold text-zinc-100">Private by default</h2>
-      <p class="mt-2 text-sm leading-6 text-zinc-500">
-        No login required for local use, no telemetry. Optional hosted account features stay
-        isolated from your local workspace.
-      </p>
-    </article>
-    <article class="hf-card p-5">
-      <Terminal class="text-zinc-400" size={22} aria-hidden="true" />
-      <h2 class="mt-4 text-lg font-semibold text-zinc-100">Runs from your terminal</h2>
-      <p class="mt-2 text-sm leading-6 text-zinc-500">
-        Install via npm and serve the app on localhost. Works fully air-gapped — cloud sync just
-        stays disabled.
-      </p>
-    </article>
-    <article class="hf-card p-5">
-      <Github class="text-zinc-400" size={22} aria-hidden="true" />
-      <h2 class="mt-4 text-lg font-semibold text-zinc-100">Open core</h2>
-      <p class="mt-2 text-sm leading-6 text-zinc-500">
-        Built by pentesters, for pentesters. The local-first core is free; Pro adds cloud sync and
-        encrypted backups.
-      </p>
-    </article>
-  </section>
-
-  <ProSpotlight />
-
-  <FaqSection />
-
-  <section class="mx-auto max-w-7xl px-5 py-16">
-    <div class="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-      <div>
-        <p class="hf-eyebrow">Quickstart</p>
-        <h2 class="mt-3 text-3xl font-semibold text-zinc-50">Run it locally.</h2>
-        <p class="mt-4 text-sm leading-7 text-zinc-500">
-          HuntFlow ships as a local app. Start from npm, then export or back up your workspace from
-          Settings.
-        </p>
-      </div>
-      <div class="max-w-md">
-        <InstallCommand />
-      </div>
-    </div>
-  </section>
-
-  <section class="border-t border-zinc-900 px-5 py-12">
-    <div class="mx-auto flex max-w-7xl flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-      <div>
-        <h2 class="text-2xl font-semibold text-zinc-50">Start testing with a cleaner workspace.</h2>
-        <p class="mt-2 text-sm text-zinc-500">
-          Local-first pentest workflow management by xalgorix.
-        </p>
-      </div>
-      <a href="/dashboard" class="hf-button-primary">
-        Start using
-        <ArrowRight size={16} aria-hidden="true" />
-      </a>
-    </div>
-  </section>
-
-  <footer class="border-t border-zinc-900 px-5 py-12">
-    <div
-      class="mx-auto flex max-w-7xl flex-col gap-8 md:flex-row md:items-start md:justify-between"
-    >
-      <div class="max-w-md">
-        <div class="flex items-center gap-2.5 text-zinc-100">
-          <BrandMark size={32} />
-          <span class="font-semibold">HuntFlow</span>
-        </div>
-        <p class="mt-3 text-sm leading-6 text-zinc-500">
-          The pentest workflow OS. Built by pentesters, for pentesters. Open core, offline-first.
-        </p>
-      </div>
-
-      <div class="grid grid-cols-2 gap-x-12 gap-y-3 text-sm sm:grid-cols-3">
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Product</p>
-          <a class="mt-3 block text-zinc-300 transition hover:text-zinc-100" href="/#features"
-            >Features</a
-          >
-          <a class="mt-2 block text-zinc-300 transition hover:text-zinc-100" href="/pricing"
-            >Pricing</a
-          >
-          <a class="mt-2 block text-zinc-300 transition hover:text-zinc-100" href="/#cloud-sync"
-            >Cloud sync</a
-          >
-          <a class="mt-2 block text-zinc-300 transition hover:text-zinc-100" href="/dashboard"
-            >Open app</a
-          >
-        </div>
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Account</p>
-          <a class="mt-3 block text-zinc-300 transition hover:text-zinc-100" href="/sign-in"
-            >Sign in</a
-          >
-          <a class="mt-2 block text-zinc-300 transition hover:text-zinc-100" href="/sign-up"
-            >Sign up</a
-          >
-          <a class="mt-2 block text-zinc-300 transition hover:text-zinc-100" href="/#faq">FAQ</a>
-        </div>
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Connect</p>
-          <a
-            class="mt-3 inline-flex items-center gap-2 text-zinc-300 transition hover:text-zinc-100"
-            href="https://github.com/xalgord/huntflow"
-            rel="noreferrer"
-          >
-            <Github size={14} aria-hidden="true" />
-            GitHub
+            View on GitHub
           </a>
         </div>
       </div>
-    </div>
+    </section>
+  </main>
 
-    <div class="mx-auto mt-10 max-w-7xl border-t border-zinc-900 pt-6 text-xs text-zinc-600">
-      &copy; 2026 HuntFlow by xalgorix. MIT Licensed.
+  <footer class="border-t-[0.5px] border-zinc-800 px-5 py-8 text-[0.75rem] text-zinc-500">
+    <div class="mx-auto flex max-w-[1024px] flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <p>© 2026 HuntFlow by xalgorix · MIT License · For authorised testing only.</p>
+      <nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Footer">
+        <a class="hover:text-foreground" href="/dashboard">Open App</a>
+        <a class="hover:text-foreground" href="/pricing">Pricing</a>
+        <a class="hover:text-foreground" href="/sign-in">Sign In</a>
+        <a class="hover:text-foreground" href={REPO} rel="noreferrer">GitHub</a>
+        <a class="hover:text-foreground" href="mailto:huntflow@xalgorix.com">Contact</a>
+      </nav>
     </div>
   </footer>
-</main>
+</div>

@@ -2,15 +2,16 @@ import { expect, test } from '@playwright/test';
 import { gotoAppRoute, seedFirstRunApp, waitForAppReady, watchConsole } from './helpers';
 
 test.describe('first-run onboarding', () => {
-  test('appears once on app routes, is skippable, and persists completion', async ({ page }) => {
+  test('appears once on app routes, is dismissable, and persists completion', async ({ page }) => {
     const consoleWatcher = watchConsole(page);
 
     await seedFirstRunApp(page);
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Welcome to HuntFlow' })).toBeVisible();
-    await expect(page.getByLabel(/Go to step/)).toHaveCount(6);
+    const sheet = page.getByRole('dialog', { name: 'Welcome to HuntFlow' });
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText('Bring scope and recon in')).toBeVisible();
+    await expect(sheet.getByText('Write reports triage accepts')).toBeVisible();
 
-    await page.getByRole('button', { name: 'Skip' }).click();
+    await page.getByRole('button', { name: 'Not Now' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
     await page.reload({ waitUntil: 'load' });
@@ -19,20 +20,14 @@ test.describe('first-run onboarding', () => {
     await consoleWatcher.assertClean();
   });
 
-  test('supports clickable dots and final CTA routes to the timer', async ({ page }) => {
+  test('goes straight to creating the first program', async ({ page }) => {
     const consoleWatcher = watchConsole(page);
 
     await seedFirstRunApp(page);
-    await page.getByLabel('Go to step 4: Take structured security notes').click();
-    await expect(page.getByRole('heading', { name: 'Take structured security notes' })).toBeVisible();
-
-    await page.getByRole('button', { name: 'Next' }).click();
-    await page.getByRole('button', { name: 'Next' }).click();
-    await expect(page.getByRole('heading', { name: 'Start your first session' })).toBeVisible();
-
-    await page.getByRole('button', { name: 'Start your first session', exact: true }).click();
-    await expect(page).toHaveURL(/\/timer\/?$/);
-    await expect(page.getByRole('heading', { name: 'Timer' })).toBeVisible();
+    await page.getByRole('button', { name: 'Add Your First Program' }).click();
+    await expect(page).toHaveURL(/\/programs\?new=1$/);
+    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await expect(page.getByPlaceholder('Example Corp')).toBeVisible();
     await consoleWatcher.assertClean();
   });
 

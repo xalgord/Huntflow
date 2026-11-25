@@ -1,44 +1,51 @@
 <p align="center">
-  <img src="https://huntflow.xalgorix.com/icons/huntflow-logo.png?v=2" alt="HuntFlow" width="120" height="120" />
+  <img src="https://huntflow.xalgorix.com/icons/huntflow-logo.png?v=2" alt="HuntFlow" width="96" height="96" />
 </p>
 
-# HuntFlow
+<h1 align="center">HuntFlow</h1>
 
-Your personal pentest command center. Track targets, time test sessions, capture evidence, draft reports, and manage findings — all from a single local-first app that runs entirely on your machine.
+<p align="center">
+  <strong>Recon to report, in one calm workspace.</strong><br />
+  The local-first app for bug bounty hunters and pentesters.
+</p>
 
-## Why HuntFlow?
+<p align="center">
+  <a href="https://huntflow.xalgorix.com/demo?go=/dashboard">Try the demo</a> ·
+  <a href="https://huntflow.xalgorix.com">Website</a> ·
+  <a href="https://www.npmjs.com/package/huntflow">npm</a>
+</p>
 
-- **Local-first, zero telemetry** — Your data stays in your browser. No accounts required, no tracking, nothing phones home.
-- **Purpose-built for pentesters** — Every feature is designed around real penetration testing workflows, not retrofitted from generic project tools.
-- **Offline-ready PWA** — Works without an internet connection. Install it like a native app.
-- **Optional cloud sync** — Sign in to sync across devices when you need it. Skip it when you don't.
+<p align="center">
+  <img src="https://raw.githubusercontent.com/xalgord/huntflow/main/static/screenshots/v3/today-light.webp" alt="HuntFlow Today view" width="900" />
+</p>
 
-## Quick Start
-
-Run HuntFlow locally with one command:
+## Quick start
 
 ```bash
 npx huntflow
 ```
 
-Opens your browser at `http://localhost:3000` with a fresh workspace ready to go.
+This opens HuntFlow at `http://localhost:3000`. No account, no telemetry, and it works offline. Your data stays in your browser, and while HuntFlow runs from this command it also writes rotating backups to `~/.huntflow/backups`.
 
-To install globally:
+Prefer not to install anything? [Open the web app](https://huntflow.xalgorix.com/dashboard) or [try it with sample data](https://huntflow.xalgorix.com/demo?go=/dashboard).
 
-```bash
-npm install -g huntflow
-huntflow
-```
+## What it does
 
-Override the default port:
+**Bring scope and recon in.** Import a HackerOne scope CSV or paste a Bugcrowd or Intigriti scope table. Add output from subfinder, amass, httpx, nmap, nuclei or Burp Suite. Every host is checked against the program's rules first, so out-of-scope assets never reach your test list. Duplicates are merged, and nuclei and Burp results become draft findings with the request and response attached.
 
-```bash
-npx huntflow --port 4000
-```
+**Write reports triage accepts.** Start from one of 29 finding templates, score with CVSS 3.1 or 4.0, paste raw requests or curl commands as evidence, and get warned about likely duplicates. Then copy each field straight into the HackerOne, Bugcrowd, Intigriti or YesWeHack form, or export Markdown or PDF.
 
-## Pipe Your Tools In
+**Deliver like a pro.** Each program has an engagement report: a cover page, an executive summary written from your findings, scope, a findings overview, and every finding with its evidence. Export it as a clean PDF or as Markdown.
 
-While HuntFlow runs from `npx huntflow`, send tool output straight from your terminal:
+**Stay on top of it.** The Today view shows what needs you next: overdue triage, unfinished drafts, bounties to record, untested targets and backups. Time-boxed sessions show where your hours go. Payouts are tracked by program and platform, with a year-end export for taxes.
+
+| Import scope and recon | Findings | Engagement report |
+| --- | --- | --- |
+| ![Import](https://raw.githubusercontent.com/xalgord/huntflow/main/static/screenshots/v3/import-light.webp) | ![Findings](https://raw.githubusercontent.com/xalgord/huntflow/main/static/screenshots/v3/findings-light.webp) | ![Report](https://raw.githubusercontent.com/xalgord/huntflow/main/static/screenshots/v3/report-light.webp) |
+
+## Pipe your tools in
+
+While HuntFlow runs from `npx huntflow`, you can send tool output straight from your terminal:
 
 ```bash
 subfinder -d acme.com -silent | huntflow push -P acme
@@ -48,49 +55,52 @@ nmap -sV -oX - acme.com | huntflow push -P acme
 huntflow push scope.csv -P acme          # HackerOne "Download CSV"
 ```
 
-HuntFlow checks every host against the program's scope, merges duplicates, and shows a preview before anything is added. nuclei and Burp results become draft findings with the request and response attached. If HuntFlow isn't running, the output is queued and waiting the next time you start it. You can also paste or drop the same files on the Targets page with **Import**.
+The output shows up in HuntFlow for review with the program already selected. Nothing is added until you confirm the preview. If HuntFlow isn't running, the output is queued and waiting the next time you start it. You can also paste or drop the same files on the Targets page with **Import**.
 
-## What You Get
-
-- **Target Tracker** — Organize engagements by priority, status, and scope
-- **Focus Timer** — Timed test sessions with completion notes and tags
-- **Notes** — Rich markdown notes with templates, preview, and autosave
-- **Evidence Vault** — Proof files, URLs, code snippets, and relationship mapping
-- **Report Builder** — Auto-populated reports with severity suggestions and PDF/markdown export
-- **Stats Dashboard** — Visualize your testing patterns and progress
-- **Findings Tracker** — Track findings through triage, resolution, and sign-off
-- **Cloud Sync (Pro)** — Optional sync across devices with end-to-end security
-
-## Screenshots
-
-![HuntFlow dashboard](https://huntflow.xalgorix.com/screenshots/dashboard.png?v=2)
-
-| Targets | Sessions |
+| Format | How to produce it |
 | --- | --- |
-| ![Targets](https://huntflow.xalgorix.com/screenshots/targets.png?v=2) | ![Sessions](https://huntflow.xalgorix.com/screenshots/sessions.png?v=2) |
+| HackerOne scope | Program → Scope → **Download CSV** |
+| Bugcrowd / Intigriti scope | Copy the in-scope and out-of-scope tables |
+| subfinder / amass | `subfinder -d acme.com -oJ` or any host list |
+| httpx | `httpx -json` or default output |
+| nuclei | `nuclei -jsonl` |
+| nmap | `nmap -sV -oX scan.xml` |
+| Burp Suite | Issues → Report selected issues → XML |
 
-| Notes | Evidence |
-| --- | --- |
-| ![Notes](https://huntflow.xalgorix.com/screenshots/notes.png?v=2) | ![Evidence](https://huntflow.xalgorix.com/screenshots/evidence.png?v=2) |
+## Your data
 
-| Payloads | Toolkit |
-| --- | --- |
-| ![Payloads](https://huntflow.xalgorix.com/screenshots/payloads.png?v=2) | ![Toolkit](https://huntflow.xalgorix.com/screenshots/toolkit.png?v=2) |
+- **Local first.** Everything lives in IndexedDB in your browser, on your machine. Nothing phones home.
+- **Backed up.** Running from `npx huntflow` mirrors backups to disk (`--backup-dir`, `--keep`). You can also download a full backup from Settings at any time.
+- **Optional sync.** HuntFlow Pro syncs your workspace across devices. Everything else is free and works without an account.
 
-| Reports | Findings |
-| --- | --- |
-| ![Reports](https://huntflow.xalgorix.com/screenshots/reports.png?v=2) | ![Findings](https://huntflow.xalgorix.com/screenshots/findings.png?v=2) |
+## CLI
 
-| Analytics | Payouts |
-| --- | --- |
-| ![Analytics](https://huntflow.xalgorix.com/screenshots/analytics.png?v=2) | ![Payouts](https://huntflow.xalgorix.com/screenshots/payouts.png?v=2) |
+```text
+huntflow [options]          Start HuntFlow
+  -p, --port <number>       Port (default 3000)
+      --host <address>      Interface to listen on (use 127.0.0.1 to stay off your network)
+      --backup-dir <dir>    Where backups are written (default ~/.huntflow/backups)
+      --keep=<n>            Backups to keep (default 30)
+      --no-backup           Don't write backups to disk
+      --no-open             Don't open a browser
 
-| Programs | Reference |
-| --- | --- |
-| ![Programs](https://huntflow.xalgorix.com/screenshots/programs.png?v=2) | ![Reference](https://huntflow.xalgorix.com/screenshots/reference.png?v=2) |
+huntflow push [file] [options]
+  -P, --program <name>      Program to import into (name or part of it)
+  -f, --format <format>     h1-scope-csv, scope-text, hosts, httpx, nuclei, nmap, burp
+      --tee                 Also print the input
+```
+
+## Development
+
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm test           # unit tests (vitest)
+npm run build      # static build used by the CLI
+```
+
+HuntFlow is built with SvelteKit and Tailwind CSS, stores data in IndexedDB, and ships as a static app served by a small Node CLI.
 
 ## License
 
-MIT License. Copyright © 2026 xalgorix.
-
-See [`LICENSE`](./LICENSE) for the full text. You are free to use, modify, distribute, and sublicense this software.
+MIT © 2026 xalgorix. Use HuntFlow only for testing you are authorized to do.
