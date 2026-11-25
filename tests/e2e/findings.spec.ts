@@ -78,4 +78,22 @@ test.describe('findings workspace', () => {
     await expect(page).toHaveURL(/\/findings/);
     await expect(page.getByRole('heading', { name: 'Findings', exact: true })).toBeVisible();
   });
+
+  test('a pending retest shows on the finding and on Today', async ({ page }) => {
+    await seedDemoApp(page);
+    await gotoAppRoute(page, '/findings');
+    await dismissOnboarding(page);
+    await page.getByRole('button', { name: 'New', exact: true }).click();
+    await page.locator('#finding-title').fill('Open redirect on /logout');
+    await page.locator('#finding-status').selectOption('resolved');
+    await page.getByRole('tab', { name: 'Activity' }).click();
+    await page.getByRole('radiogroup', { name: 'Retest status' }).getByRole('radio', { name: 'Pending' }).click();
+    await page.waitForTimeout(600);
+
+    await gotoAppRoute(page, '/dashboard');
+    const retest = page.getByRole('link', { name: /Retest “Open redirect on \/logout”/ });
+    await expect(retest).toBeVisible();
+    await retest.click();
+    await expect(page.locator('#finding-title')).toHaveValue('Open redirect on /logout');
+  });
 });

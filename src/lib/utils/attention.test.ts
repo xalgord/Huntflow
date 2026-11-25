@@ -96,6 +96,23 @@ describe('buildAttentionQueue', () => {
     expect(paid.some((item) => item.kind === 'record-bounty')).toBe(false);
   });
 
+  it('asks for a retest when one is pending, and only then', () => {
+    const items = buildAttentionQueue({
+      ...empty,
+      submissions: [submission({ status: 'resolved', resolvedAt: NOW - 3 * DAY, retestStatus: 'pending', payoutIds: ['x'] })]
+    });
+    const retest = items.find((item) => item.kind === 'retest');
+    expect(retest).toMatchObject({ title: 'Retest “IDOR on orders”', tone: 'blue', href: '/findings?id=s1' });
+    expect(retest?.detail).toContain('fix reported 3 days ago');
+    expect(items[0].kind).toBe('retest');
+
+    const done = buildAttentionQueue({
+      ...empty,
+      submissions: [submission({ status: 'resolved', resolvedAt: NOW - 3 * DAY, retestStatus: 'fixed', payoutIds: ['x'] })]
+    });
+    expect(done.some((item) => item.kind === 'retest')).toBe(false);
+  });
+
   it('suggests promoting severity-tagged notes that are not yet findings', () => {
     const note: Note = {
       id: 'n1',

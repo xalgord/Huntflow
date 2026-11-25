@@ -11,6 +11,7 @@ import { calculateSla } from './submissionSla';
 export type AttentionKind =
   | 'sla-overdue'
   | 'sla-approaching'
+  | 'retest'
   | 'draft'
   | 'lead'
   | 'record-bounty'
@@ -117,6 +118,22 @@ export function buildAttentionQueue(input: AttentionInput): AttentionItem[] {
         tone: 'orange',
         rank: 40 + (severityWeight[submission.severity] ?? 2),
         at: submission.updatedAt
+      });
+    }
+
+    if (submission.retestStatus === 'pending') {
+      const since = submission.resolvedAt ?? submission.updatedAt;
+      const age = days(now - since);
+      items.push({
+        id: `retest:${submission.id}`,
+        kind: 'retest',
+        title: `Retest “${submission.title}”`,
+        detail: `${program} · fix ${age === 0 ? 'reported today' : `reported ${plural(age, 'day')} ago`} — confirm it holds and update the report`,
+        href: `/findings?id=${submission.id}`,
+        tone: 'blue',
+        // Retests are often paid and time-boxed by the program.
+        rank: 10 + (severityWeight[submission.severity] ?? 2) - Math.min(age, 5),
+        at: since
       });
     }
 
