@@ -1,111 +1,191 @@
 <script lang="ts">
+  import { goto } from '$app/navigation';
+  import IncomeChart from '$lib/components/income/IncomeChart.svelte';
   import PayoutForm from '$lib/components/income/PayoutForm.svelte';
+  import TaxExport from '$lib/components/income/TaxExport.svelte';
   import EmptyState from '$lib/components/workspace/EmptyState.svelte';
   import MetricCard from '$lib/components/workspace/MetricCard.svelte';
   import SeverityBadge from '$lib/components/workspace/SeverityBadge.svelte';
   import StatusBadge from '$lib/components/workspace/StatusBadge.svelte';
   import { payoutStore, submissionStore, targetStore } from '$lib/stores';
-  import type { Payout, PayoutStatus, Platform } from '$lib/types';
+  import type { Payout, PayoutSeverity, PayoutStatus, Platform } from '$lib/types';
+  import { buildSubmissionFromPayout } from '$lib/utils/migrations';
   import { formatDate, formatMoney, platformLabels, statusTone } from '$lib/utils/workspace';
-  import { Banknote, CircleDollarSign, Plus, Search, TrendingUp } from 'lucide-svelte';
+  import { Banknote, CircleDollarSign, Pencil, Plus, Receipt, Search, ShieldAlert, Trash2, TrendingUp } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
   type StatusFilter = PayoutStatus | 'all';
-  type PlatformFilter = Platform | 'all';
+
+  const statusSegments: { value: StatusFilter; label: string }[] = [
+    { value: 'all', label: 'All' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'triaged', label: 'Triaged' },
+    { value: 'paid', label: 'Paid' }
+  ];
+
+  const statusLabels: Record<PayoutStatus, string> = { pending: 'Pending', triaged: 'Triaged', paid: 'Paid' };
 
   let loaded = false;
   let showForm = false;
   let editing: Payout | null = null;
   let query = '';
   let statusFilter: StatusFilter = 'all';
-  let platformFilter: PlatformFilter = 'all';
+  let platformFilter: Platform | 'all' = 'all';
+  let severityFilter: PayoutSeverity | 'all' = 'all';
+  let yearFilter = 'all';
 
   onMount(async () => {
     await Promise.all([payoutStore.load(), submissionStore.load(), targetStore.load()]);
-    showForm = new URLSearchParams(location.search).get('new') === '1';
+    const params = new URLSearchParams(location.search);
+    if (params.get('new') === '1') startCreate(params.get('submission') ?? undefined);
     loaded = true;
   });
 
+  /** Prefill a new payout from the finding it rewards. */
+  function startCreate(submissionId?: string): void {
+    const submission = submissionId ? $submissionStore.find((item) => item.id === submissionId) : undefined;
+    const program = submission ? $targetStore.find((target) => target.id === submission.targetId) : undefined;
+    editing = submission
+      ? {
+          id: '',
+          program: program?.name ?? '',
+          platform: submission.platform,
+          severity: submission.severity,
+          amount: submission.bountyAmount ?? 0,
+          date: Date.now(),
+          status: submission.status === 'rewarded' ? 'paid' : 'pending',
+          submissionId: submission.id,
+          createdAt: Date.now(),
+          updatedAt: Date.now()
+        }
+      : null;
+    showForm = true;
+  }
+
+  function startEdit(payout: Payout): void {
+    editing = payout;
+    showForm = true;
+  }
+
   async function savePayout(event: CustomEvent<{ payout: Payout }>): Promise<void> {
-    await payoutStore.put(event.detail.payout);
+    const payout = event.detail.payout;
+    await payoutStore.put(payout);
+    // Keep the originating finding in sync so it stops asking for a bounty.
+    if (payout.submissionId) {
+      const submission = $submissionStore.find((item) => item.id === payout.submissionId);
+      if (submission) {
+        const payoutIds = Array.from(new Set([...(submission.payoutIds ?? []), payout.id]));
+        const linked = $payoutStore.filter((item) => payoutIds.includes(item.id) && item.id !== payout.id);
+        const bountyAmount = [...linked, payout].reduce((sum, item) => sum + item.amount, 0);
+        await submissionStore.put({ ...submission, payoutIds, bountyAmount, updatedAt: Date.now() });
+        await submissionStore.persistNow();
+      }
+    }
     await payoutStore.persistNow();
     editing = null;
     showForm = false;
   }
 
+  function nextStatus(status: PayoutStatus): PayoutStatus | null {
+    if (status === 'pending') return 'triaged';
+    if (status === 'triaged') return 'paid';
+    return null;
+  }
+
+  async function advancePayout(payout: Payout): Promise<void> {
+    const status = nextStatus(payout.status);
+    if (!status) return;
+    await payoutStore.put({ ...payout, status, updatedAt: Date.now() });
+    await payoutStore.persistNow();
+  }
+
+  async function openFinding(payout: Payout): Promise<void> {
+    if (payout.submissionId && existingSubmissionIds.has(payout.submissionId)) {
+      await goto(`/findings?id=${payout.submissionId}`);
+      return;
+    }
+    const { submission, updatedPayout } = buildSubmissionFromPayout(payout, $targetStore);
+    if (!submission.targetId) {
+      alert('Add a program first so the finding can be linked to it.');
+      return;
+    }
+    await submissionStore.put(submission);
+    await payoutStore.put(updatedPayout);
+    await Promise.all([submissionStore.persistNow(), payoutStore.persistNow()]);
+    await goto(`/findings?id=${submission.id}`);
+  }
+
   async function deletePayout(payout: Payout): Promise<void> {
-    if (!confirm(`Delete payout for ${payout.program}?`)) return;
+    if (!confirm(`Delete the ${formatMoney(payout.amount)} payout from ${payout.program}?`)) return;
     await payoutStore.delete(payout.id);
     await payoutStore.persistNow();
   }
 
+  $: existingSubmissionIds = new Set($submissionStore.map((submission) => submission.id));
+  $: years = Array.from(new Set($payoutStore.map((payout) => String(new Date(payout.date).getFullYear())))).sort(
+    (a, b) => Number(b) - Number(a)
+  );
   $: paidPayouts = $payoutStore.filter((payout) => payout.status === 'paid');
-  $: pendingPayouts = $payoutStore.filter((payout) => payout.status !== 'paid');
-  $: totalPaid = Math.round(paidPayouts.reduce((sum, payout) => sum + payout.amount, 0) * 100) / 100;
-  $: pendingTotal = Math.round(pendingPayouts.reduce((sum, payout) => sum + payout.amount, 0) * 100) / 100;
-  $: averagePaid = paidPayouts.length > 0 ? Math.round((totalPaid / paidPayouts.length) * 100) / 100 : 0;
-  $: acceptedReports = $submissionStore.filter((submission) => ['accepted', 'resolved', 'rewarded'].includes(submission.status)).length;
-  $: decidedReports = $submissionStore.filter((submission) =>
-    ['accepted', 'resolved', 'rewarded', 'duplicate', 'informational', 'not-applicable', 'closed'].includes(submission.status)
-  ).length;
-  $: acceptedRate = decidedReports > 0 ? Math.round((acceptedReports / decidedReports) * 100) : 0;
-  $: duplicateRate =
-    decidedReports > 0
-      ? Math.round(($submissionStore.filter((submission) => submission.status === 'duplicate').length / decidedReports) * 100)
-      : 0;
+  $: paidTotal = Math.round(paidPayouts.reduce((sum, payout) => sum + payout.amount, 0) * 100) / 100;
+  $: pendingTotal =
+    Math.round($payoutStore.filter((payout) => payout.status !== 'paid').reduce((sum, payout) => sum + payout.amount, 0) * 100) /
+    100;
+  $: currentYear = new Date().getFullYear();
+  $: yearPaidTotal =
+    Math.round(
+      paidPayouts
+        .filter((payout) => new Date(payout.date).getFullYear() === currentYear)
+        .reduce((sum, payout) => sum + payout.amount, 0) * 100
+    ) / 100;
+  $: averagePaid = paidPayouts.length > 0 ? Math.round((paidTotal / paidPayouts.length) * 100) / 100 : 0;
   $: filteredPayouts = $payoutStore
     .filter((payout) => {
       if (statusFilter !== 'all' && payout.status !== statusFilter) return false;
       if (platformFilter !== 'all' && payout.platform !== platformFilter) return false;
+      if (severityFilter !== 'all' && payout.severity !== severityFilter) return false;
+      if (yearFilter !== 'all' && String(new Date(payout.date).getFullYear()) !== yearFilter) return false;
       const search = query.trim().toLowerCase();
       if (!search) return true;
-      return [payout.program, payout.platform, payout.status, payout.severity].join(' ').toLowerCase().includes(search);
+      return [payout.program, payout.platform, payout.severity, payout.status].join(' ').toLowerCase().includes(search);
     })
     .sort((a, b) => b.date - a.date);
 </script>
 
 <svelte:head>
-  <title>Payouts | HuntFlow bug bounty command center</title>
-  <meta name="description" content="Track bug bounty payouts, accepted report rate, duplicates, pending rewards, average payout, and program income." />
+  <title>Payouts | HuntFlow</title>
+  <meta name="description" content="Track bug bounty payouts from pending to paid, see income over time and export a tax-year CSV." />
 </svelte:head>
 
 <main class="hf-page">
   <div class="hf-page-inner">
     <header class="hf-page-header">
       <div>
-        <p class="hf-eyebrow">Payouts</p>
-        <h1 class="hf-title">Income and outcomes</h1>
-        <p class="hf-description">
-          Track bounty amounts, status, platform, submitted dates, paid dates, and outcome quality without a spreadsheet.
-        </p>
+        <h1 class="hf-title">Payouts</h1>
+        <p class="hf-description">Bounties from award to paid, with a tax-year export when you need it.</p>
       </div>
-      <button type="button" class="hf-button-primary" on:click={() => (showForm = !showForm)}>
-        <Plus size={17} aria-hidden="true" />
+      <button type="button" class="hf-button-primary" on:click={() => startCreate()}>
+        <Plus size={15} aria-hidden="true" />
         Add Payout
       </button>
     </header>
 
     <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
-      <MetricCard icon={CircleDollarSign} label="Total payout" value={formatMoney(totalPaid)} detail={`${paidPayouts.length} paid records`} tone="success" />
-      <MetricCard icon={Banknote} label="Pending payout" value={formatMoney(pendingTotal)} detail="Pending or triaged" tone="warning" />
-      <MetricCard icon={TrendingUp} label="Accepted rate" value={`${acceptedRate}%`} detail={`${acceptedReports}/${decidedReports || 0} decided reports`} />
-      <MetricCard icon={TrendingUp} label="Duplicate rate" value={`${duplicateRate}%`} detail="Duplicate outcomes" />
-      <MetricCard icon={CircleDollarSign} label="Average payout" value={formatMoney(averagePaid)} detail="Paid records only" />
-      <MetricCard icon={Banknote} label="Tracked reports" value={String($submissionStore.length)} detail="Submission outcomes" />
-      <MetricCard icon={CircleDollarSign} label="Best programs" value={String(new Set(paidPayouts.map((payout) => payout.program)).size)} detail="Programs with paid rewards" />
-      <MetricCard icon={TrendingUp} label="Time vs payout" value={totalPaid > 0 ? formatMoney(totalPaid) : '$0'} detail="Use Analytics for time context" />
+      <MetricCard icon={TrendingUp} label={`Paid in ${currentYear}`} value={formatMoney(yearPaidTotal)} detail="Tax-year total" tone="success" />
+      <MetricCard icon={CircleDollarSign} label="Paid all time" value={formatMoney(paidTotal)} detail={`${paidPayouts.length} paid payout${paidPayouts.length === 1 ? '' : 's'}`} tone="success" />
+      <MetricCard icon={Banknote} label="Pending" value={formatMoney(pendingTotal)} detail="Awarded, not yet paid" tone="warning" />
+      <MetricCard icon={Receipt} label="Average payout" value={formatMoney(averagePaid)} detail="Paid payouts only" />
     </section>
 
     {#if showForm}
       <section class="hf-card p-5">
-        <div class="mb-4">
-          <h2 class="text-base font-semibold text-zinc-100">{editing ? 'Edit payout' : 'New payout'}</h2>
-          <p class="mt-1 text-sm text-zinc-500">Record only real program outcomes. Rejections, duplicates, and informative outcomes can be tracked on the linked report.</p>
-        </div>
+        <h2 class="hf-section-title">{editing?.id ? 'Edit Payout' : 'New Payout'}</h2>
+        <p class="mb-4 mt-0.5 text-xs text-zinc-500">
+          {editing?.submissionId ? 'Linked to a finding — saving updates its bounty total.' : 'Record real program outcomes only.'}
+        </p>
         <PayoutForm
           payout={editing}
           targets={$targetStore}
-          submitLabel={editing ? 'Save Payout' : 'Create Payout'}
+          submitLabel={editing?.id ? 'Save Changes' : 'Create Payout'}
           on:submit={savePayout}
           on:cancel={() => {
             showForm = false;
@@ -115,80 +195,123 @@
       </section>
     {/if}
 
-    <section class="hf-card p-4">
-      <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_170px_170px]">
-        <label class="block">
-          <span class="hf-label">Search</span>
-          <div class="mt-2 flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-500/20">
-            <Search size={16} class="text-zinc-600" aria-hidden="true" />
-            <input bind:value={query} class="min-h-[44px] w-full bg-transparent text-sm text-zinc-100 placeholder:text-zinc-600 focus:outline-none" placeholder="Program, platform, status" />
-          </div>
-        </label>
-        <label class="block">
-          <span class="hf-label">Status</span>
-          <select bind:value={statusFilter} class="hf-select mt-2">
-            <option value="all">All statuses</option>
-            <option value="pending">Pending</option>
-            <option value="triaged">Triaged</option>
-            <option value="paid">Paid</option>
-          </select>
-        </label>
-        <label class="block">
-          <span class="hf-label">Platform</span>
-          <select bind:value={platformFilter} class="hf-select mt-2">
-            <option value="all">All platforms</option>
-            <option value="hackerone">HackerOne</option>
-            <option value="bugcrowd">Bugcrowd</option>
-            <option value="intigriti">Intigriti</option>
-            <option value="yeswehack">YesWeHack</option>
-            <option value="self-hosted">Private</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
+    {#if $payoutStore.length > 0}
+      <section class="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(20rem,0.6fr)]">
+        <IncomeChart payouts={$payoutStore} />
+        <TaxExport payouts={$payoutStore} />
+      </section>
+    {/if}
+
+    <section class="flex flex-col gap-3 lg:flex-row lg:items-center">
+      <div class="hf-segmented self-start" role="radiogroup" aria-label="Payout status">
+        {#each statusSegments as segment}
+          <button
+            type="button"
+            role="radio"
+            aria-checked={statusFilter === segment.value}
+            class="hf-segment {statusFilter === segment.value ? 'hf-segment-active' : ''}"
+            on:click={() => (statusFilter = segment.value)}
+          >
+            {segment.label}
+          </button>
+        {/each}
+      </div>
+      <label class="relative block flex-1">
+        <span class="sr-only">Search payouts</span>
+        <Search size={14} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" aria-hidden="true" />
+        <input bind:value={query} class="hf-input pl-8" placeholder="Search program, platform or severity" />
+      </label>
+      <div class="grid grid-cols-3 gap-2 lg:flex">
+        <select bind:value={platformFilter} class="hf-select lg:w-36" aria-label="Platform">
+          <option value="all">All platforms</option>
+          {#each Object.entries(platformLabels) as [value, label]}
+            <option {value}>{label}</option>
+          {/each}
+        </select>
+        <select bind:value={severityFilter} class="hf-select lg:w-36" aria-label="Severity">
+          <option value="all">All severities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+          <option value="informational">Informational</option>
+        </select>
+        <select bind:value={yearFilter} class="hf-select lg:w-28" aria-label="Year">
+          <option value="all">All years</option>
+          {#each years as year}
+            <option value={year}>{year}</option>
+          {/each}
+        </select>
       </div>
     </section>
 
     {#if filteredPayouts.length > 0}
       <section class="hf-card overflow-hidden">
-        <div class="hidden grid-cols-[minmax(220px,1fr)_130px_120px_130px_130px_110px] border-b border-zinc-800 px-4 py-3 text-xs font-medium text-zinc-500 lg:grid">
+        <div
+          class="hidden grid-cols-[minmax(12rem,1fr)_7rem_6.5rem_7rem_7.5rem_minmax(14rem,auto)] gap-4 border-b-[0.5px] border-zinc-800 px-4 py-2 text-[0.6875rem] font-semibold text-zinc-500 lg:grid"
+        >
           <span>Program</span>
-          <span>Platform</span>
           <span>Severity</span>
-          <span>Amount</span>
+          <span class="text-right">Amount</span>
           <span>Date</span>
           <span>Status</span>
+          <span class="sr-only">Actions</span>
         </div>
-        <div class="divide-y divide-zinc-900">
-          {#each filteredPayouts as payout}
-            <div class="grid gap-3 px-4 py-4 lg:grid-cols-[minmax(220px,1fr)_130px_120px_130px_130px_110px] lg:items-center">
+        <ul class="hf-list">
+          {#each filteredPayouts as payout (payout.id)}
+            {@const next = nextStatus(payout.status)}
+            <li
+              class="grid gap-x-4 gap-y-2 px-4 py-3 lg:grid-cols-[minmax(12rem,1fr)_7rem_6.5rem_7rem_7.5rem_minmax(14rem,auto)] lg:items-center"
+            >
               <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-zinc-100">{payout.program}</p>
-                <div class="mt-2 flex gap-2">
-                  <button type="button" class="text-xs font-medium text-zinc-500 hover:text-zinc-200" on:click={() => {
-                    editing = payout;
-                    showForm = true;
-                  }}>Edit</button>
-                  <button type="button" class="text-xs font-medium text-red-300 hover:text-red-200" on:click={() => deletePayout(payout)}>Delete</button>
-                </div>
+                <p class="truncate text-[0.8125rem] font-semibold text-zinc-100">{payout.program}</p>
+                <p class="text-xs text-zinc-500">{platformLabels[payout.platform]}<span class="lg:hidden"> · {formatDate(payout.date)}</span></p>
               </div>
-              <span class="text-sm text-zinc-400">{platformLabels[payout.platform]}</span>
-              <SeverityBadge severity={payout.severity} />
-              <span class="font-mono text-sm text-zinc-100">{formatMoney(payout.amount)}</span>
-              <span class="text-xs text-zinc-500">{formatDate(payout.date)}</span>
-              <StatusBadge label={payout.status} tone={statusTone(payout.status)} />
-            </div>
+              <div><SeverityBadge severity={payout.severity} variant="dot" /></div>
+              <span class="font-mono text-[0.8125rem] font-semibold tabular-nums text-zinc-50 lg:text-right">
+                {formatMoney(payout.amount, 'USD', 2)}
+              </span>
+              <span class="hidden text-xs text-zinc-500 lg:block">{formatDate(payout.date)}</span>
+              <span><StatusBadge label={statusLabels[payout.status]} tone={statusTone(payout.status)} /></span>
+              <div class="flex items-center justify-start gap-1 lg:justify-end">
+                {#if next}
+                  <button type="button" class="hf-button-tinted h-7 min-h-0 px-2.5 text-xs" on:click={() => advancePayout(payout)}>
+                    Mark {statusLabels[next]}
+                  </button>
+                {/if}
+                <button
+                  type="button"
+                  class="hf-icon-button"
+                  aria-label={payout.submissionId && existingSubmissionIds.has(payout.submissionId) ? 'Open linked finding' : 'Create finding from payout'}
+                  title={payout.submissionId && existingSubmissionIds.has(payout.submissionId) ? 'Open linked finding' : 'Create finding from payout'}
+                  on:click={() => openFinding(payout)}
+                >
+                  <ShieldAlert size={15} aria-hidden="true" />
+                </button>
+                <button type="button" class="hf-icon-button" aria-label="Edit payout" title="Edit" on:click={() => startEdit(payout)}>
+                  <Pencil size={15} aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  class="hf-icon-button hover:!text-red-400"
+                  aria-label="Delete payout"
+                  title="Delete"
+                  on:click={() => deletePayout(payout)}
+                >
+                  <Trash2 size={15} aria-hidden="true" />
+                </button>
+              </div>
+            </li>
           {/each}
-        </div>
+        </ul>
       </section>
     {:else if loaded}
       <EmptyState
         icon={CircleDollarSign}
-        title={$payoutStore.length === 0 ? 'No payouts yet' : 'No payouts match the filters'}
+        title={$payoutStore.length === 0 ? 'No Payouts Yet' : 'No Results'}
         description={$payoutStore.length === 0
-          ? 'Track pending and paid rewards here once a report has an outcome.'
-          : 'Adjust search, status, or platform filters.'}
-        actionLabel={$payoutStore.length === 0 ? 'Add Payout' : undefined}
-        href={$payoutStore.length === 0 ? '/payouts?new=1' : undefined}
+          ? 'When a program awards a bounty, log it here and follow it through to paid.'
+          : 'Try a different status, platform, severity or year.'}
       />
     {/if}
   </div>

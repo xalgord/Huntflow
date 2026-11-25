@@ -88,7 +88,7 @@
       return;
     }
     if (!targetId) {
-      errorMessage = 'Pick a target';
+      errorMessage = 'Pick a program';
       return;
     }
 
@@ -169,7 +169,7 @@
 
   <div class="grid gap-4 sm:grid-cols-2">
     <label class="block">
-      <span class="hf-label">Target</span>
+      <span class="hf-label">Program</span>
       <select bind:value={targetId} class="hf-select mt-2" required>
         {#each targetOptions as target}
           <option value={target.id}>{target.name}</option>

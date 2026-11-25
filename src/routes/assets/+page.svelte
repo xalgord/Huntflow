@@ -684,7 +684,7 @@
 
   function buildDestinationOptions(asset: EvidenceAsset | undefined): { label: string; value: LinkDestination }[] {
     const options: { label: string; value: LinkDestination }[] = [];
-    for (const target of $targetStore) options.push({ label: `Target: ${target.name}`, value: `target:${target.id}` });
+    for (const target of $targetStore) options.push({ label: `Program: ${target.name}`, value: `target:${target.id}` });
     for (const session of $sessionStore) {
       const target = targetById.get(session.targetId);
       options.push({
@@ -919,9 +919,9 @@
               </div>
               <div class="mt-6 grid gap-3 grid-cols-1 sm:grid-cols-3">
                 <label class="space-y-1.5">
-                  <span class="hf-label">Target</span>
+                  <span class="hf-label">Program</span>
                   <select bind:value={selectedTargetId} class="hf-select">
-                    <option value="">No target</option>
+                    <option value="">No program</option>
                     {#each targetOptions as target}
                       <option value={target.id}>{target.name}</option>
                     {/each}
@@ -933,7 +933,7 @@
                     <option value="">No session</option>
                     {#each $sessionStore.filter((session) => !selectedTargetId || session.targetId === selectedTargetId) as session}
                       <option value={session.id}>
-                        {targetById.get(session.targetId)?.name ?? 'Target'} · {formatDate(session.startedAt)}
+                        {targetById.get(session.targetId)?.name ?? 'Program'} · {formatDate(session.startedAt)}
                       </option>
                     {/each}
                   </select>
@@ -1038,9 +1038,9 @@
                 </select>
               </label>
               <label class="space-y-1.5">
-                <span class="hf-label">Target</span>
+                <span class="hf-label">Program</span>
                 <select bind:value={targetFilter} class="hf-select" on:change={hydrateCanvasView}>
-                  <option value="all">All targets</option>
+                  <option value="all">All programs</option>
                   {#each $targetStore as target}
                     <option value={target.id}>{target.name}</option>
                   {/each}

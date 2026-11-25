@@ -278,7 +278,7 @@
     <TemplateSelector selectedTemplateId={note.templateId ?? ''} on:select={selectTemplate} />
 
     <label class="block">
-      <span class="hf-label">Target</span>
+      <span class="hf-label">Program</span>
       <select
         bind:value={note.targetId}
         class="hf-select mt-2"
@@ -287,7 +287,7 @@
           emitChange();
         }}
       >
-        <option value="">Select target</option>
+        <option value="">Choose a program</option>
         {#each targets as target}
           <option value={target.id}>{target.name}</option>
         {/each}

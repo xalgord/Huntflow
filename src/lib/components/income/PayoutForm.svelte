@@ -85,13 +85,16 @@
     const now = Date.now();
     dispatch('submit', {
       payout: {
-        id: payout?.id ?? createId(),
+        // `||` so a prefilled draft with an empty id becomes a new record.
+        id: payout?.id || createId(),
         program: program.trim(),
         platform,
         severity,
         amount: Math.round(amount * 100) / 100,
         date: timestampFromDate(date),
         status,
+        // Keep the link to the originating finding when editing.
+        submissionId: payout?.submissionId,
         createdAt: payout?.createdAt ?? now,
         updatedAt: now
       }

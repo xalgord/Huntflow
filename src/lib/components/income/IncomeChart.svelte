@@ -228,16 +228,16 @@
 <section class="hf-card p-4">
   <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
     <div>
-      <h2 class="text-lg font-semibold text-foreground">Earnings</h2>
-      <p class="mt-1 text-sm text-muted-foreground">Paid payouts over time, by platform, and by severity.</p>
+      <h2 class="hf-section-title">Earnings</h2>
+      <p class="mt-0.5 text-xs text-zinc-500">Paid payouts over time, by platform and by severity.</p>
     </div>
-    <div class="grid grid-cols-3 overflow-hidden rounded-md border border-border bg-background/50 shadow-inner-line">
+    <div class="hf-segmented self-start" role="radiogroup" aria-label="Chart breakdown">
       {#each modes as item}
         <button
           type="button"
-          class="min-h-[40px] px-3 text-xs font-medium transition {mode === item.value
-            ? 'bg-primary text-primary-foreground'
-            : 'text-muted-foreground hover:bg-muted hover:text-foreground'}"
+          role="radio"
+          aria-checked={mode === item.value}
+          class="hf-segment {mode === item.value ? 'hf-segment-active' : ''}"
           on:click={() => (mode = item.value)}
         >
           {item.label}
@@ -246,11 +246,11 @@
     </div>
   </div>
 
-  <div class="mt-4 h-80">
+  <div class="mt-4 h-72">
     {#if hasPaidData}
       <canvas bind:this={canvas}></canvas>
     {:else}
-      <div class="flex h-full items-center justify-center rounded-lg border border-dashed border-border bg-background/50 text-sm text-muted-foreground">
+      <div class="flex h-full items-center justify-center rounded-[10px] text-[0.8125rem] text-zinc-500" style="background: var(--hf-fill)">
         Mark a payout as paid to chart earnings.
       </div>
     {/if}

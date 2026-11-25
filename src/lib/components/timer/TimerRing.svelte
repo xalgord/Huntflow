@@ -5,55 +5,48 @@
   export let totalMs = 25 * 60 * 1000;
   export let status: TimerState['status'] = 'idle';
 
-  $: radius = 116;
-  $: circumference = 2 * Math.PI * radius;
-  $: progress = totalMs > 0 ? Math.min(Math.max(100 - (remainingMs / totalMs) * 100, 0), 100) : 0;
-  $: dashOffset = circumference - (progress / 100) * circumference;
+  const radius = 128;
+  const circumference = 2 * Math.PI * radius;
+
+  $: remainingFraction = totalMs > 0 ? Math.min(Math.max(remainingMs / totalMs, 0), 1) : 1;
+  // Like Apple's Clock timer, the ring drains as time passes.
+  $: dashOffset = circumference * (1 - remainingFraction);
   $: totalSeconds = Math.max(Math.ceil(remainingMs / 1000), 0);
-  $: minutes = Math.floor(totalSeconds / 60);
+  $: hours = Math.floor(totalSeconds / 3600);
+  $: minutes = Math.floor((totalSeconds % 3600) / 60);
   $: seconds = totalSeconds % 60;
-  $: time = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-  $: stateColor =
-    status === 'paused'
-      ? 'text-amber-300'
-      : status === 'completed'
-        ? 'text-primary'
-        : status === 'idle'
-          ? 'text-muted-foreground'
-          : 'text-foreground';
+  $: time =
+    hours > 0
+      ? `${hours}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+      : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  $: label = status === 'running' ? 'Hunting' : status === 'paused' ? 'Paused' : status === 'completed' ? 'Done' : 'Ready';
+  $: ringClass = status === 'paused' ? 'text-orange-500' : status === 'completed' ? 'text-green-500' : 'text-primary';
 </script>
 
-<div class="relative mx-auto h-[240px] w-[240px] sm:h-[280px] sm:w-[280px]">
+<div class="relative mx-auto aspect-square w-full max-w-[17.5rem]" role="timer" aria-label={`${label}, ${time} remaining`}>
   <svg class="h-full w-full -rotate-90" viewBox="0 0 280 280" aria-hidden="true">
+    <circle cx="140" cy="140" r={radius} fill="none" stroke="var(--hf-fill)" stroke-width="7" />
     <circle
-      class="text-muted"
+      class="{ringClass} transition-[stroke-dashoffset] duration-1000 ease-linear"
       cx="140"
       cy="140"
       r={radius}
       fill="none"
       stroke="currentColor"
-      stroke-width="8"
-    />
-    <circle
-      class="text-primary drop-shadow-sm transition-[stroke-dashoffset] duration-1000 ease-linear"
-      cx="140"
-      cy="140"
-      r={radius}
-      fill="none"
-      stroke="currentColor"
-      stroke-width="8"
+      stroke-width="7"
       stroke-linecap="round"
       stroke-dasharray={circumference}
       stroke-dashoffset={dashOffset}
     />
   </svg>
-
-  <div class="absolute inset-0 flex flex-col items-center justify-center">
-    <div class="font-mono text-5xl font-semibold tabular-nums tracking-normal {stateColor}">
+  <div class="absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
+    <div
+      class="text-[3.75rem] font-light leading-none tracking-[-0.03em] tabular-nums sm:text-[4.25rem] {status === 'idle'
+        ? 'text-zinc-400'
+        : 'text-zinc-50'}"
+    >
       {time}
     </div>
-    <div class="mt-2 text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-      {status}
-    </div>
+    <div class="mt-2 text-[0.8125rem] font-medium text-zinc-500">{label}</div>
   </div>
 </div>
