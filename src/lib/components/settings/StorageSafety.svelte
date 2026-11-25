@@ -207,7 +207,7 @@
       <span>
         <span class="block text-zinc-100">Last manual backup</span>
         <span class="block text-xs text-zinc-500">
-          {lastExport ? formatRelativeDate(lastExport) : 'Never — use “Export backup” below'}
+          {lastExport ? formatRelativeDate(lastExport) : 'Never — use “Back Up…” below'}
         </span>
       </span>
     </li>

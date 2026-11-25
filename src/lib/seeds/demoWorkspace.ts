@@ -401,22 +401,27 @@ export async function loadDemoWorkspace(_options: DemoLoadOptions = {}): Promise
     }
   ];
 
-  // One in-progress checklist instance attached to a built-in template if one
-  // exists. We do not assume any specific template id; we just create a
-  // standalone instance the user can wire to a real template later.
+  // One in-progress checklist on the built-in OWASP web playbook, with the
+  // IDOR from the demo findings marked as found.
   const now = Date.now();
   const checklistInstance: ChecklistInstance = {
     id: randomId('demo-ck'),
-    templateId: 'demo-template',
+    templateId: 'bi-wstg-condensed',
     targetId: targets[0].id,
-    templateName: 'Demo · Account Security',
+    templateName: 'OWASP Web Security (condensed)',
     templateKind: 'web',
     itemStates: {
-      'item-1': { status: 'done', updatedAt: now - 1 * DAY, notes: 'IDOR confirmed and reported.' },
-      'item-2': { status: 'in-progress', updatedAt: now - 2 * DAY },
-      'item-3': { status: 'todo', updatedAt: now - 3 * DAY }
+      'recon-fingerprint': { status: 'done', updatedAt: now - 5 * DAY },
+      'recon-subdomains': { status: 'done', updatedAt: now - 5 * DAY },
+      'recon-js': { status: 'done', updatedAt: now - 4 * DAY, notes: 'Found /v1/users/{id}/orders in main.js.' },
+      'config-headers': { status: 'done', updatedAt: now - 4 * DAY },
+      'config-cors': { status: 'na', updatedAt: now - 4 * DAY },
+      'auth-rate': { status: 'done', updatedAt: now - 3 * DAY },
+      'authz-idor': { status: 'found', updatedAt: now - 2 * DAY, notes: 'IDOR on order history — reported.' },
+      'authz-vertical': { status: 'in-progress', updatedAt: now - 1 * DAY }
     },
-    notes: 'Demo checklist showing how the methodology view tracks coverage.',
+    notes: 'Demo checklist showing how coverage is tracked per program.',
+    startedAt: now - 5 * DAY,
     createdAt: now - 5 * DAY,
     updatedAt: now
   };

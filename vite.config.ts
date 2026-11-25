@@ -1,6 +1,9 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 import { VitePWA } from 'vite-plugin-pwa';
+import { readFileSync } from 'node:fs';
+
+const appVersion: string = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')).version;
 
 // `BUILD_TARGET` discriminates between the two HuntFlow distribution
 // targets at compile time. See `src/lib/buildTarget.ts` for the full
@@ -14,7 +17,8 @@ export default defineConfig({
     // Inlined as a literal string at build time. Constants in
     // `$lib/buildTarget` derive `IS_APP` / `IS_WEB` booleans from this,
     // which Vite/esbuild then tree-shake throughout the bundle.
-    __BUILD_TARGET__: JSON.stringify(buildTarget)
+    __BUILD_TARGET__: JSON.stringify(buildTarget),
+    __APP_VERSION__: JSON.stringify(appVersion)
   },
   // Pre-bundle lazily imported deps so the dev server never triggers a
   // full-page "optimized dependencies changed" reload mid-session.

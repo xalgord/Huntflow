@@ -84,8 +84,8 @@ test.describe('core product workflows', () => {
     await page.getByRole('button', { name: 'Save Session' }).click();
     await expect(page.getByRole('dialog', { name: 'Session complete' })).toHaveCount(0);
 
-    await gotoAppRoute(page, `/targets/${seedIds.target}`);
-    await expect(page.getByText('2 completed sessions')).toBeVisible();
+    await gotoAppRoute(page, `/programs/${seedIds.target}#activity`);
+    await expect(page.getByRole('region', { name: 'Activity' })).toContainText('Confirmed replay with stale state token.');
     await consoleWatcher.assertClean();
   });
 

@@ -1,40 +1,45 @@
 <script lang="ts">
-  import { ExternalLink, HeartHandshake, Info } from 'lucide-svelte';
+  import { APP_VERSION } from '$lib/buildTarget';
+  import { ChevronRight, Github, Lock, MessageCircle } from 'lucide-svelte';
+
+  const REPO = 'https://github.com/xalgord/huntflow';
 </script>
 
-<section class="hf-card p-4">
-  <div class="flex items-start gap-3">
-    <div class="rounded-lg border border-primary-500/20 bg-primary-500/10 p-2 text-primary-400">
-      <Info size={24} aria-hidden="true" />
-    </div>
-    <div>
-      <h2 class="text-lg font-semibold text-zinc-100">About HuntFlow</h2>
-      <p class="mt-1 text-sm text-zinc-400">Version 1.0.0</p>
-    </div>
+<section class="hf-card overflow-hidden" aria-labelledby="about-heading">
+  <div class="px-4 pb-2 pt-4">
+    <h2 id="about-heading" class="hf-section-title">About</h2>
   </div>
-
-  <div class="mt-4 grid gap-3 lg:grid-cols-3">
-    <div class="rounded-lg border border-zinc-700 bg-zinc-900 p-3">
-      <h3 class="text-sm font-semibold text-zinc-100">What&apos;s New</h3>
-      <p class="mt-2 text-sm leading-6 text-zinc-400">
-        Offline sessions, target tracking, markdown notes, stats dashboard, and PWA install support.
-      </p>
-    </div>
-    <a
-      href="mailto:feedback@huntflow.local"
-      class="rounded-lg border border-zinc-700 bg-zinc-900 p-3 text-zinc-100 transition hover:border-primary-500/50 hover:bg-zinc-850"
-    >
-      <HeartHandshake size={20} class="text-primary-400" aria-hidden="true" />
-      <h3 class="mt-2 text-sm font-semibold">Feedback</h3>
-      <p class="mt-1 text-sm text-zinc-400">Send bug reports, workflow friction, or feature requests.</p>
-    </a>
-    <a
-      href="/manifest.json"
-      class="rounded-lg border border-zinc-700 bg-zinc-900 p-3 text-zinc-100 transition hover:border-primary-500/50 hover:bg-zinc-850"
-    >
-      <ExternalLink size={20} class="text-blue-400" aria-hidden="true" />
-      <h3 class="mt-2 text-sm font-semibold">Privacy</h3>
-      <p class="mt-1 text-sm text-zinc-400">All MVP data stays local in your browser unless you export it.</p>
-    </a>
-  </div>
+  <ul class="hf-list border-t-[0.5px] border-zinc-900">
+    <li class="hf-list-row justify-between">
+      <span class="text-zinc-100">HuntFlow</span>
+      <span class="text-xs text-zinc-500">Version {APP_VERSION}</span>
+    </li>
+    <li>
+      <a class="hf-list-row" href={`${REPO}/issues/new`} target="_blank" rel="noreferrer">
+        <MessageCircle size={17} class="text-blue-500" aria-hidden="true" />
+        <span class="min-w-0 flex-1">
+          <span class="block text-zinc-100">Send feedback</span>
+          <span class="block text-xs text-zinc-500">Report a bug or ask for a feature on GitHub</span>
+        </span>
+        <ChevronRight size={15} class="text-zinc-600" aria-hidden="true" />
+      </a>
+    </li>
+    <li>
+      <a class="hf-list-row" href={REPO} target="_blank" rel="noreferrer">
+        <Github size={17} class="text-zinc-400" aria-hidden="true" />
+        <span class="min-w-0 flex-1">
+          <span class="block text-zinc-100">Source code</span>
+          <span class="block text-xs text-zinc-500">Open source under the MIT license</span>
+        </span>
+        <ChevronRight size={15} class="text-zinc-600" aria-hidden="true" />
+      </a>
+    </li>
+    <li class="hf-list-row">
+      <Lock size={17} class="text-green-500" aria-hidden="true" />
+      <span class="min-w-0 flex-1">
+        <span class="block text-zinc-100">Privacy</span>
+        <span class="block text-xs text-zinc-500">Your workspace stays on this device unless you export it or turn on sync. No telemetry.</span>
+      </span>
+    </li>
+  </ul>
 </section>

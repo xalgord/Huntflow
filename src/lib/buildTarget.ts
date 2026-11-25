@@ -24,3 +24,7 @@ declare const __BUILD_TARGET__: 'web' | 'app';
 export const BUILD_TARGET: 'web' | 'app' = __BUILD_TARGET__;
 export const IS_APP = BUILD_TARGET === 'app';
 export const IS_WEB = BUILD_TARGET === 'web';
+
+declare const __APP_VERSION__: string;
+/** package.json version, inlined at build time. */
+export const APP_VERSION: string = __APP_VERSION__;

@@ -2,6 +2,8 @@
   import { goto } from '$app/navigation';
   import { page } from '$app/stores';
   import ImportSheet from '$lib/components/imports/ImportSheet.svelte';
+  import ProgramActivity from '$lib/components/programs/ProgramActivity.svelte';
+  import ProgramChecklists from '$lib/components/programs/ProgramChecklists.svelte';
   import TargetForm from '$lib/components/targets/TargetForm.svelte';
   import CopyButton from '$lib/components/workspace/CopyButton.svelte';
   import EmptyState from '$lib/components/workspace/EmptyState.svelte';
@@ -49,17 +51,22 @@
   } from 'lucide-svelte';
   import { onMount } from 'svelte';
 
-  type Tab = 'overview' | 'scope' | 'targets' | 'sessions' | 'notes' | 'findings' | 'payouts';
+  type Tab = 'overview' | 'scope' | 'targets' | 'checklists' | 'findings' | 'notes' | 'activity' | 'payouts';
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'overview', label: 'Overview' },
     { id: 'scope', label: 'Scope' },
     { id: 'targets', label: 'Targets' },
-    { id: 'sessions', label: 'Sessions' },
-    { id: 'notes', label: 'Notes' },
+    { id: 'checklists', label: 'Checklists' },
     { id: 'findings', label: 'Findings' },
+    { id: 'notes', label: 'Notes' },
+    { id: 'activity', label: 'Activity' },
     { id: 'payouts', label: 'Payouts' }
   ];
+
+  // Older links: #reports and #sessions folded into other tabs, and the
+  // retired /targets/:id pages redirect here with #methodology/#timeline.
+  const TAB_ALIASES: Record<string, Tab> = { reports: 'findings', sessions: 'activity', timeline: 'activity', methodology: 'checklists' };
 
   const statusPipeline: TargetStatus[] = ['recon', 'testing', 'reported', 'paid', 'closed', 'archived'];
 
@@ -69,20 +76,28 @@
   let notesDraft = '';
   let loadedProgramId = '';
 
-  onMount(async () => {
-    await Promise.all([
+  onMount(() => {
+    void Promise.all([
       targetStore.load(),
       reconAssetStore.load(),
       sessionStore.load(),
       noteStore.load(),
       submissionStore.load(),
       payoutStore.load()
-    ]);
-    // "#reports" predates drafts living alongside findings.
-    const hash = (location.hash === '#reports' ? 'findings' : location.hash.replace('#', '')) as Tab;
-    if (tabs.some((tab) => tab.id === hash)) activeTab = hash;
-    loaded = true;
+    ]).then(() => {
+      applyHash();
+      loaded = true;
+    });
+    // Links to another tab of this program (#activity…) don't remount.
+    window.addEventListener('hashchange', applyHash);
+    return () => window.removeEventListener('hashchange', applyHash);
   });
+
+  function applyHash(): void {
+    const raw = location.hash.replace('#', '');
+    const hash = (TAB_ALIASES[raw] ?? raw) as Tab;
+    if (tabs.some((tab) => tab.id === hash)) activeTab = hash;
+  }
 
   $: programId = $page.params.id;
   $: program = $targetStore.find((candidate) => candidate.id === programId);
@@ -219,6 +234,7 @@
             class="min-h-[40px] whitespace-nowrap rounded-lg px-3 text-sm font-medium transition {activeTab === tab.id
               ? 'bg-zinc-900 text-zinc-50'
               : 'text-zinc-500 hover:bg-zinc-950 hover:text-zinc-200'}"
+            aria-current={activeTab === tab.id ? 'page' : undefined}
             on:click={() => selectTab(tab.id)}
           >
             {tab.label}
@@ -361,23 +377,10 @@
         {:else}
           <EmptyState icon={Network} title="No targets yet" description="Import scope or recon output, or add targets by hand." actionLabel="Import Targets" href={`/targets?program=${program.id}&import=1`} />
         {/if}
-      {:else if activeTab === 'sessions'}
-        {#if programSessions.length > 0}
-          <section class="hf-card divide-y divide-zinc-900 overflow-hidden">
-            {#each programSessions as session}
-              <a href="/sessions" class="grid gap-2 px-4 py-3 transition hover:bg-zinc-950 sm:grid-cols-[1fr_120px_120px] sm:items-center">
-                <span>
-                  <span class="block text-sm font-medium text-zinc-100">{formatDate(session.startedAt)}</span>
-                  <span class="text-xs text-zinc-500">{session.quickNote ?? 'No session note'}</span>
-                </span>
-                <StatusBadge label={session.status} tone={statusTone(session.status)} />
-                <span class="font-mono text-sm text-zinc-300">{formatDuration(session.durationActual)}</span>
-              </a>
-            {/each}
-          </section>
-        {:else}
-          <EmptyState icon={Timer} title="No hunt sessions yet" description="Start a focused session when you begin testing a target." actionLabel="Start Session" href={`/timer?target=${program.id}`} />
-        {/if}
+      {:else if activeTab === 'checklists'}
+        <ProgramChecklists programId={program.id} />
+      {:else if activeTab === 'activity'}
+        <ProgramActivity programId={program.id} />
       {:else if activeTab === 'notes'}
         {#if programNotes.length > 0}
           <section class="grid gap-3 lg:grid-cols-2">
