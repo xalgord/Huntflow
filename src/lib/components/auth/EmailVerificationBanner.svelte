@@ -137,8 +137,8 @@
     border: 1px solid rgba(251, 191, 36, 0.28); /* amber-400 @ 28% */
     background-color: rgba(120, 53, 15, 0.18); /* amber-900 @ 18% over zinc-950 */
     padding: 0.75rem 1rem;
-    color: #fef3c7; /* amber-50 */
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    color: var(--hf-text-amber); /* amber-50 */
+    box-shadow: inset 0 1px 0 var(--hf-hairline);
   }
 
   .ev-banner__icon {
@@ -147,7 +147,7 @@
     align-items: center;
     justify-content: center;
     margin-top: 0.125rem;
-    color: #fbbf24; /* amber-400 */
+    color: var(--hf-text-amber); /* amber-400 */
   }
 
   .ev-banner__copy {
@@ -162,28 +162,28 @@
     font-size: 0.8125rem;
     font-weight: 600;
     letter-spacing: 0.005em;
-    color: #fde68a; /* amber-200 */
+    color: var(--hf-text-amber); /* amber-200 */
     margin: 0;
   }
 
   .ev-banner__body {
     font-size: 0.8125rem;
     line-height: 1.45;
-    color: #fef3c7; /* amber-50 */
+    color: var(--hf-text-amber); /* amber-50 */
     margin: 0;
   }
 
   .ev-banner__email {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
     font-size: 0.78125rem;
-    color: #fff7ed;
+    color: var(--hf-text-amber);
     word-break: break-all;
   }
 
   .ev-banner__error {
     display: block;
     margin-top: 0.25rem;
-    color: #fecaca; /* rose-200 — error stands out from the amber base */
+    color: var(--hf-text-red); /* rose-200 — error stands out from the amber base */
   }
 
   .ev-banner__actions {
@@ -201,7 +201,7 @@
     border-radius: 0.5rem;
     border: 1px solid rgba(251, 191, 36, 0.45);
     background-color: rgba(251, 191, 36, 0.12);
-    color: #fde68a;
+    color: var(--hf-text-amber);
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
@@ -220,7 +220,7 @@
 
   .ev-banner__resend:focus-visible {
     outline: none;
-    border-color: #fbbf24;
+    border-color: var(--hf-text-amber);
     box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.45);
   }
 
@@ -238,7 +238,7 @@
     border-radius: 0.5rem;
     border: 1px solid rgba(74, 222, 128, 0.35); /* green-400 @ 35% */
     background-color: rgba(34, 197, 94, 0.12); /* green-500 @ 12% */
-    color: #bbf7d0; /* green-200 */
+    color: var(--hf-text-green); /* green-200 */
     font-size: 0.8125rem;
     font-weight: 500;
   }

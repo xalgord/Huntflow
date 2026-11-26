@@ -240,11 +240,11 @@
   /* ----------------------------------------------------------------------- */
   .sub-card {
     border-radius: 0.875rem;
-    border: 1px solid #27272a; /* zinc-800 */
-    background-color: #0e1612;
+    border: 1px solid var(--hf-hairline-strong); /* zinc-800 */
+    background-color: var(--hf-surface);
     padding: 1.25rem;
-    color: #fafafa; /* zinc-50 */
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    color: hsl(var(--foreground)); /* zinc-50 */
+    box-shadow: inset 0 1px 0 var(--hf-hairline);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -267,14 +267,14 @@
     font-size: 0.9375rem;
     font-weight: 600;
     letter-spacing: 0.005em;
-    color: #fafafa;
+    color: hsl(var(--foreground));
   }
 
   .sub-card__subtitle {
     margin: 0;
     font-size: 0.8125rem;
     line-height: 1.5;
-    color: #a1a1aa; /* zinc-400 — clears WCAG AA on `#0e1612` at ~7:1. */
+    color: hsl(var(--muted-foreground)); /* zinc-400 — clears WCAG AA on `#0e1612` at ~7:1. */
   }
 
   /* ----------------------------------------------------------------------- */
@@ -292,7 +292,7 @@
     border-radius: 9999px;
     background-color: rgba(225, 29, 52, 0.14);
     border: 1px solid rgba(225, 29, 52, 0.4);
-    color: #fda4af; /* green-300 */
+    color: var(--hf-text-red); /* green-300 */
     font-size: 0.6875rem;
     font-weight: 600;
     letter-spacing: 0.04em;
@@ -315,7 +315,7 @@
   .sub-card__error {
     margin: 0;
     font-size: 0.8125rem;
-    color: #fecaca; /* rose-200 */
+    color: var(--hf-text-red); /* rose-200 */
   }
 
   /* ----------------------------------------------------------------------- */
@@ -337,7 +337,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06),
+    box-shadow: 0 1px 0 var(--hf-hairline),
       0 6px 18px rgba(225, 29, 52, 0.18);
     transition: background-color 150ms ease, transform 150ms ease,
       box-shadow 150ms ease;

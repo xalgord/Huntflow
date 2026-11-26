@@ -134,7 +134,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: #ffffff;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 24px rgba(225, 29, 52, 0.18);
+    box-shadow: 0 1px 0 var(--hf-hairline), 0 8px 24px rgba(225, 29, 52, 0.18);
     transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
     cursor: pointer;
   }

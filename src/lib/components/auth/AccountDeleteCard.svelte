@@ -368,8 +368,8 @@
     border: 1px solid rgba(244, 63, 94, 0.28); /* rose-500 @ 28% */
     background-color: rgba(76, 5, 25, 0.18); /* rose-950 @ 18% over zinc-950 */
     padding: 1.25rem;
-    color: #fafafa; /* zinc-50 */
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    color: hsl(var(--foreground)); /* zinc-50 */
+    box-shadow: inset 0 1px 0 var(--hf-hairline);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -390,7 +390,7 @@
     height: 32px;
     border-radius: 9999px;
     background-color: rgba(244, 63, 94, 0.14); /* rose-500 @ 14% */
-    color: #fda4af; /* rose-300 */
+    color: var(--hf-text-red); /* rose-300 */
     margin-top: 0.125rem;
   }
 
@@ -399,14 +399,14 @@
     font-size: 0.9375rem;
     font-weight: 600;
     letter-spacing: 0.005em;
-    color: #fff1f2; /* rose-50 */
+    color: var(--hf-text-red);
   }
 
   .delete-card__subtitle {
     margin: 0.125rem 0 0;
     font-size: 0.8125rem;
     line-height: 1.45;
-    color: #fecdd3; /* rose-200 */
+    color: var(--hf-text-red); /* rose-200 */
   }
 
   /* ----------------------------------------------------------------------- */
@@ -424,7 +424,7 @@
     margin: 0;
     font-size: 0.8125rem;
     line-height: 1.45;
-    color: #fecaca; /* rose-200 */
+    color: var(--hf-text-red); /* rose-200 */
     flex: 1 1 12rem;
     min-width: 0;
   }
@@ -452,7 +452,7 @@
     height: 28px;
     border-radius: 9999px;
     background-color: rgba(244, 63, 94, 0.18);
-    color: #fecaca;
+    color: var(--hf-text-red);
     margin-top: 0.125rem;
   }
 
@@ -468,14 +468,14 @@
     font-size: 0.875rem;
     font-weight: 600;
     line-height: 1.45;
-    color: #fff1f2;
+    color: var(--hf-text-red);
   }
 
   .delete-card__panel-body {
     margin: 0;
     font-size: 0.8125rem;
     line-height: 1.5;
-    color: #fecdd3;
+    color: var(--hf-text-red);
   }
 
   .delete-card__field {
@@ -486,7 +486,7 @@
   .delete-card__error {
     margin: 0.375rem 0 0;
     font-size: 0.8125rem;
-    color: #fecaca;
+    color: var(--hf-text-red);
   }
 
   .delete-card__actions {
@@ -520,7 +520,7 @@
     font-size: 0.8125rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06),
+    box-shadow: 0 1px 0 var(--hf-hairline),
       0 6px 18px rgba(225, 29, 72, 0.25);
     transition: background-color 150ms ease, border-color 150ms ease,
       transform 150ms ease, box-shadow 150ms ease;
@@ -537,7 +537,7 @@
 
   .danger-btn:focus-visible {
     outline: none;
-    border-color: #fb7185; /* rose-400 */
+    border-color: var(--hf-text-red); /* rose-400 */
     box-shadow: 0 0 0 2px rgba(251, 113, 133, 0.55),
       0 6px 18px rgba(225, 29, 72, 0.3);
   }
@@ -556,9 +556,9 @@
     min-height: 36px;
     padding: 0.5rem 0.875rem;
     border-radius: 0.5rem;
-    border: 1px solid #27272a; /* zinc-800 */
-    background-color: #0e1612;
-    color: #d4d4d8; /* zinc-300 */
+    border: 1px solid var(--hf-hairline-strong); /* zinc-800 */
+    background-color: var(--hf-surface);
+    color: hsl(var(--foreground) / 0.85); /* zinc-300 */
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
@@ -567,9 +567,9 @@
   }
 
   .secondary-btn:hover:not(:disabled) {
-    border-color: #3f3f46;
-    background-color: #131c17;
-    color: #fafafa;
+    border-color: var(--hf-hairline-strong);
+    background-color: var(--hf-surface-elevated);
+    color: hsl(var(--foreground));
   }
 
   .secondary-btn:active:not(:disabled) {

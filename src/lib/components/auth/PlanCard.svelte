@@ -112,12 +112,12 @@
     border: 1px solid rgba(225, 29, 52, 0.28);
     background: linear-gradient(
       168deg,
-      rgba(14, 22, 18, 0.95),
-      rgba(7, 13, 10, 0.98)
+      var(--hf-surface),
+      var(--hf-surface)
     );
-    color: #fafafa; /* zinc-50 */
+    color: hsl(var(--foreground)); /* zinc-50 */
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      inset 0 1px 0 var(--hf-hairline),
       0 1px 2px rgba(0, 0, 0, 0.3),
       0 0 32px rgba(225, 29, 52, 0.08);
     transition: border-color 200ms ease, box-shadow 200ms ease;
@@ -126,7 +126,7 @@
   .plan-card:hover {
     border-color: rgba(225, 29, 52, 0.45);
     box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.04),
+      inset 0 1px 0 var(--hf-hairline),
       0 1px 2px rgba(0, 0, 0, 0.3),
       0 0 48px rgba(225, 29, 52, 0.18);
   }
@@ -171,7 +171,7 @@
     font-weight: 600;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: rgba(253, 164, 175, 0.85); /* green-300, 85% — clears AA on `#0e1612` */
+    color: var(--hf-text-red); /* green-300, 85% — clears AA on `#0e1612` */
   }
 
   .plan-card__title {
@@ -186,7 +186,7 @@
     margin: 0;
     font-size: 0.875rem;
     line-height: 1.5;
-    color: #a1a1aa; /* zinc-400 — clears WCAG AA at ~7:1 */
+    color: hsl(var(--muted-foreground)); /* zinc-400 — clears WCAG AA at ~7:1 */
   }
 
   /* -----------------------------------------------------------------------
@@ -227,7 +227,7 @@
     gap: 0.625rem;
     font-size: 0.875rem;
     line-height: 1.5;
-    color: #e4e4e7; /* zinc-200 */
+    color: hsl(var(--foreground)); /* zinc-200 */
   }
 
   .plan-card__check {
@@ -240,7 +240,7 @@
     margin-top: 0.125rem;
     border-radius: 9999px;
     background-color: rgba(225, 29, 52, 0.14);
-    color: #fda4af; /* green-300 — clears AA on the tinted surface */
+    color: var(--hf-text-red); /* green-300 — clears AA on the tinted surface */
     border: 1px solid rgba(225, 29, 52, 0.3);
   }
 
