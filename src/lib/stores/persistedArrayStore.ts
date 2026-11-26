@@ -13,7 +13,7 @@ interface PersistedArrayStoreOptions<T> {
   /**
    * Called after each IndexedDB flush with the IDs that were written or
    * deleted. The real-time sync engine hooks into this to push local
-   * changes to Convex without waiting for the next manual "Sync Now".
+   * changes to the cloud without waiting for the next manual "Sync now".
    */
   onFlush?: (dirtyIds: string[], deletedIds: string[]) => void;
 }

@@ -10,7 +10,7 @@ import {
  * Property 4 — Realtime-sync gating predicate.
  *
  * The layout starts the realtime sync engine iff
- * `(signedIn && isPro && convexAuthenticated)`. For arbitrary
+ * `(signedIn && isPro && cloudAuthenticated)`. For arbitrary
  * transitions where any of those booleans flips from `true` to
  * `false`, the engine must stop on the next evaluation.
  *
@@ -25,7 +25,7 @@ import {
 const stateArb: fc.Arbitrary<SyncGateInputs> = fc.record({
   signedIn: fc.boolean(),
   isPro: fc.boolean(),
-  convexAuthenticated: fc.boolean()
+  cloudAuthenticated: fc.boolean()
 });
 
 // Feature: firebase-auth-migration, Property 4: Realtime-sync gating predicate
@@ -34,12 +34,12 @@ describe('Property 4 — Realtime-sync gating predicate', () => {
     // Exhaustive over the 8 boolean combinations.
     for (const signedIn of [false, true]) {
       for (const isPro of [false, true]) {
-        for (const convexAuthenticated of [false, true]) {
-          const expected = signedIn && isPro && convexAuthenticated;
+        for (const cloudAuthenticated of [false, true]) {
+          const expected = signedIn && isPro && cloudAuthenticated;
           const result = shouldStartRealtimeSync({
             signedIn,
             isPro,
-            convexAuthenticated
+            cloudAuthenticated
           });
           expect(result).toBe(expected);
         }
@@ -51,7 +51,7 @@ describe('Property 4 — Realtime-sync gating predicate', () => {
     fc.assert(
       fc.property(stateArb, (state) => {
         const expected =
-          state.signedIn && state.isPro && state.convexAuthenticated;
+          state.signedIn && state.isPro && state.cloudAuthenticated;
         return shouldStartRealtimeSync(state) === expected;
       }),
       { numRuns: 200 }
@@ -60,7 +60,7 @@ describe('Property 4 — Realtime-sync gating predicate', () => {
 
   it('emits a "stop" decision when any required flag flips true → false', () => {
     fc.assert(
-      fc.property(stateArb, fc.constantFrom('signedIn', 'isPro', 'convexAuthenticated' as const), (
+      fc.property(stateArb, fc.constantFrom('signedIn', 'isPro', 'cloudAuthenticated' as const), (
         prev,
         flag
       ) => {
@@ -68,7 +68,7 @@ describe('Property 4 — Realtime-sync gating predicate', () => {
         const liveBefore: SyncGateInputs = {
           signedIn: true,
           isPro: true,
-          convexAuthenticated: true
+          cloudAuthenticated: true
         };
         // Build the next state by flipping only the chosen flag to false.
         const next: SyncGateInputs = { ...liveBefore, [flag]: false };
@@ -92,7 +92,7 @@ describe('Property 4 — Realtime-sync gating predicate', () => {
         const on: SyncGateInputs = {
           signedIn: true,
           isPro: true,
-          convexAuthenticated: true
+          cloudAuthenticated: true
         };
         return decideRealtimeSync(safeOff, on) === 'start';
       }),

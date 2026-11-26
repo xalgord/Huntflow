@@ -2,7 +2,11 @@
 src/
 static/
 scripts/
-convex/
+server/
+functions/
+migrations/
+wrangler.toml
+.dev.vars
 tests/
 e2e/
 

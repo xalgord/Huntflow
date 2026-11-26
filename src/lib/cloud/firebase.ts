@@ -3,7 +3,7 @@
  *
  * Implementation (task 3.1): replaces the Clerk module wholesale. Owns
  * the canonical auth store, every public sign-in / sign-up / sign-out
- * surface, the Convex token getter, and the Pro-entitlement refresh.
+ * surface, the cloud API token provider, and the Pro-entitlement refresh.
  *
  * Public functions never mutate `authStore` directly (with the single
  * exception of `signOut`, which has to clear the store synchronously
@@ -19,7 +19,6 @@
 
 import { browser } from '$app/environment';
 import { writable, get, type Writable } from 'svelte/store';
-import { anyApi } from 'convex/server';
 import {
   initializeApp,
   getApps,
@@ -52,7 +51,7 @@ import {
   type UserCredential
 } from 'firebase/auth';
 
-import { configureConvexAuth, getConvexClient, resetConvexAuth } from './convex';
+import { CloudApiError, clearCloudCopy, cloudConfigured, fetchCloudAccount, setCloudTokenProvider } from './api';
 
 // Re-export so downstream modules can refer to the type without
 // pulling firebase/app in directly.
@@ -68,7 +67,8 @@ export interface AuthState {
   /** Initial auth-state hydration in flight. */
   loading: boolean;
   signedIn: boolean;
-  convexAuthenticated: boolean;
+  /** The HuntFlow cloud API has accepted this user's ID token. */
+  cloudAuthenticated: boolean;
   /** Firebase uid (claim `sub`). */
   uid: string;
   email: string;
@@ -77,7 +77,7 @@ export interface AuthState {
   photoURL: string;
   /** e.g. ['password'], ['google.com'], ['github.com']. */
   providerIds: string[];
-  /** Sourced from the Convex `entitlements` query. */
+  /** Sourced from the cloud API (`GET /api/me`), written by the Dodo webhook. */
   isPro: boolean;
   /** Last init / network / auth error (empty string when none). */
   error: string;
@@ -114,7 +114,7 @@ const initialAuthState: AuthState = {
   configured: firebaseConfigured,
   loading: firebaseConfigured,
   signedIn: false,
-  convexAuthenticated: false,
+  cloudAuthenticated: false,
   uid: '',
   email: '',
   emailVerified: false,
@@ -134,7 +134,6 @@ export const authStore: Writable<AuthState> = writable<AuthState>(initialAuthSta
 let firebaseApp: FirebaseApp | null = null;
 let firebaseAuth: Auth | null = null;
 let initPromise: Promise<FirebaseApp | null> | null = null;
-let convexAuthWired = false;
 let listenersAttached = false;
 
 function deriveDisplayName(user: User): string {
@@ -181,8 +180,9 @@ function applyUserToStore(user: User | null, patch: Partial<AuthState> = {}): vo
 // ---------------------------------------------------------------------------
 
 /**
- * Initialize the Firebase app, register auth listeners, wire Convex
- * auth, and resolve once the initial auth state has hydrated.
+ * Initialize the Firebase app, register auth listeners, hand the cloud
+ * API its token provider, and resolve once the initial auth state has
+ * hydrated.
  *
  * Idempotent: every call after the first returns the same promise.
  * Returns `null` when SSR or when `VITE_FIREBASE_*` env vars are missing
@@ -211,46 +211,32 @@ export async function initFirebase(): Promise<FirebaseApp | null> {
         appId: firebaseAppId
       });
       firebaseAuth = getAuth(firebaseApp);
+      setCloudTokenProvider(getFirebaseIdToken);
 
       if (!listenersAttached) {
         // onAuthStateChanged: keeps `signedIn`, `uid`, profile fields, etc.
         // in sync. It also fires once at registration with the persisted
         // user (if any), which closes the initial `loading: true` state.
         onAuthStateChanged(firebaseAuth, (user) => {
-          applyUserToStore(user, { loading: false, error: '' });
-          // Wire Convex auth as soon as we know the auth state. The
-          // token getter handles signed-out by returning null.
-          if (!convexAuthWired) {
-            try {
-              configureConvexAuth(
-                async ({ forceRefreshToken }) => getFirebaseIdToken(forceRefreshToken),
-                (convexAuthenticated) => {
-                  authStore.update((state) => ({ ...state, convexAuthenticated }));
-                }
-              );
-              convexAuthWired = true;
-            } catch (err) {
-              console.warn('[firebase] configureConvexAuth failed:', err);
-            }
-          }
+          applyUserToStore(user, {
+            loading: false,
+            error: '',
+            // Re-established by refreshProEntitlement once the API
+            // accepts this user's token.
+            ...(user ? {} : { cloudAuthenticated: false, isPro: false })
+          });
           // Refresh the entitlement on every sign-in / sign-out so the
-          // store reflects the canonical Convex value. Signed-out
-          // refreshes simply set `isPro: false`.
+          // store reflects the server's value. Signed-out refreshes
+          // simply set `isPro: false`.
           void refreshProEntitlement();
         });
 
-        // onIdTokenChanged: fires whenever the ID token rotates (every
-        // ~hour) or after a manual `getIdToken(true)`. We use it to
-        // force Convex to re-auth with the fresh token; Convex's
-        // setAuth wrapper already calls our token getter on each
-        // forceRefresh, so just nudging it with a no-op refresh is
-        // enough — but we explicitly trigger one so Convex picks it up
-        // immediately rather than waiting for its own refresh cadence.
+        // onIdTokenChanged fires when the ID token rotates (about
+        // hourly). The API client asks for a token per request, and
+        // retries once with a forced refresh on 401, so there is
+        // nothing to re-wire here; we only keep the SDK's cache warm.
         onIdTokenChanged(firebaseAuth, (user) => {
           if (!user) return;
-          // Touch the auth store so Convex's setAuth callback re-runs
-          // with the latest token. The cheapest way to do that is to
-          // call getIdToken(true) directly; if it succeeds we're done.
           void user.getIdToken(false).catch(() => undefined);
         });
 
@@ -422,11 +408,10 @@ export async function updateDisplayName(name: string): Promise<void> {
  * `auth/requires-recent-login`, the original error is propagated so
  * the UI (`AccountDeleteCard`) can prompt for re-auth.
  *
- * Per design (greenfield mode) the current Convex per-user rows are
- * cleared via `clearCloud` before the Firebase user is deleted. If
- * that call fails (Convex unreachable, etc.) the orphaning is
- * acceptable — the data is keyed by the soon-to-be-deleted uid and
- * cannot be re-claimed by a future user.
+ * The user's cloud copy is wiped via `POST /api/sync/clear` before the
+ * Firebase user is deleted. If that call fails (offline, API down) the
+ * orphaning is acceptable — the data is keyed by the soon-to-be-deleted
+ * uid and cannot be re-claimed by a future user.
  */
 export async function deleteAccount(): Promise<void> {
   const auth = await requireAuth();
@@ -435,14 +420,10 @@ export async function deleteAccount(): Promise<void> {
     throw new Error('No signed-in user.');
   }
 
-  // Best-effort Convex cleanup before the auth account vanishes; if
-  // we wait until after deleteUser() the ID token is gone and the
-  // mutation will fail with `Unauthenticated`.
+  // Best-effort cloud cleanup before the auth account vanishes; after
+  // deleteUser() the ID token is gone and the call would be rejected.
   try {
-    const convex = getConvexClient();
-    if (convex) {
-      await convex.mutation(anyApi.sync.clearCloud, {});
-    }
+    if (cloudConfigured) await clearCloudCopy();
   } catch (err) {
     console.warn('[firebase] clearCloud before deleteAccount failed:', err);
   }
@@ -457,7 +438,6 @@ export async function deleteAccount(): Promise<void> {
   }
 
   await deleteUser(user);
-  resetConvexAuth();
   // The onAuthStateChanged listener will run once the SDK fires
   // signed-out, but reset the store now so the UI doesn't briefly
   // display the just-deleted user.
@@ -475,7 +455,6 @@ export async function signOut(): Promise<void> {
     // realtimeSync may not be loaded yet.
   }
   await fbSignOut(auth);
-  resetConvexAuth();
   authStore.set({ ...initialAuthState, loading: false });
   clearNoteDrafts();
 }
@@ -541,21 +520,20 @@ export async function reauthenticate(password?: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// Token surface for Convex
+// Token surface for the cloud API
 // ---------------------------------------------------------------------------
 
 /**
  * Return a fresh Firebase ID token for the current user, or `null` when
- * signed-out / not yet hydrated. Convex's setAuth callback receives a
- * `forceRefreshToken` flag which we pass straight through.
+ * signed-out / not yet hydrated. The cloud API client passes
+ * `forceRefresh` after a 401 so a just-rotated token is picked up.
  */
 export async function getFirebaseIdToken(
   forceRefresh?: boolean
 ): Promise<string | null> {
   if (!browser) return null;
-  // Don't trigger initFirebase from the token getter — the token
-  // getter is called from inside Convex's setAuth, which is itself
-  // installed during init. Reading firebaseAuth directly avoids the
+  // Don't trigger initFirebase from the token getter — it is handed to
+  // the API client during init. Reading firebaseAuth directly avoids
   // re-entrancy and returns null cleanly when init hasn't run yet.
   const auth = firebaseAuth;
   if (!auth?.currentUser) return null;
@@ -572,37 +550,35 @@ export async function getFirebaseIdToken(
 // ---------------------------------------------------------------------------
 
 /**
- * Refresh `authStore.isPro` by querying Convex `entitlements.getMine`.
+ * Refresh `authStore.isPro` (and `cloudAuthenticated`) from the cloud
+ * API's `GET /api/me`.
  *
- * Returns silently and leaves `isPro` unchanged when:
- *   - the user is signed out (forces `isPro: false` instead),
- *   - Convex is unreachable (network error, missing client).
+ *   - Signed out → `isPro: false`, `cloudAuthenticated: false`.
+ *   - 401 from the API → `cloudAuthenticated: false` (token rejected).
+ *   - Network error / API down → leave both unchanged. The sync engine
+ *     re-checks before every push, and the server enforces Pro on every
+ *     write, so a stale `true` can't unlock anything.
  *
- * The Convex query itself returns `null` when the user has no row,
- * which we map to `isPro: false`. The webhook handler in
- * `convex/http.ts` is the single writer of this row.
+ * The Dodo webhook (`/api/webhooks/dodo`) is the only writer of the
+ * entitlement; the browser never writes it.
  */
 export async function refreshProEntitlement(): Promise<void> {
   if (!browser) return;
   const state = get(authStore);
   if (!state.signedIn) {
-    authStore.update((s) => ({ ...s, isPro: false }));
+    authStore.update((s) => ({ ...s, isPro: false, cloudAuthenticated: false }));
     return;
   }
-  const convex = getConvexClient();
-  if (!convex) return;
+  if (!cloudConfigured) return;
   try {
-    // anyApi keeps the call provider-agnostic in TS; the real runtime
-    // path is `entitlements.getMine` in `convex/entitlements.ts`.
-    const row = (await convex.query(anyApi.entitlements.getMine, {})) as
-      | { isPro?: boolean }
-      | null;
-    const isPro = Boolean(row?.isPro);
-    authStore.update((s) => ({ ...s, isPro }));
+    const account = await fetchCloudAccount();
+    // Ignore a late answer for a user who has since signed out/switched.
+    if (get(authStore).uid !== account.uid) return;
+    authStore.update((s) => ({ ...s, isPro: Boolean(account.isPro), cloudAuthenticated: true }));
   } catch (err) {
-    // Leave isPro at its current value if Convex is unreachable. The
-    // sync engine's gate re-checks before each push so a temporary
-    // failure here doesn't unlock cloud sync for a non-Pro user.
+    if (err instanceof CloudApiError && err.status === 401) {
+      authStore.update((s) => ({ ...s, cloudAuthenticated: false }));
+    }
     console.warn('[firebase] refreshProEntitlement failed:', err);
   }
 }

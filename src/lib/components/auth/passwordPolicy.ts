@@ -16,7 +16,7 @@
  * straightforward reference predicate, which is what Wave 6 Property 1
  * exercises.
  *
- * The module is deliberately decoupled from Firebase / Svelte / Convex
+ * The module is deliberately decoupled from Firebase / Svelte / the cloud API
  * so the test harness can drive it deterministically across thousands
  * of inputs.
  *

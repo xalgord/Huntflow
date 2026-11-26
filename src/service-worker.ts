@@ -93,7 +93,12 @@ sw.addEventListener('fetch', (event) => {
   const { request } = event;
 
   if (request.method !== 'GET') return;
-  if (new URL(request.url).origin !== sw.location.origin) return;
+  const url = new URL(request.url);
+  if (url.origin !== sw.location.origin) return;
+  // API responses (cloud sync, account, evidence downloads, the local
+  // CLI's inbox/backup endpoints) are live data: never serve them from
+  // the cache, and never write them into it.
+  if (url.pathname === '/api' || url.pathname.startsWith('/api/')) return;
 
   if (isDocumentRequest(request) || isMutableStaticAsset(request)) {
     event.respondWith(networkFirst(request));

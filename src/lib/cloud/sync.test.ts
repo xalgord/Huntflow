@@ -3,7 +3,7 @@ import { mergeItems, normalizeRemoteItem, type SyncItem } from './syncMerge';
 
 /**
  * Pure-logic tests for the sync merge algorithm. These deliberately
- * avoid touching IndexedDB, Convex, or the Svelte stores — `mergeItems`
+ * avoid touching IndexedDB, the network, or the Svelte stores — `mergeItems`
  * is the kernel of last-writer-wins reconciliation and tombstone
  * handling, and that is what the rest of the sync engine depends on.
  *

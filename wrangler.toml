@@ -1,0 +1,30 @@
+# Cloudflare Pages project for huntflow.xalgorix.com.
+#
+# Static app: `build/` (SvelteKit adapter-static).
+# API:        `functions/api/[[path]].ts` → `server/router.ts`.
+#
+# Secrets are not in this file. Set them once per project with:
+#   npx wrangler pages secret put DODO_API_KEY --project-name huntflow
+#   npx wrangler pages secret put DODO_WEBHOOK_SIGNING_SECRET --project-name huntflow
+#   npx wrangler pages secret put RESEND_API_KEY --project-name huntflow
+#
+# Schema changes: add a file under migrations/ and run
+#   npx wrangler d1 migrations apply huntflow --remote
+name = "huntflow"
+pages_build_output_dir = "build"
+compatibility_date = "2026-11-01"
+
+[vars]
+FIREBASE_PROJECT_ID = "huntflow-prod"
+DODO_API_BASE_URL = "https://test.dodopayments.com"
+DODO_PRO_PRODUCT_ID = "pdt_0NfcnbQY88BNCsQnX50wz"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "huntflow"
+database_id = "86abe797-811f-46b3-a04c-f712720cff8e"
+migrations_dir = "migrations"
+
+[[r2_buckets]]
+binding = "EVIDENCE"
+bucket_name = "huntflow-evidence"

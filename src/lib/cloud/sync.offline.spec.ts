@@ -5,25 +5,25 @@
  * stores executed while `authStore.signedIn === false`, every
  * operation must be reflected in the persistent layer (IndexedDB in
  * production, an in-memory mock here) after the next flush, and the
- * Convex client's mutation-call count must remain zero.
+ * cloud API client's write-call count must remain zero.
  *
  * We test this against the same `createPersistedArrayStore` factory
  * the live stores use, with two test doubles:
  *
  *   - A `PersistedArrayDB` whose `put` / `putBatch` / `delete` write
  *     into a `Map<string, T>` (a faithful in-memory IndexedDB).
- *   - A `MockConvexClient` that records every mutation call. The real
+ *   - A `MockCloudClient` that records every mutation call. The real
  *     `realtimeSync` engine is gated on `signedIn && isPro &&
- *     convexAuthenticated` (Property 4) — when those are false, the
+ *     cloudAuthenticated` (Property 4) — when those are false, the
  *     gate keeps `startRealtimeSync` from ever attaching the
- *     `onFlush` hook that pushes to Convex. Property 8 is the
+ *     `onFlush` hook that pushes to the cloud API. Property 8 is the
  *     downstream guarantee: no engine attached → no mutation count
  *     bump, regardless of how many local edits the user makes.
  *
  * We don't import the real `realtimeSync` here because it touches
  * many other modules. Instead we assert the contract directly:
  * `signedIn === false` ⇒ the test never installs an `onFlush` hook
- * that contacts Convex, so the Convex mutation count is provably
+ * that contacts the cloud API, so the cloud API write count is provably
  * zero by construction.
  *
  * Validates: Property 8, Requirement 11.1
@@ -81,10 +81,10 @@ function buildMemoryDb() {
   };
 }
 
-// Mock Convex client with a mutation counter. The realtimeSync engine
+// Mock cloud API client with a mutation counter. The realtimeSync engine
 // only ever invokes mutations through this counter; in our offline
 // scenario it is never invoked.
-function buildMockConvex() {
+function buildMockCloud() {
   let mutationCount = 0;
   return {
     mutation(): Promise<unknown> {
@@ -139,30 +139,30 @@ function applyToOracle(op: Op, oracle: Map<string, Entity>): void {
 
 // Feature: firebase-auth-migration, Property 8: Offline-first invariant is preserved
 describe('Property 8 — Offline-first invariant is preserved', () => {
-  it('every CRUD op is reflected in the persistent store, and Convex mutations stay at zero', async () => {
+  it('every CRUD op is reflected in the persistent store, and cloud API writes stay at zero', async () => {
     await fc.assert(
       fc.asyncProperty(opsArb, async (ops) => {
         // Simulate the offline auth state. The persistedArrayStore
         // doesn't read this directly, but we assert the contract: any
         // realtime-sync engine that gates on `signedIn` (per Property
-        // 4) won't install the onFlush hook, so the Convex client
+        // 4) won't install the onFlush hook, so the cloud API client
         // never sees a mutation.
         const authStore = writable({ signedIn: false });
         const { db, snapshot, putCount, deleteCount } = buildMemoryDb();
-        const convex = buildMockConvex();
+        const cloud = buildMockCloud();
         const store = createPersistedArrayStore<Entity>(db);
 
         // Key contract: while signedIn is false, NO onFlush hook is
         // installed. realtimeSync.startRealtimeSync is the only caller
-        // of `setOnFlush` that wires Convex pushes; we deliberately do
+        // of `setOnFlush` that wires cloud pushes; we deliberately do
         // not call startRealtimeSync here, mirroring what the layout's
         // gating predicate would do for the offline case.
         if (get(authStore).signedIn) {
           // Defensive — should never enter this branch under the
-          // generator; if it did, hooking onFlush to convex.mutation
+          // generator; if it did, hooking onFlush to cloud.mutation
           // is what realtimeSync would do.
           store.setOnFlush(() => {
-            void convex.mutation();
+            void cloud.mutation();
           });
         }
 
@@ -201,8 +201,8 @@ describe('Property 8 — Offline-first invariant is preserved', () => {
         const persistentWriteCount = putCount() + deleteCount();
         if (ops.length > 0 && persistentWriteCount === 0) return false;
 
-        // Crucial: Convex mutation count remains zero throughout.
-        if (convex.mutationCount() !== 0) return false;
+        // Crucial: cloud API write count remains zero throughout.
+        if (cloud.mutationCount() !== 0) return false;
 
         return true;
       }),
@@ -213,7 +213,7 @@ describe('Property 8 — Offline-first invariant is preserved', () => {
   it('a single put/delete cycle produces exactly the expected persistent state', async () => {
     const authStore = writable({ signedIn: false });
     const { db, snapshot } = buildMemoryDb();
-    const convex = buildMockConvex();
+    const cloud = buildMockCloud();
     const store = createPersistedArrayStore<Entity>(db);
     expect(get(authStore).signedIn).toBe(false);
     await store.load();
@@ -226,6 +226,6 @@ describe('Property 8 — Offline-first invariant is preserved', () => {
     await store.persistNow();
     expect(snapshot().has('a')).toBe(false);
 
-    expect(convex.mutationCount()).toBe(0);
+    expect(cloud.mutationCount()).toBe(0);
   });
 });

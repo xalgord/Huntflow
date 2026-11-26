@@ -11,6 +11,7 @@
    *                                avatar, verification indicator.
    *   3. SubscriptionCard        — Upgrade or Manage subscription via
    *                                Dodo Payments.
+   *   3b. CloudSyncCard          — sync status + "Sync now" (Pro only).
    *   4. AccountDeleteCard       — destructive two-step delete with
    *                                provider-aware re-authentication.
    *
@@ -41,7 +42,9 @@
   import { browser } from '$app/environment';
   import { page } from '$app/stores';
   import { IS_APP, IS_WEB } from '$lib/buildTarget';
-  import { authStore } from '$lib/cloud/firebase';
+  import { onDestroy } from 'svelte';
+  import { authStore, refreshProEntitlement } from '$lib/cloud/firebase';
+  import CloudSyncCard from '$lib/components/auth/CloudSyncCard.svelte';
   import AccountDeleteCard from '$lib/components/auth/AccountDeleteCard.svelte';
   import AccountProfileCard from '$lib/components/auth/AccountProfileCard.svelte';
   import EmailVerificationBanner from '$lib/components/auth/EmailVerificationBanner.svelte';
@@ -72,11 +75,11 @@
   // status banner above the cards and strip the param from the URL so
   // it doesn't reappear on refresh, share, or back-navigation.
   //
-  // The banner is dismissible. The Pro entitlement itself is delivered
-  // by Convex's live `entitlements` query (driven by the webhook), not
-  // by the query param — the banner just acknowledges the user's
-  // intent so they see immediate feedback even before the webhook
-  // round-trip lands.
+  // The banner is dismissible. The Pro entitlement itself comes from
+  // the server (`/api/me`, written by the payment webhook), not from
+  // the query param — the banner just acknowledges the user's intent.
+  // While the webhook is in flight we re-check every few seconds so
+  // Pro unlocks without a reload.
   // ---------------------------------------------------------------------------
 
   type UpgradeStatus = 'success' | 'cancelled' | null;
@@ -100,6 +103,31 @@
   function dismissUpgradeBanner(): void {
     upgradeStatus = null;
   }
+
+  const ENTITLEMENT_POLL_MS = 3000;
+  const ENTITLEMENT_POLL_LIMIT = 40;
+  let entitlementPoll: ReturnType<typeof setInterval> | null = null;
+  let entitlementChecks = 0;
+
+  function stopEntitlementPoll(): void {
+    if (entitlementPoll) clearInterval(entitlementPoll);
+    entitlementPoll = null;
+  }
+
+  $: if (browser && upgradeStatus === 'success' && $authStore.signedIn && !$authStore.isPro && !entitlementPoll) {
+    entitlementChecks = 0;
+    entitlementPoll = setInterval(() => {
+      entitlementChecks += 1;
+      if (entitlementChecks > ENTITLEMENT_POLL_LIMIT) {
+        stopEntitlementPoll();
+        return;
+      }
+      void refreshProEntitlement();
+    }, ENTITLEMENT_POLL_MS);
+  }
+  $: if ($authStore.isPro || !$authStore.signedIn) stopEntitlementPoll();
+
+  onDestroy(stopEntitlementPoll);
 
   // ---------------------------------------------------------------------------
   // View-mode selectors
@@ -390,9 +418,13 @@
           <div class="flex-1 min-w-0">
             <p class="font-semibold text-foreground">Welcome to HuntFlow Pro</p>
             <p class="mt-0.5 text-muted-foreground">
-              Your Pro plan is on its way. Real-time cloud sync and end-to-end encrypted
-              evidence will activate automatically across every signed-in device — usually
-              within a few seconds.
+              {#if $authStore.isPro}
+                Pro is active. Cloud sync and evidence backup are now on for every device you
+                sign in on.
+              {:else}
+                Confirming your payment… Cloud sync and evidence backup switch on automatically,
+                usually within a few seconds.
+              {/if}
             </p>
           </div>
           <button
@@ -458,6 +490,11 @@
 
       <!-- 3. Subscription card -->
       <SubscriptionCard />
+
+      {#if $authStore.isPro}
+        <!-- 3b. Cloud sync status -->
+        <CloudSyncCard />
+      {/if}
 
       <!-- 4. Sign-out card (non-destructive) -->
       <SignOutCard />

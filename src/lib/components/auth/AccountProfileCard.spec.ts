@@ -65,7 +65,7 @@ interface AuthState {
   configured: boolean;
   loading: boolean;
   signedIn: boolean;
-  convexAuthenticated: boolean;
+  cloudAuthenticated: boolean;
   uid: string;
   email: string;
   emailVerified: boolean;
@@ -86,7 +86,7 @@ vi.mock('$lib/cloud/firebase', async () => {
       configured: true,
       loading: false,
       signedIn: false,
-      convexAuthenticated: false,
+      cloudAuthenticated: false,
       uid: '',
       email: '',
       emailVerified: false,
@@ -114,13 +114,18 @@ vi.mock('$lib/cloud/firebase', async () => {
   };
 });
 
-vi.mock('$lib/cloud/convex', () => ({
+vi.mock('$lib/cloud/api', () => ({
   cloudConfigured: false,
-  getConvexClient: vi.fn(() => null),
-  getConvexHttpClient: vi.fn(() => null),
-  configureConvexAuth: vi.fn(),
-  resetConvexAuth: vi.fn(),
-  cloudApi: {}
+  setCloudTokenProvider: vi.fn(),
+  fetchCloudAccount: vi.fn(async () => {
+    throw new Error('network disabled in tests');
+  }),
+  clearCloudCopy: vi.fn(async () => ({ deleted: 0, skippedFiles: 0 })),
+  createCheckoutSession: vi.fn(),
+  createCustomerPortalSession: vi.fn(),
+  CloudApiError: class CloudApiError extends Error {
+    status = 0;
+  }
 }));
 
 // ---------------------------------------------------------------------------
@@ -174,7 +179,7 @@ const authStateArb: fc.Arbitrary<AuthState> = fc.record({
   configured: fc.constant(true),
   loading: fc.constant(false),
   signedIn: fc.constant(true),
-  convexAuthenticated: fc.boolean(),
+  cloudAuthenticated: fc.boolean(),
   uid: fc.stringMatching(/^[A-Za-z0-9]{12,28}$/),
   email: fc.emailAddress(),
   emailVerified: fc.boolean(),
@@ -200,7 +205,7 @@ const arbitraryAuthStateArb: fc.Arbitrary<AuthState> = fc.record({
   configured: fc.boolean(),
   loading: fc.boolean(),
   signedIn: fc.boolean(),
-  convexAuthenticated: fc.boolean(),
+  cloudAuthenticated: fc.boolean(),
   uid: fc.string({ maxLength: 24 }),
   email: fc.option(fc.emailAddress(), { nil: '' }).map((v) => v ?? ''),
   emailVerified: fc.boolean(),
@@ -233,7 +238,7 @@ describe('Property 5 — AccountProfileCard rendering is total and brand-clean',
       configured: true,
       loading: false,
       signedIn: false,
-      convexAuthenticated: false,
+      cloudAuthenticated: false,
       uid: '',
       email: '',
       emailVerified: false,

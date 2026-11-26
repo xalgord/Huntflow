@@ -71,7 +71,7 @@ The output shows up in HuntFlow for review with the program already selected. No
 
 - **Local first.** Everything lives in IndexedDB in your browser, on your machine. Nothing phones home.
 - **Backed up.** Running from `npx huntflow` mirrors backups to disk (`--backup-dir`, `--keep`). You can also download a full backup from Settings at any time.
-- **Optional sync.** HuntFlow Pro syncs your workspace across devices. Everything else is free and works without an account.
+- **Optional sync.** HuntFlow Pro syncs your workspace and evidence files across the devices you sign in on. Synced data is encrypted in transit and at rest and is readable only by your account. Everything else is free and works without an account.
 
 ## CLI
 
@@ -100,6 +100,28 @@ npm run build      # static build used by the CLI
 ```
 
 HuntFlow is built with SvelteKit and Tailwind CSS, stores data in IndexedDB, and ships as a static app served by a small Node CLI.
+
+### Hosted site and cloud API
+
+[huntflow.xalgorix.com](https://huntflow.xalgorix.com) runs entirely on Cloudflare:
+
+| Piece | Where |
+| --- | --- |
+| Static app | Cloudflare Pages (`build/`) |
+| API (`/api/*`) | Pages Functions: `functions/api/[[path]].ts` → `server/router.ts` |
+| Sync records, entitlements | D1 database `huntflow` (schema in `migrations/`) |
+| Evidence files | R2 bucket `huntflow-evidence` |
+| Sign-in | Firebase Auth; the API verifies Firebase ID tokens |
+| Billing | Dodo Payments checkout, portal and webhook (`/api/webhooks/dodo`) |
+
+```bash
+npm run check:server   # type-check the API
+npm run cf:migrate     # apply D1 migrations
+npm run cf:dev         # app + API locally (put secrets in .dev.vars)
+npm run deploy:cf      # build and deploy to production
+```
+
+Bindings and public settings live in `wrangler.toml`; secrets (`DODO_API_KEY`, `DODO_WEBHOOK_SIGNING_SECRET`, `RESEND_API_KEY`) are Pages secrets. `.env.cloudflare` holds the public Firebase web config used by `npm run build:cf`.
 
 ## License
 

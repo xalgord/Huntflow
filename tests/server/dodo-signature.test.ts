@@ -6,15 +6,15 @@ import { Webhook, WebhookVerificationError } from 'standardwebhooks';
  * Property 2 — Webhook signature verifier round-trip and tamper rejection.
  *
  * Exercises the Standard Webhooks signing/verification round-trip
- * directly (using the same `standardwebhooks` package the Convex
- * webhook handler in `convex/http.ts` consumes). Splitting the test
- * away from the Convex `httpActionGeneric` keeps the property
+ * directly (using the same `standardwebhooks` package the API
+ * webhook handler in `server/billing.ts` consumes). Splitting the test
+ * away from the Functions router keeps the property
  * concerned with the cryptographic invariant (signature ↔ payload
- * binding) rather than with the Convex runtime.
+ * binding) rather than with the HTTP runtime.
  *
- * The companion mutation-call assertion (no `entitlements.upsertFromWebhook`
+ * The companion mutation-call assertion (no `entitlement upsert`
  * on tamper) is checked at the integration layer in
- * `convex/http.parser.spec.ts` (Property 3) — together they cover the
+ * `tests/server/dodo-parser.test.ts` (Property 3) and `tests/server/api.test.ts` — together they cover the
  * full Property 2 statement: tamper triggers verification failure AND
  * the handler short-circuits before any mutation.
  *
@@ -25,7 +25,7 @@ import { Webhook, WebhookVerificationError } from 'standardwebhooks';
  * Standard Webhooks signing-secret format expected by the
  * `standardwebhooks` package: a base64-encoded byte sequence,
  * optionally prefixed with `whsec_`. We always include the prefix so
- * the test mirrors what Convex sees in production.
+ * the test mirrors what the API sees in production.
  */
 function whsecArb(): fc.Arbitrary<string> {
   return fc
