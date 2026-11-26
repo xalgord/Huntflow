@@ -113,7 +113,7 @@
     on private offline installs.
   -->
   <main
-    class="flex min-h-screen flex-col items-center justify-center gap-3 bg-zinc-950 px-4 text-center text-zinc-300"
+    class="flex min-h-screen flex-col items-center justify-center gap-3 px-4 text-center text-zinc-300"
     aria-busy="true"
     aria-live="polite"
   >
@@ -176,7 +176,7 @@
 
   <section class="pricing-hero relative isolate border-b border-white/[0.06] px-4 py-24 sm:px-6 sm:py-32 lg:px-8">
     <div class="absolute inset-0 -z-10" aria-hidden="true">
-      <div class="absolute inset-0 bg-zinc-950"></div>
+      <div class="absolute inset-0" style="background: var(--hf-window)"></div>
       <div class="absolute inset-x-0 top-0 h-[640px] bg-[radial-gradient(ellipse_at_top,_rgba(225,29,52,0.18),_transparent_55%)]"></div>
       <div class="absolute inset-x-0 top-0 h-full bg-[radial-gradient(circle_at_80%_20%,_rgba(225,29,52,0.08),_transparent_40%)]"></div>
       <div class="absolute inset-x-0 bottom-0 h-[320px] bg-[radial-gradient(ellipse_at_bottom,_rgba(225,29,52,0.06),_transparent_60%)]"></div>
@@ -189,7 +189,7 @@
         <Sparkles size={13} aria-hidden="true" class="animate-pulse" />
         Simple, hunter-friendly pricing
       </span>
-      <h1 class="mt-8 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-white sm:text-5xl lg:text-6xl">
+      <h1 class="mt-8 text-balance text-4xl font-bold leading-[1.05] tracking-tight text-foreground sm:text-5xl lg:text-6xl">
         Free forever. Pro when you need
         <span class="bg-gradient-to-br from-primary-200 via-primary-400 to-primary-600 bg-clip-text text-transparent">
           real-time sync.
@@ -250,7 +250,7 @@
     <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_bottom,_rgba(225,29,52,0.04),_transparent_60%)]" aria-hidden="true"></div>
     <div class="mx-auto max-w-6xl">
       <p class="hf-eyebrow">What Pro buys you</p>
-      <h2 class="mt-2 text-3xl font-bold leading-tight text-white sm:text-4xl">Three things, no fluff.</h2>
+      <h2 class="mt-2 text-3xl font-bold leading-tight text-foreground sm:text-4xl">Three things, no fluff.</h2>
 
       <div class="mt-10 grid gap-5 md:grid-cols-3">
         <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-tranzinc-y-0.5">
@@ -258,7 +258,7 @@
           <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(225,29,52,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(225,29,52,0.15)]">
             <Cloud size={20} aria-hidden="true" />
           </div>
-          <h3 class="mt-5 text-lg font-semibold text-white">Real-time sync</h3>
+          <h3 class="mt-5 text-lg font-semibold text-foreground">Real-time sync</h3>
           <p class="mt-2.5 text-sm leading-6 text-zinc-400">
             Every edit is reflected on every signed-in device in under a second. Same data on laptop, phone, tablet.
           </p>
@@ -268,7 +268,7 @@
           <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(225,29,52,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(225,29,52,0.15)]">
             <Lock size={20} aria-hidden="true" />
           </div>
-          <h3 class="mt-5 text-lg font-semibold text-white">Encrypted at rest</h3>
+          <h3 class="mt-5 text-lg font-semibold text-foreground">Encrypted at rest</h3>
           <p class="mt-2.5 text-sm leading-6 text-zinc-400">
             Notes, evidence and report drafts are encrypted client-side. Even we can&apos;t read your findings.
           </p>
@@ -278,7 +278,7 @@
           <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(225,29,52,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(225,29,52,0.15)]">
             <Smartphone size={20} aria-hidden="true" />
           </div>
-          <h3 class="mt-5 text-lg font-semibold text-white">Mobile-friendly</h3>
+          <h3 class="mt-5 text-lg font-semibold text-foreground">Mobile-friendly</h3>
           <p class="mt-2.5 text-sm leading-6 text-zinc-400">
             Capture a finding on your phone the moment you spot it. It is on your laptop before you sit down.
           </p>
@@ -291,7 +291,7 @@
   <section class="relative border-b border-white/[0.06] px-4 py-20 sm:px-6 lg:px-8">
     <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,_rgba(225,29,52,0.08),_transparent_60%)]" aria-hidden="true"></div>
     <div class="mx-auto max-w-3xl text-center">
-      <h2 class="text-3xl font-bold leading-tight text-white sm:text-4xl">Stop juggling tabs. Start a hunt.</h2>
+      <h2 class="text-3xl font-bold leading-tight text-foreground sm:text-4xl">Stop juggling tabs. Start a hunt.</h2>
       <p class="mt-3 text-base leading-7 text-zinc-400">
         Install in one command. No login required to start.
       </p>

@@ -35,6 +35,10 @@
 
   /* Materials, fills, hairlines */
   --hf-window: #f5f5f7;
+  /* Tinted text for banners and callouts (readable on light surfaces). */
+  --hf-text-red: #b4232a;
+  --hf-text-amber: #8a5300;
+  --hf-text-green: #1a7f37;
   --hf-surface: #ffffff;
   --hf-surface-elevated: #ffffff;
   --hf-sidebar: rgb(236 236 241 / 0.78);
@@ -83,6 +87,9 @@
   --input: 240 2% 26%;
 
   --hf-window: #000000;
+  --hf-text-red: #fda4af;
+  --hf-text-amber: #fde68a;
+  --hf-text-green: #bbf7d0;
   --hf-surface: #1c1c1e;
   --hf-surface-elevated: #2c2c2e;
   --hf-sidebar: rgb(28 28 30 / 0.78);

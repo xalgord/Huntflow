@@ -325,11 +325,11 @@
   /* ----------------------------------------------------------------------- */
   .profile-card {
     border-radius: 0.875rem;
-    border: 1px solid #27272a; /* zinc-800 */
-    background-color: #0e1612;
+    border: 1px solid var(--hf-hairline-strong); /* zinc-800 */
+    background-color: var(--hf-surface);
     padding: 1.25rem;
-    color: #fafafa; /* zinc-50 */
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    color: hsl(var(--foreground)); /* zinc-50 */
+    box-shadow: inset 0 1px 0 var(--hf-hairline);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -346,14 +346,14 @@
     font-size: 0.9375rem;
     font-weight: 600;
     letter-spacing: 0.005em;
-    color: #fafafa;
+    color: hsl(var(--foreground));
   }
 
   .profile-card__subtitle {
     margin: 0;
     font-size: 0.8125rem;
     line-height: 1.45;
-    color: #71717a; /* zinc-500 */
+    color: hsl(var(--muted-foreground)); /* zinc-500 */
   }
 
   .profile-card__body {
@@ -379,8 +379,8 @@
     height: 56px;
     border-radius: 9999px;
     overflow: hidden;
-    background-color: #27272a; /* zinc-800 */
-    border: 1px solid #3f3f46; /* zinc-700 */
+    background-color: var(--hf-hairline-strong); /* zinc-800 */
+    border: 1px solid var(--hf-hairline-strong); /* zinc-700 */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -429,7 +429,7 @@
 
   .field__value {
     font-size: 0.875rem;
-    color: #fafafa;
+    color: hsl(var(--foreground));
     word-break: break-word;
     min-width: 0;
   }
@@ -437,7 +437,7 @@
   .field__value--mono {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
     font-size: 0.8125rem;
-    color: #e4e4e7; /* zinc-200 */
+    color: hsl(var(--foreground)); /* zinc-200 */
   }
 
   .field__edit {
@@ -456,7 +456,7 @@
   .field__error {
     margin: 0.25rem 0 0;
     font-size: 0.8125rem;
-    color: #fecaca; /* rose-200 */
+    color: var(--hf-text-red); /* rose-200 */
   }
 
   /* ----------------------------------------------------------------------- */
@@ -469,9 +469,9 @@
     min-height: 32px;
     padding: 0.25rem 0.625rem;
     border-radius: 0.5rem;
-    border: 1px solid #27272a;
+    border: 1px solid var(--hf-hairline-strong);
     background-color: transparent;
-    color: #d4d4d8; /* zinc-300 */
+    color: hsl(var(--foreground) / 0.85); /* zinc-300 */
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
@@ -480,9 +480,9 @@
   }
 
   .icon-btn:hover:not(:disabled) {
-    border-color: #3f3f46;
-    background-color: #131c17;
-    color: #fafafa;
+    border-color: var(--hf-hairline-strong);
+    background-color: var(--hf-surface-elevated);
+    color: hsl(var(--foreground));
   }
 
   .icon-btn:active:not(:disabled) {
@@ -514,7 +514,7 @@
     font-size: 0.8125rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06),
+    box-shadow: 0 1px 0 var(--hf-hairline),
       0 6px 18px rgba(225, 29, 52, 0.18);
     transition: background-color 150ms ease, transform 150ms ease,
       box-shadow 150ms ease;
@@ -548,9 +548,9 @@
     min-height: 36px;
     padding: 0.375rem 0.875rem;
     border-radius: 0.5rem;
-    border: 1px solid #27272a;
-    background-color: #0e1612;
-    color: #d4d4d8;
+    border: 1px solid var(--hf-hairline-strong);
+    background-color: var(--hf-surface);
+    color: hsl(var(--foreground) / 0.85);
     font-size: 0.8125rem;
     font-weight: 500;
     cursor: pointer;
@@ -559,9 +559,9 @@
   }
 
   .secondary-btn:hover:not(:disabled) {
-    border-color: #3f3f46;
-    background-color: #131c17;
-    color: #fafafa;
+    border-color: var(--hf-hairline-strong);
+    background-color: var(--hf-surface-elevated);
+    color: hsl(var(--foreground));
   }
 
   .secondary-btn:active:not(:disabled) {
@@ -600,19 +600,19 @@
   .chip--ok {
     background-color: rgba(34, 197, 94, 0.12); /* green-500 @ 12% */
     border: 1px solid rgba(74, 222, 128, 0.35); /* green-400 @ 35% */
-    color: #fecdd3; /* green-200 */
+    color: var(--hf-text-red); /* green-200 */
   }
 
   .chip--warn {
     background-color: rgba(251, 191, 36, 0.14); /* amber-400 @ 14% */
     border: 1px solid rgba(251, 191, 36, 0.45);
-    color: #fde68a; /* amber-200 */
+    color: var(--hf-text-amber); /* amber-200 */
   }
 
   .chip--neutral {
-    background-color: rgba(63, 63, 70, 0.45); /* zinc-700 @ 45% */
-    border: 1px solid #3f3f46;
-    color: #e4e4e7;
+    background-color: var(--hf-hairline-strong); /* zinc-700 @ 45% */
+    border: 1px solid var(--hf-hairline-strong);
+    color: hsl(var(--foreground));
   }
 
   /* ----------------------------------------------------------------------- */
@@ -629,6 +629,6 @@
 
   .provider-list__empty {
     font-size: 0.8125rem;
-    color: #71717a;
+    color: hsl(var(--muted-foreground));
   }
 </style>

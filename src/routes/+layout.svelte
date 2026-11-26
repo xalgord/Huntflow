@@ -295,9 +295,9 @@
 
 <div class="hf-shell">
   {#if isLanding}
-    <!-- The home page follows the visitor's appearance; auth and pricing
-         surfaces are designed dark. Each page renders its own <main>. -->
-    <div class="relative min-h-screen {pathname === '/' ? '' : 'dark bg-black text-white'}">
+    <!-- Marketing and auth pages follow the visitor's appearance, like the
+         app. Each page renders its own <main>. -->
+    <div class="relative min-h-screen text-foreground" style="background: var(--hf-window)">
       <PageTransition name={pathname}>
         <slot />
       </PageTransition>

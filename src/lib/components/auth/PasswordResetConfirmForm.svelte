@@ -244,7 +244,7 @@
     font-size: 0.875rem;
     font-weight: 600;
     color: #ffffff;
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06), 0 8px 24px rgba(225, 29, 52, 0.18);
+    box-shadow: 0 1px 0 var(--hf-hairline), 0 8px 24px rgba(225, 29, 52, 0.18);
     transition: background-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
     cursor: pointer;
   }
@@ -267,7 +267,7 @@
   /* Secondary action used for the "Request a new link" affordance.
      Neutral chrome with the agreed accent ring on focus so keyboard
      users see the active control clearly. The 4.5:1 contrast on
-     `text-zinc-100` over `#0e1612` clears WCAG AA. */
+     `text-zinc-100` over `var(--hf-surface)` clears WCAG AA. */
   .secondary-btn {
     display: inline-flex;
     align-items: center;
@@ -276,19 +276,19 @@
     min-height: 44px;
     width: 100%;
     border-radius: 0.5rem;
-    border: 1px solid #27272a; /* zinc-800 */
-    background-color: #0e1612;
+    border: 1px solid var(--hf-hairline-strong); /* zinc-800 */
+    background-color: var(--hf-surface);
     padding: 0.625rem 1rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #fafafa; /* zinc-50 */
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    color: hsl(var(--foreground)); /* zinc-50 */
+    box-shadow: inset 0 1px 0 var(--hf-hairline);
     transition: border-color 150ms ease, background-color 150ms ease, transform 150ms ease;
     cursor: pointer;
   }
   .secondary-btn:hover:not(:disabled) {
-    border-color: #3f3f46; /* zinc-700 */
-    background-color: #131c17;
+    border-color: var(--hf-hairline-strong); /* zinc-700 */
+    background-color: var(--hf-surface-elevated);
   }
   .secondary-btn:active:not(:disabled) {
     transform: scale(0.985);

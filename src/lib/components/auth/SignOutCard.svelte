@@ -93,11 +93,11 @@
 <style>
   .signout-card {
     border-radius: 0.875rem;
-    border: 1px solid #27272a;
-    background-color: #0e1612;
+    border: 1px solid var(--hf-hairline-strong);
+    background-color: var(--hf-surface);
     padding: 1.25rem;
-    color: #fafafa;
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    color: hsl(var(--foreground));
+    box-shadow: inset 0 1px 0 var(--hf-hairline);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -113,14 +113,14 @@
     margin: 0;
     font-size: 0.9375rem;
     font-weight: 600;
-    color: #fafafa;
+    color: hsl(var(--foreground));
   }
 
   .signout-card__subtitle {
     margin: 0;
     font-size: 0.8125rem;
     line-height: 1.45;
-    color: #71717a;
+    color: hsl(var(--muted-foreground));
   }
 
   .signout-card__action {
@@ -133,7 +133,7 @@
   .signout-card__error {
     margin: 0;
     font-size: 0.8125rem;
-    color: #fecaca;
+    color: var(--hf-text-red);
   }
 
   .signout-btn {
@@ -144,9 +144,9 @@
     min-height: 40px;
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
-    border: 1px solid #27272a;
+    border: 1px solid var(--hf-hairline-strong);
     background-color: transparent;
-    color: #d4d4d8;
+    color: hsl(var(--foreground) / 0.85);
     font-size: 0.875rem;
     font-weight: 500;
     cursor: pointer;
@@ -155,9 +155,9 @@
   }
 
   .signout-btn:hover:not(:disabled) {
-    border-color: #3f3f46;
-    background-color: #131c17;
-    color: #fafafa;
+    border-color: var(--hf-hairline-strong);
+    background-color: var(--hf-surface-elevated);
+    color: hsl(var(--foreground));
   }
 
   .signout-btn:active:not(:disabled) {
