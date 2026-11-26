@@ -57,7 +57,7 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "prepublishOnly": "npm run build:app",
     "prepare": "node bin/prepare.mjs",
-    "deploy:cf": "npm run build && npx wrangler pages deploy build --project-name=huntflow-dpx --branch main"
+    "deploy:cf": "npm run build && npx wrangler pages deploy build --project-name=huntflow --branch main"
   },
   "dependencies": {
     "@sveltejs/kit": "^2.60.1",
