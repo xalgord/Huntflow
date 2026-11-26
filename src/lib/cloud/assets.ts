@@ -1,46 +1,27 @@
 import { evidenceBlobDB } from '$lib/db/evidence';
 import type { EvidenceAsset, EvidenceBlob } from '$lib/types';
 import { cloudEvidenceQuotaError } from '$lib/utils/evidence';
-import { isRecord } from '$lib/utils/guards';
-import { cloudApi, cloudConfigured, getConvexClient } from './convex';
+import { CloudApiError, cloudConfigured, cloudFetch } from './api';
 
-interface UploadResponse {
-  storageId?: string;
+/**
+ * Evidence file transfer for cloud sync. Files stream through
+ * `/api/assets/:assetId` into R2; the asset record itself syncs like
+ * any other item and carries the returned `storageId`.
+ */
+
+const MAX_ATTEMPTS = 3;
+
+function assetPath(assetId: string): string {
+  return `/assets/${encodeURIComponent(assetId)}`;
 }
 
-interface RemoteAssetFile {
-  url: string;
-  storageId: string;
-  fileName?: string;
-  relativePath?: string;
-  mimeType: string;
-  size: number;
-  uploadedAt: number;
-}
-
-
-
-function normalizeRemoteAssetFile(value: unknown): RemoteAssetFile | null {
-  if (!isRecord(value)) return null;
-  if (
-    typeof value.url !== 'string' ||
-    typeof value.storageId !== 'string' ||
-    typeof value.mimeType !== 'string' ||
-    typeof value.size !== 'number' ||
-    typeof value.uploadedAt !== 'number'
-  ) {
-    return null;
+function decodeHeader(value: string | null): string | undefined {
+  if (!value) return undefined;
+  try {
+    return decodeURIComponent(value) || undefined;
+  } catch {
+    return undefined;
   }
-
-  return {
-    url: value.url,
-    storageId: value.storageId,
-    fileName: typeof value.fileName === 'string' ? value.fileName : undefined,
-    relativePath: typeof value.relativePath === 'string' ? value.relativePath : undefined,
-    mimeType: value.mimeType,
-    size: value.size,
-    uploadedAt: value.uploadedAt
-  };
 }
 
 export async function uploadEvidenceAssetFile(
@@ -48,84 +29,60 @@ export async function uploadEvidenceAssetFile(
   evidenceBlob: EvidenceBlob,
   currentSyncedBytes: number
 ): Promise<string> {
-  if (!cloudConfigured) throw new Error('Missing VITE_CONVEX_URL.');
+  if (!cloudConfigured) throw new Error('Cloud sync is not configured for this build.');
   if (asset.source === 'url') throw new Error('URL assets do not have uploadable file content.');
   const quotaError = cloudEvidenceQuotaError(evidenceBlob.size, currentSyncedBytes);
   if (quotaError) throw new Error(quotaError);
 
-  const convex = getConvexClient();
-  if (!convex) throw new Error('Convex is not available in this browser.');
+  const headers: Record<string, string> = {
+    'content-type': evidenceBlob.mimeType || asset.mimeType || 'application/octet-stream'
+  };
+  const fileName = evidenceBlob.fileName ?? asset.fileName;
+  const relativePath = evidenceBlob.relativePath ?? asset.relativePath;
+  if (fileName) headers['x-hf-file-name'] = encodeURIComponent(fileName);
+  if (relativePath) headers['x-hf-relative-path'] = encodeURIComponent(relativePath);
 
-  const ticket = await convex.mutation(cloudApi.generateAssetUploadUrl, {});
-  if (!ticket || typeof ticket !== 'object') {
-    throw new Error('Convex did not return an upload ticket.');
-  }
-  const { uploadUrl, ticketId } = ticket as { uploadUrl?: unknown; ticketId?: unknown };
-  if (typeof uploadUrl !== 'string' || !ticketId) {
-    throw new Error('Convex did not return a valid upload URL or ticket id.');
-  }
-
-  let upload: Response | undefined;
-  const MAX_RETRIES = 3;
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+  let lastError: unknown = null;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     try {
-      upload = await fetch(uploadUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': evidenceBlob.mimeType || asset.mimeType || 'application/octet-stream' },
-        body: evidenceBlob.blob
-      });
-      if (upload.ok) break;
-    } catch (networkError) {
-      if (attempt === MAX_RETRIES) throw networkError;
+      const response = await cloudFetch(assetPath(asset.id), { method: 'PUT', headers, body: evidenceBlob.blob });
+      const result = (await response.json()) as { storageId?: unknown };
+      if (typeof result.storageId !== 'string' || !result.storageId) {
+        throw new Error('Evidence upload did not return a storage ID.');
+      }
+      return result.storageId;
+    } catch (error) {
+      lastError = error;
+      // Client errors (quota, size, Pro) won't improve on retry.
+      if (error instanceof CloudApiError && error.status >= 400 && error.status < 500) break;
+      if (attempt < MAX_ATTEMPTS) await new Promise((resolve) => setTimeout(resolve, 250 * 2 ** attempt));
     }
-    // Exponential backoff: 500ms, 1s, 2s
-    if (attempt < MAX_RETRIES) await new Promise((r) => setTimeout(r, 250 * 2 ** attempt));
   }
-
-  if (!upload || !upload.ok) throw new Error(`Evidence upload failed after ${MAX_RETRIES} attempts.`);
-
-  const result = (await upload.json()) as UploadResponse;
-  if (!result.storageId) throw new Error('Evidence upload did not return a storage ID.');
-
-  await convex.mutation(cloudApi.registerAssetFile, {
-    ticketId,
-    assetId: asset.id,
-    storageId: result.storageId,
-    fileName: evidenceBlob.fileName ?? asset.fileName,
-    relativePath: evidenceBlob.relativePath ?? asset.relativePath,
-    mimeType: evidenceBlob.mimeType || asset.mimeType || 'application/octet-stream',
-    size: evidenceBlob.size,
-    uploadedAt: Date.now()
-  });
-
-  return result.storageId;
-}
-
-export async function getRemoteEvidenceAssetFile(assetId: string): Promise<RemoteAssetFile | null> {
-  if (!cloudConfigured) return null;
-  const convex = getConvexClient();
-  if (!convex) return null;
-  const result = await convex.query(cloudApi.getAssetFileUrl, { assetId });
-  return normalizeRemoteAssetFile(result);
+  if (lastError instanceof Error) throw lastError;
+  throw new Error(`Evidence upload failed after ${MAX_ATTEMPTS} attempts.`);
 }
 
 export async function cacheRemoteEvidenceAsset(asset: EvidenceAsset): Promise<EvidenceBlob | null> {
   const existing = await evidenceBlobDB.get(asset.id);
   if (existing) return existing;
+  if (!cloudConfigured) return null;
 
-  const remote = await getRemoteEvidenceAssetFile(asset.id);
-  if (!remote) return null;
+  let response: Response;
+  try {
+    response = await cloudFetch(assetPath(asset.id));
+  } catch (error) {
+    if (error instanceof CloudApiError && error.status === 404) return null;
+    throw error;
+  }
 
-  const response = await fetch(remote.url);
-  if (!response.ok) throw new Error(`Evidence download failed with HTTP ${response.status}.`);
   const blob = await response.blob();
   const cached: EvidenceBlob = {
     assetId: asset.id,
     blob,
-    fileName: remote.fileName ?? asset.fileName,
-    relativePath: remote.relativePath ?? asset.relativePath,
-    mimeType: remote.mimeType || asset.mimeType,
-    size: remote.size || blob.size,
+    fileName: decodeHeader(response.headers.get('x-hf-file-name')) ?? asset.fileName,
+    relativePath: decodeHeader(response.headers.get('x-hf-relative-path')) ?? asset.relativePath,
+    mimeType: response.headers.get('content-type') || asset.mimeType,
+    size: blob.size,
     createdAt: Date.now(),
     updatedAt: Date.now()
   };
@@ -135,7 +92,5 @@ export async function cacheRemoteEvidenceAsset(asset: EvidenceAsset): Promise<Ev
 
 export async function deleteRemoteEvidenceAssetFile(assetId: string): Promise<void> {
   if (!cloudConfigured) return;
-  const convex = getConvexClient();
-  if (!convex) return;
-  await convex.mutation(cloudApi.deleteAssetFile, { assetId });
+  await cloudFetch(assetPath(assetId), { method: 'DELETE' });
 }

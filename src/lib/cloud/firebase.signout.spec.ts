@@ -3,9 +3,9 @@
  *
  * For any number `n ≥ 1` of consecutive `signOut()` calls (with no
  * other auth actions in between), the resulting `authStore` value
- * equals the canonical signed-out state, no error is thrown, and
- * `stopRealtimeSync` and `resetConvexAuth` are each invoked at least
- * once.
+ * equals the canonical signed-out state (including
+ * `cloudAuthenticated: false`), no error is thrown, and
+ * `stopRealtimeSync` is invoked at least once.
  *
  * Mocked surfaces:
  *   - `$app/environment` — `browser: true` so the firebase module's
@@ -15,8 +15,8 @@
  *   - `firebase/auth` — `getAuth` returns a stub Auth, `signOut`
  *     records its calls, every other surface is a no-op so the import
  *     graph closes.
- *   - `$lib/cloud/convex` — `configureConvexAuth` is a no-op,
- *     `resetConvexAuth` records its calls.
+ *   - `$lib/cloud/api` — the cloud API client is a stub; sign-out
+ *     must not need the network.
  *   - `$lib/cloud/realtimeSync` — `stopRealtimeSync` records its calls.
  *
  * Validates: Property 6, Requirement 5.4
@@ -68,13 +68,16 @@ vi.mock('firebase/auth', () => {
   };
 });
 
-vi.mock('$lib/cloud/convex', () => ({
+vi.mock('$lib/cloud/api', () => ({
   cloudConfigured: false,
-  getConvexClient: vi.fn(() => null),
-  getConvexHttpClient: vi.fn(() => null),
-  configureConvexAuth: vi.fn(),
-  resetConvexAuth: vi.fn(),
-  cloudApi: {}
+  setCloudTokenProvider: vi.fn(),
+  fetchCloudAccount: vi.fn(async () => {
+    throw new Error('network disabled in tests');
+  }),
+  clearCloudCopy: vi.fn(async () => ({ deleted: 0, skippedFiles: 0 })),
+  CloudApiError: class CloudApiError extends Error {
+    status = 0;
+  }
 }));
 
 vi.mock('$lib/cloud/realtimeSync', () => ({
@@ -89,17 +92,14 @@ vi.mock('$lib/cloud/realtimeSync', () => ({
 
 import * as firebaseAuth from 'firebase/auth';
 import { authStore, signOut } from './firebase';
-import { resetConvexAuth } from './convex';
 import { stopRealtimeSync } from './realtimeSync';
 
 const fbSignOutMock = firebaseAuth.signOut as ReturnType<typeof vi.fn>;
 const stopRealtimeSyncMock = stopRealtimeSync as ReturnType<typeof vi.fn>;
-const resetConvexAuthMock = resetConvexAuth as ReturnType<typeof vi.fn>;
 
 beforeEach(() => {
   fbSignOutMock.mockClear();
   stopRealtimeSyncMock.mockClear();
-  resetConvexAuthMock.mockClear();
 });
 
 afterEach(() => {
@@ -109,7 +109,7 @@ afterEach(() => {
     configured: true,
     loading: false,
     signedIn: true,
-    convexAuthenticated: true,
+    cloudAuthenticated: true,
     uid: 'pre-test-uid',
     email: 'pre-test@example.com',
     emailVerified: true,
@@ -132,7 +132,7 @@ describe('Property 6 — Sign-out is idempotent', () => {
           configured: true,
           loading: false,
           signedIn: true,
-          convexAuthenticated: true,
+          cloudAuthenticated: true,
           uid: 'uid-active',
           email: 'active@example.com',
           emailVerified: true,
@@ -144,7 +144,6 @@ describe('Property 6 — Sign-out is idempotent', () => {
         });
         fbSignOutMock.mockClear();
         stopRealtimeSyncMock.mockClear();
-        resetConvexAuthMock.mockClear();
 
         for (let i = 0; i < n; i += 1) {
           await signOut();
@@ -157,7 +156,7 @@ describe('Property 6 — Sign-out is idempotent', () => {
           configured: true,
           loading: false,
           signedIn: false,
-          convexAuthenticated: false,
+          cloudAuthenticated: false,
           uid: '',
           email: '',
           emailVerified: false,
@@ -169,7 +168,6 @@ describe('Property 6 — Sign-out is idempotent', () => {
         });
 
         expect(stopRealtimeSyncMock.mock.calls.length).toBeGreaterThanOrEqual(1);
-        expect(resetConvexAuthMock.mock.calls.length).toBeGreaterThanOrEqual(1);
         return true;
       }),
       { numRuns: 100 }

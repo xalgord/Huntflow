@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
 import { uploadEvidenceAssetFile } from '$lib/cloud/assets';
-import { isRecord } from '$lib/utils/guards';
 import { bookmarkDB } from '$lib/db/bookmarks';
 import { checklistInstanceDB, checklistTemplateDB } from '$lib/db/checklists';
 import { evidenceAssetDB, evidenceBlobDB, evidenceCanvasViewDB, evidenceLinkDB } from '$lib/db/evidence';
@@ -41,11 +40,8 @@ import type {
   Submission,
   Target
 } from '$lib/types';
-import { get } from 'svelte/store';
-import { authStore, getFirebaseIdToken, refreshProEntitlement } from './firebase';
-import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient } from './convex';
 // Pure merge primitives live in `syncMerge.ts` so they can be unit-tested
-// without dragging IndexedDB and Convex into the test environment.
+// without dragging IndexedDB and the network into the test environment.
 // We re-export them so existing call sites stay untouched.
 import {
   KNOWN_COLLECTIONS,
@@ -56,15 +52,6 @@ import {
 } from './syncMerge';
 export { KNOWN_COLLECTIONS, mergeItems, normalizeRemoteItem };
 export type { SyncCollection, SyncItem };
-
-// Thrown when a signed-in but non-Pro user tries to sync. The settings UI
-// catches this and renders a paywall instead of an error toast.
-export class ProRequiredError extends Error {
-  constructor() {
-    super('HuntFlow Pro is required to enable real-time cloud sync.');
-    this.name = 'ProRequiredError';
-  }
-}
 
 type SyncPayload =
   | Session
@@ -141,26 +128,6 @@ export function purgeStaleTombstones(): void {
   }
 }
 
-export interface CloudSyncResult {
-  pulled: number;
-  pushed: number;
-  merged: number;
-  syncedAt: number;
-}
-
-const LAST_SYNC_KEY = 'huntflow-cloud-last-sync-at';
-
-export function getLastCloudSyncAt(): number | null {
-  if (!browser) return null;
-  const value = Number(localStorage.getItem(LAST_SYNC_KEY));
-  return Number.isFinite(value) && value > 0 ? value : null;
-}
-
-function setLastCloudSyncAt(value: number): void {
-  if (!browser) return;
-  localStorage.setItem(LAST_SYNC_KEY, String(value));
-}
-
 function sessionUpdatedAt(session: Session): number {
   // Completed/abandoned sessions use endedAt as their last-modified marker.
   // Running/paused sessions have no endedAt; use startedAt as a stable
@@ -193,8 +160,6 @@ export function toSyncItem(collection: SyncCollection, item: SyncPayload): SyncI
     updatedAt
   };
 }
-
-// isRecord is now imported at the top of this file
 
 export async function getLocalItems(): Promise<SyncItem[]> {
   const [
@@ -257,16 +222,28 @@ export async function getLocalItems(): Promise<SyncItem[]> {
   return [...liveItems, ...tombstoneItems];
 }
 
-export async function uploadPendingEvidenceFiles(): Promise<void> {
+/** Evidence uploaded to the Cloudflare R2 backend carries an `r2:` storage id. */
+function isUploaded(asset: EvidenceAsset): boolean {
+  return typeof asset.storageId === 'string' && asset.storageId.startsWith('r2:');
+}
+
+/** Failed uploads are retried at most this often unless the user forces a sync. */
+const UPLOAD_RETRY_MS = 5 * 60 * 1000;
+
+export async function uploadPendingEvidenceFiles(options: { retryErrors?: boolean } = {}): Promise<void> {
   const assets = await evidenceAssetDB.getAll();
   const uploadedBytes = assets
-    .filter((asset) => asset.storageId)
+    .filter(isUploaded)
     .reduce((sum, asset) => sum + (asset.source === 'url' ? 0 : asset.size), 0);
   let currentBytes = uploadedBytes;
 
   for (const asset of assets) {
-    if (asset.source === 'url' || asset.storageId || !asset.localBlobId) continue;
-    if (asset.syncState !== 'pending-upload' && asset.syncState !== 'local' && asset.syncState !== 'error') continue;
+    if (asset.source === 'url' || isUploaded(asset) || !asset.localBlobId) continue;
+    if (asset.syncState === 'error' && !options.retryErrors && Date.now() - asset.updatedAt < UPLOAD_RETRY_MS) continue;
+    // Records synced from the previous backend keep a foreign storage id;
+    // re-upload them when this device still has the file.
+    const legacy = Boolean(asset.storageId) && !isUploaded(asset);
+    if (!legacy && asset.syncState !== 'pending-upload' && asset.syncState !== 'local' && asset.syncState !== 'error') continue;
 
     const evidenceBlob = await evidenceBlobDB.get(asset.id);
     if (!evidenceBlob) continue;
@@ -387,72 +364,4 @@ export async function applyLocalSnapshot(items: SyncItem[]): Promise<void> {
   for (const item of liveItems) {
     removeTombstone(item.collection, item.localId);
   }
-}
-
-export async function syncNow(): Promise<CloudSyncResult> {
-  if (!cloudConfigured) throw new Error('Missing VITE_CONVEX_URL.');
-
-  const convex = getConvexClient();
-  if (!convex) throw new Error('Convex is not available in this browser.');
-
-  // Pro gate: cloud sync is the paid feature. Re-check the live Firebase
-  // entitlement before each sync (rather than trusting the cached store
-  // value) so a just-cancelled subscription stops syncing immediately.
-  await refreshProEntitlement();
-  const auth = get(authStore);
-  if (!auth.isPro) {
-    throw new ProRequiredError();
-  }
-
-  await uploadPendingEvidenceFiles();
-
-  // Use the cache-free HTTP client for pulling the remote snapshot so
-  // "Sync Now" always returns fresh data — the WebSocket client's
-  // convex.query() can serve stale cached results on cross-device syncs.
-  const httpClient = getConvexHttpClient();
-  const token = await getFirebaseIdToken();
-  if (!httpClient || !token) {
-    throw new Error('Could not authenticate with Convex. Please sign in again.');
-  }
-  httpClient.setAuth(token);
-
-  const [localItems, rawRemoteItems] = await Promise.all([
-    getLocalItems(),
-    httpClient.query(cloudApi.getSnapshot, {})
-  ]);
-  const remoteItems = Array.isArray(rawRemoteItems)
-    ? rawRemoteItems.map(normalizeRemoteItem).filter((item): item is SyncItem => Boolean(item))
-    : [];
-  const merged = mergeItems(localItems, remoteItems);
-
-  await applyLocalSnapshot(merged);
-
-  // Push via the WebSocket client (faster, auth already configured).
-  await convex.mutation(cloudApi.upsertSnapshot, {
-    items: merged.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
-      collection,
-      localId,
-      payload,
-      updatedAt,
-      ...(deletedAt ? { deletedAt } : {})
-    }))
-  });
-
-  const syncedAt = Date.now();
-  setLastCloudSyncAt(syncedAt);
-
-  return {
-    pulled: remoteItems.length,
-    pushed: merged.length,
-    merged: merged.length,
-    syncedAt
-  };
-}
-
-export async function clearCloudData(): Promise<number> {
-  if (!cloudConfigured) throw new Error('Missing VITE_CONVEX_URL.');
-  const convex = getConvexClient();
-  if (!convex) throw new Error('Convex is not available in this browser.');
-  const result = await convex.mutation(cloudApi.clearCloud, {});
-  return isRecord(result) && typeof result.deleted === 'number' ? result.deleted : 0;
 }

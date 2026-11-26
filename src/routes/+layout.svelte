@@ -251,7 +251,7 @@
 
   // Real-time sync lifecycle: start when Pro is confirmed, stop otherwise.
   // The reactive block re-evaluates whenever signedIn, isPro, or
-  // convexAuthenticated changes so the engine toggles automatically on
+  // cloudAuthenticated changes so the engine toggles automatically on
   // sign-in/sign-out and subscription changes. The actual gate
   // decision lives in `shouldStartRealtimeSync` (Property 4) so the
   // rule is testable without spinning up the layout.
@@ -259,7 +259,7 @@
     const shouldSync = shouldStartRealtimeSync({
       signedIn: $authStore.signedIn,
       isPro: $authStore.isPro,
-      convexAuthenticated: $authStore.convexAuthenticated
+      cloudAuthenticated: $authStore.cloudAuthenticated
     });
     if (shouldSync) {
       startRealtimeSync();

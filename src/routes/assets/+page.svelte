@@ -771,7 +771,7 @@
   <meta property="og:title" content="Evidence Assets | HuntFlow" />
   <meta
     property="og:description"
-    content="A local-first evidence vault with Convex-backed file sync and graph visualization for bug bounty workflows."
+    content="A local-first evidence vault with cloud-backed file sync and graph visualization for bug bounty workflows."
   />
 </svelte:head>
 

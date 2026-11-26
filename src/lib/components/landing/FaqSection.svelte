@@ -44,7 +44,7 @@
     {
       question: 'Is my data encrypted in the cloud?',
       answer:
-        'Yes. Pro encrypts evidence files and note bodies client-side before they leave your device.'
+        'Yes, in transit and at rest. Synced records and evidence files are stored per account, and only your signed-in account can read them. Without Pro, nothing leaves your device at all.'
     },
     {
       question: 'Can I cancel Pro any time?',

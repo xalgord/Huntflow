@@ -1,36 +1,32 @@
 /**
- * Real-time cloud sync engine for HuntFlow Pro users.
+ * Cloud sync engine for HuntFlow Pro users (Cloudflare backend).
  *
- * Strategy:
- *   - **Subscription** (primary): Convex `onUpdate` keeps every device
- *     converged within ~200ms whenever the WebSocket is healthy.
- *     We trust this channel and don't try to second-guess it.
- *   - **Event-driven recovery**: instead of polling on a fixed cadence,
- *     we kick a single bidirectional sync cycle whenever something
- *     plausibly broke convergence:
- *       · the user came back to the tab (`visibilitychange` → visible),
- *       · the Convex WebSocket finished reconnecting after a drop,
- *       · we just signed back in.
- *   - **Safety net** (last resort): a 60s interval that runs one cycle
- *     to catch the rare case where every event-driven trigger missed.
- *     This is a 6× reduction from the previous 10s cadence and removes
- *     the `suppressSubscription` hack that the tight loop required.
+ * Pull — a change feed. The server keeps a per-user change counter and
+ * the device keeps a cursor; each poll asks "what changed after my
+ * cursor?" and gets back only those records, page by page. Polls run
+ * while the tab is visible on an adaptive cadence (5s after activity,
+ * easing off to 30s when nothing changes), and immediately when the
+ * tab regains focus or the network comes back.
  *
- * Push behaviour (debounced 1.5s after store flush) is unchanged. We
- * still upload pending evidence files first so storageIds are current
- * in every snapshot.
+ * Push — deltas. Local edits are pushed 1.5s after the stores flush.
+ * The engine remembers a signature for every record the cloud already
+ * has, so a push only carries records that actually changed. Records
+ * go in bounded chunks so large workspaces never hit request limits.
  *
- * Lifecycle: root layout calls `startRealtimeSync()` when a Pro user is
- * detected. `stopRealtimeSync()` tears everything down.
+ * Both directions use the same last-writer-wins rule as the server
+ * (`deletedAt ?? updatedAt`), so every device converges.
+ *
+ * Lifecycle: the root layout calls `startRealtimeSync()` once the user
+ * is signed in, Pro, and the API has accepted their token; it calls
+ * `stopRealtimeSync()` when any of those stop being true.
  */
 import { browser } from '$app/environment';
 import { get as storeGet, writable } from 'svelte/store';
-import { cloudApi, cloudConfigured, getConvexClient, getConvexHttpClient } from './convex';
-import { authStore, getFirebaseIdToken, refreshProEntitlement } from './firebase';
+import { CloudApiError, cloudConfigured, fetchSyncChanges, pushSyncItems } from './api';
+import { authStore, refreshProEntitlement } from './firebase';
 import {
   applyLocalSnapshot,
   getLocalItems,
-  mergeItems,
   normalizeRemoteItem,
   purgeStaleTombstones,
   saveTombstone,
@@ -38,6 +34,16 @@ import {
   type SyncCollection,
   type SyncItem
 } from './sync';
+import {
+  chunkWireItems,
+  cursorAfterOwnPush,
+  cursorSeq,
+  isValidCursor,
+  itemKey,
+  planPush,
+  remoteWinners,
+  signatureOf
+} from './syncDelta';
 import {
   bookmarkStore,
   checklistInstanceStore,
@@ -60,16 +66,18 @@ import type { PersistedArrayStore } from '$lib/stores/persistedArrayStore';
 // ---------------------------------------------------------------------------
 
 export interface RealtimeSyncState {
-  /** Whether the real-time engine is currently connected. */
+  /** Whether the sync engine is running. */
   active: boolean;
-  /** Timestamp of the last successful Convex round-trip (push or pull). */
+  /** Timestamp of the last successful round trip (push or pull). */
   lastSyncAt: number | null;
   /** Human-readable status label for the settings UI. */
   statusLabel: string;
-  /** Number of push operations completed this session. */
+  /** Number of push requests completed this session. */
   pushCount: number;
-  /** Number of pull operations completed this session. */
+  /** Number of pulls that brought in changes this session. */
   pullCount: number;
+  /** Last error message, cleared on the next success. */
+  error: string;
 }
 
 const initialState: RealtimeSyncState = {
@@ -77,7 +85,8 @@ const initialState: RealtimeSyncState = {
   lastSyncAt: null,
   statusLabel: 'Idle',
   pushCount: 0,
-  pullCount: 0
+  pullCount: 0,
+  error: ''
 };
 
 export const realtimeSyncStore = writable<RealtimeSyncState>(initialState);
@@ -86,38 +95,82 @@ export const realtimeSyncStore = writable<RealtimeSyncState>(initialState);
 // Internal state
 // ---------------------------------------------------------------------------
 
-let unsubscribeConvex: (() => void) | null = null;
-let unsubscribeConnectionState: (() => void) | null = null;
-let safetyInterval: ReturnType<typeof setInterval> | null = null;
-let pushTimer: ReturnType<typeof setTimeout> | null = null;
-let pushPending = false;
-let recoveryInFlight = false;
 const PUSH_DEBOUNCE_MS = 1500;
+const POLL_MIN_MS = 5_000;
+const POLL_MAX_MS = 30_000;
+const POLL_BACKOFF = 1.5;
+const MAX_PAGES_PER_PULL = 50;
+const LAST_SYNC_KEY = 'huntflow-cloud-last-sync-at';
+const CURSOR_KEY_PREFIX = 'huntflow-sync-cursor:';
 
-// Promise-chain mutex serializes the mutating sync bodies (push,
-// recover, remote-merge) so a debounce-spawned push can't race a
-// recovery cycle or an incoming subscription update and clobber the
-// merged snapshot. `recoveryInFlight` stays as a dedupe flag for the
-// event triggers; this lock guarantees the actual work never overlaps.
+let running = false;
+let activeUid = '';
+let pushTimer: ReturnType<typeof setTimeout> | null = null;
+let pollTimer: ReturnType<typeof setTimeout> | null = null;
+let pollDelay = POLL_MIN_MS;
+let pushPending = false;
+let pullInFlight = false;
+
+/** Signature of every record the cloud is known to hold, by `collection:id`. */
+const acknowledged = new Map<string, string>();
+
+// Serialises push/pull bodies so a debounced push can't interleave with
+// a pull that is rewriting the same records.
 let syncChain: Promise<unknown> = Promise.resolve();
 function withSyncLock<T>(fn: () => Promise<T>): Promise<T> {
   const run = syncChain.then(fn, fn);
   syncChain = run.catch(() => undefined);
   return run;
 }
-/**
- * Last-resort safety-net cadence. The Convex subscription should keep
- * every device converged on its own — this exists only to catch the
- * rare case where the subscription silently stops delivering updates
- * (browser bug, intermediate proxy, etc.) and the visibility/connection
- * triggers also missed. 60s is intentionally far longer than the
- * previous 10s loop; we trust the live channel by default.
- */
-const SAFETY_NET_MS = 60_000;
-const LAST_SYNC_KEY = 'huntflow-cloud-last-sync-at';
+
+function cursorKey(): string {
+  return `${CURSOR_KEY_PREFIX}${activeUid}`;
+}
+
+function readCursor(): string | null {
+  try {
+    const value = localStorage.getItem(cursorKey());
+    return isValidCursor(value) ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeCursor(cursor: string): void {
+  try {
+    localStorage.setItem(cursorKey(), cursor);
+  } catch {
+    // Storage full or blocked: we simply re-pull from the old cursor.
+  }
+}
+
+function markSynced(patch: Partial<RealtimeSyncState> = {}): void {
+  const now = Date.now();
+  try {
+    localStorage.setItem(LAST_SYNC_KEY, String(now));
+  } catch {
+    // ignore
+  }
+  realtimeSyncStore.update((state) => ({ ...state, lastSyncAt: now, statusLabel: 'Synced', error: '', ...patch }));
+}
+
+function reportError(label: string, error: unknown): void {
+  const message = error instanceof Error ? error.message : 'Cloud sync failed.';
+  console.error(`[realtimeSync] ${label}:`, error);
+  const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+  realtimeSyncStore.update((state) => ({
+    ...state,
+    statusLabel: offline ? 'Offline' : label,
+    error: offline ? 'You are offline. Changes will sync when you reconnect.' : message
+  }));
+  if (error instanceof CloudApiError && error.status === 402) {
+    // Subscription lapsed: refresh so the layout's gate stops the engine.
+    void refreshProEntitlement();
+  }
+}
 
 // Map collection names → their persisted stores so the onFlush hook can
-// determine which collection changed and push only the delta.
+// record deletions and schedule a push.
 type StoreEntry = { collection: SyncCollection; store: PersistedArrayStore<{ id: string }> };
 
 function allStores(): StoreEntry[] {
@@ -138,245 +191,173 @@ function allStores(): StoreEntry[] {
   ];
 }
 
-/**
- * Build a per-collection onFlush handler that creates tombstones for any
- * IDs deleted from that collection, then schedules a push.
- */
 function makeFlushHandler(collection: SyncCollection) {
   return (_dirtyIds: string[], deletedIds: string[]): void => {
-    for (const id of deletedIds) {
-      saveTombstone(collection, id);
-    }
+    for (const id of deletedIds) saveTombstone(collection, id);
     schedulePush();
   };
 }
 
 // ---------------------------------------------------------------------------
-// Push: debounced full-snapshot push to Convex after local edits
+// Push
 // ---------------------------------------------------------------------------
 
-async function pushToConvex(): Promise<void> {
-  pushPending = false;
-  const convex = getConvexClient();
-  if (!convex) return;
-
-  // Pro gate: re-check the live entitlement right before the mutation
-  // (mirrors syncNow in sync.ts). A just-cancelled subscription must
-  // not push a snapshot even if the debounce already fired. Only
-  // refresh when the cache still says Pro (the only case where
-  // staleness matters); if already not-Pro there's nothing to push.
-  if (storeGet(authStore).isPro) {
-    await refreshProEntitlement();
-  }
+async function pushChanges(options: { retryErrors?: boolean } = {}): Promise<void> {
+  // Re-check the entitlement only when the cache still says Pro; a
+  // just-cancelled subscription must not keep pushing.
+  if (storeGet(authStore).isPro) await refreshProEntitlement();
   if (!storeGet(authStore).isPro) return;
 
+  await uploadPendingEvidenceFiles(options);
+
+  const localItems = await getLocalItems();
+  const plan = planPush(localItems, acknowledged);
+  if (plan.oversized.length > 0) {
+    console.warn('[realtimeSync] records over the 1.8 MB sync limit were skipped:', plan.oversized);
+  }
+  if (plan.wire.length === 0) return;
+
+  realtimeSyncStore.update((state) => ({ ...state, statusLabel: 'Syncing…' }));
+  for (const chunk of chunkWireItems(plan.wire)) {
+    const result = await pushSyncItems(chunk);
+    for (const item of chunk) {
+      const key = itemKey(item);
+      const signature = plan.signatures.get(key);
+      if (signature) acknowledged.set(key, signature);
+    }
+    // If nobody else wrote since our cursor and every record landed, the
+    // rows stamped with this seq are exactly ours: skip pulling them back.
+    if (cursorSeq(readCursor()) === result.prevSeq && result.changed === chunk.length && result.invalid === 0) {
+      writeCursor(cursorAfterOwnPush(result.seq));
+    }
+    realtimeSyncStore.update((state) => ({ ...state, pushCount: state.pushCount + 1 }));
+  }
+  markSynced();
+  // Local activity: keep polling briskly for a while.
+  pollDelay = POLL_MIN_MS;
+}
+
+async function runPush(options: { retryErrors?: boolean } = {}): Promise<void> {
+  pushPending = false;
+  if (!running) return;
   await withSyncLock(async () => {
     try {
-      realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Pushing…' }));
-
-      // Upload any pending evidence files before the data push so storageIds
-      // are current in the snapshot.
-      await uploadPendingEvidenceFiles();
-
-      const localItems = await getLocalItems();
-      await convex.mutation(cloudApi.upsertSnapshot, {
-        items: localItems.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
-          collection,
-          localId,
-          payload,
-          updatedAt,
-          ...(deletedAt ? { deletedAt } : {})
-        }))
-      });
-
-      const now = Date.now();
-      localStorage.setItem(LAST_SYNC_KEY, String(now));
-      realtimeSyncStore.update((s) => ({
-        ...s,
-        lastSyncAt: now,
-        statusLabel: 'Synced',
-        pushCount: s.pushCount + 1
-      }));
-    } catch (err) {
-      console.error('[realtimeSync] push failed:', err);
-      realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Push error' }));
+      await pushChanges(options);
+    } catch (error) {
+      reportError('Push error', error);
     }
   });
 }
 
 function schedulePush(): void {
+  if (!running) return;
   if (pushTimer) clearTimeout(pushTimer);
   pushPending = true;
   pushTimer = setTimeout(() => {
     pushTimer = null;
-    void pushToConvex();
+    void runPush();
   }, PUSH_DEBOUNCE_MS);
 }
 
 // ---------------------------------------------------------------------------
-// Pull: process incoming Convex snapshot update
+// Pull
 // ---------------------------------------------------------------------------
 
-/**
- * Live channel handler. Convex calls this whenever the `getSnapshot`
- * subscription transitions to a new value. We merge against local state
- * to honor any edits that happened locally between the last server
- * timestamp and now (last-writer-wins on `updatedAt`/`deletedAt`),
- * apply the result, and stop.
- *
- * We deliberately do NOT push here: any local-only changes from the
- * merge are already on disk via `applyLocalSnapshot`, and the next
- * onFlush will pick them up. The previous design pushed eagerly on
- * every subscription event and needed a `suppressSubscription` flag
- * to break the resulting feedback loop.
- */
-async function handleRemoteUpdate(rawRemote: unknown): Promise<void> {
-  if (!Array.isArray(rawRemote)) return;
+/** Pull every page after the cursor. Returns how many records were applied. */
+async function pullChanges(): Promise<number> {
+  let cursor = readCursor();
+  let applied = 0;
 
-  const remoteItems = rawRemote
-    .map(normalizeRemoteItem)
-    .filter((item): item is SyncItem => Boolean(item));
+  for (let page = 0; page < MAX_PAGES_PER_PULL; page++) {
+    const response = await fetchSyncChanges(cursor);
+    const remote = response.items
+      .map(normalizeRemoteItem)
+      .filter((item): item is SyncItem => Boolean(item));
 
-  // NOTE: an empty remote snapshot is intentionally treated as a no-op
-  // rather than a "cloud is empty, wipe local" signal. A legitimately
-  // cleared account should be marked with an explicit `clearedAt`
-  // tombstone marker server-side; relying on `[]` here would brick
-  // local data whenever the subscription briefly returns empty (auth
-  // transition, partial replication). Proper `clearedAt` handling is
-  // a deferred follow-up.
-  if (remoteItems.length === 0) return;
+    if (remote.length > 0) {
+      const local = await getLocalItems();
+      const winners = remoteWinners(local, remote);
+      if (winners.length > 0) await applyLocalSnapshot(winners);
+      applied += winners.length;
+      for (const item of remote) acknowledged.set(itemKey(item), signatureOf(item, JSON.stringify(item.payload)));
+      // Local copies that beat the cloud's need to go back up.
+      if (winners.length < remote.length) schedulePush();
+    }
 
-  await withSyncLock(async () => {
-    const localItems = await getLocalItems();
-    const merged = mergeItems(localItems, remoteItems);
-
-    // applyLocalSnapshot writes to IndexedDB then calls store.refresh()
-    // which re-reads via load(). The load() path sets the store value
-    // directly (source.set) without going through put/putBatch, so no
-    // dirtyIds are added, no scheduleSave fires, and onFlush never
-    // triggers — there is no circular push-back to worry about.
-    await applyLocalSnapshot(merged);
-
-    const now = Date.now();
-    localStorage.setItem(LAST_SYNC_KEY, String(now));
-    realtimeSyncStore.update((s) => ({
-      ...s,
-      lastSyncAt: now,
-      statusLabel: 'Synced',
-      pullCount: s.pullCount + 1
-    }));
-  });
+    cursor = response.cursor;
+    writeCursor(cursor);
+    if (!response.hasMore) break;
+  }
+  return applied;
 }
 
-// ---------------------------------------------------------------------------
-// Recovery cycle: HTTP-based pull-merge-push, fired on real events
-// ---------------------------------------------------------------------------
-
-/**
- * Bidirectional sync cycle used as the recovery primitive. Runs at
- * most one at a time (`recoveryInFlight` gate). Fired by:
- *   - `visibilitychange` → visible (catch up after a backgrounded tab)
- *   - WebSocket reconnect (recover from a temporary outage)
- *   - 60s safety net (last-resort, in case the live channel silently
- *     stopped delivering updates)
- *
- * Uses the cache-free HTTP client for the pull so we never read a
- * stale value from the WebSocket client's optimistic cache.
- */
-async function recoverNow(reason: string): Promise<void> {
-  if (recoveryInFlight) return;
-  const convex = getConvexClient();
-  if (!convex) return;
-
-  recoveryInFlight = true;
+async function runPull(reason: string): Promise<void> {
+  if (!running || pullInFlight) return;
+  pullInFlight = true;
   try {
     await withSyncLock(async () => {
-      realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Syncing…' }));
-
-      await uploadPendingEvidenceFiles();
-
-      const httpClient = getConvexHttpClient();
-      const token = await getFirebaseIdToken();
-      if (!httpClient || !token) {
-        console.warn(`[realtimeSync] recovery skipped (${reason}): no HTTP client or Firebase ID token`);
-        return;
+      try {
+        const applied = await pullChanges();
+        if (applied > 0) {
+          pollDelay = POLL_MIN_MS;
+          markSynced();
+          realtimeSyncStore.update((state) => ({ ...state, pullCount: state.pullCount + 1 }));
+        } else {
+          pollDelay = Math.min(POLL_MAX_MS, Math.round(pollDelay * POLL_BACKOFF));
+          const state = storeGet(realtimeSyncStore);
+          if (state.statusLabel !== 'Synced' || state.error) markSynced();
+        }
+      } catch (error) {
+        pollDelay = POLL_MAX_MS;
+        reportError('Sync error', error);
+        console.debug(`[realtimeSync] pull failed (${reason})`);
       }
-      httpClient.setAuth(token);
-
-      const [localItems, rawRemote] = await Promise.all([
-        getLocalItems(),
-        httpClient.query(cloudApi.getSnapshot, {})
-      ]);
-
-      const remoteItems = Array.isArray(rawRemote)
-        ? rawRemote.map(normalizeRemoteItem).filter((item): item is SyncItem => Boolean(item))
-        : [];
-
-      const merged = mergeItems(localItems, remoteItems);
-
-      // Apply merged snapshot locally. As in handleRemoteUpdate(), this
-      // refreshes stores via source.set rather than put/putBatch, so it
-      // can't trigger an onFlush feedback loop.
-      await applyLocalSnapshot(merged);
-
-      // Push merged snapshot back so other devices receive any local-only
-      // changes without waiting for the user's next edit.
-      await convex.mutation(cloudApi.upsertSnapshot, {
-        items: merged.map(({ collection, localId, payload, updatedAt, deletedAt }) => ({
-          collection,
-          localId,
-          payload,
-          updatedAt,
-          ...(deletedAt ? { deletedAt } : {})
-        }))
-      });
-
-      const now = Date.now();
-      localStorage.setItem(LAST_SYNC_KEY, String(now));
-      realtimeSyncStore.update((s) => ({
-        ...s,
-        lastSyncAt: now,
-        statusLabel: 'Synced',
-        pullCount: s.pullCount + 1,
-        pushCount: s.pushCount + 1
-      }));
-      console.debug(`[realtimeSync] recovery cycle completed (${reason})`);
     });
-  } catch (err) {
-    console.error(`[realtimeSync] recovery cycle failed (${reason}):`, err);
-    realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Sync error' }));
   } finally {
-    recoveryInFlight = false;
+    pullInFlight = false;
   }
+}
+
+function schedulePoll(delay = pollDelay): void {
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = null;
+  if (!running || document.visibilityState !== 'visible') return;
+  pollTimer = setTimeout(async () => {
+    pollTimer = null;
+    await runPull('poll');
+    schedulePoll();
+  }, delay);
+}
+
+async function pollNow(reason: string): Promise<void> {
+  if (!running) return;
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = null;
+  pollDelay = POLL_MIN_MS;
+  await runPull(reason);
+  schedulePoll();
 }
 
 // ---------------------------------------------------------------------------
 // Event hooks
 // ---------------------------------------------------------------------------
 
-/** Catch up immediately when the user returns to a backgrounded tab. */
-function handleVisibilityForSync(): void {
+function handleVisibility(): void {
   if (document.visibilityState === 'visible') {
-    void recoverNow('tab-visible');
+    void pollNow('tab-visible');
+  } else if (pollTimer) {
+    clearTimeout(pollTimer);
+    pollTimer = null;
   }
 }
 
-let wasConnected = true;
+function handleOnline(): void {
+  void pollNow('online');
+  schedulePush();
+}
 
-/**
- * Run a recovery cycle on the falling/rising edge of the WebSocket
- * connection. We trigger on the rising edge (reconnect) so we catch up
- * any updates the server delivered during the outage. The falling edge
- * just updates the status label.
- */
-function handleConnectionStateChange(state: { isWebSocketConnected: boolean }): void {
-  const nowConnected = state.isWebSocketConnected;
-  if (!wasConnected && nowConnected) {
-    void recoverNow('ws-reconnect');
-  } else if (wasConnected && !nowConnected) {
-    realtimeSyncStore.update((s) => ({ ...s, statusLabel: 'Offline' }));
-  }
-  wasConnected = nowConnected;
+function handleOffline(): void {
+  realtimeSyncStore.update((state) => ({ ...state, statusLabel: 'Offline' }));
 }
 
 // ---------------------------------------------------------------------------
@@ -384,103 +365,76 @@ function handleConnectionStateChange(state: { isWebSocketConnected: boolean }): 
 // ---------------------------------------------------------------------------
 
 export function startRealtimeSync(): void {
-  if (!browser || !cloudConfigured) return;
-  if (unsubscribeConvex) return; // already running
+  if (!browser || !cloudConfigured || running) return;
+  const uid = storeGet(authStore).uid;
+  if (!uid) return;
 
-  const convex = getConvexClient();
-  if (!convex) return;
+  running = true;
+  if (activeUid !== uid) acknowledged.clear();
+  activeUid = uid;
+  pollDelay = POLL_MIN_MS;
 
-  // Purge old tombstones on startup so they don't grow unbounded.
   purgeStaleTombstones();
+  for (const entry of allStores()) entry.store.setOnFlush(makeFlushHandler(entry.collection));
 
-  // Wire per-collection onFlush handlers into every store.
-  for (const entry of allStores()) {
-    entry.store.setOnFlush(makeFlushHandler(entry.collection));
+  document.addEventListener('visibilitychange', handleVisibility);
+  window.addEventListener('online', handleOnline);
+  window.addEventListener('offline', handleOffline);
+
+  let lastSync: number | null = null;
+  try {
+    lastSync = Number(localStorage.getItem(LAST_SYNC_KEY)) || null;
+  } catch {
+    lastSync = null;
   }
+  realtimeSyncStore.set({ ...initialState, active: true, lastSyncAt: lastSync, statusLabel: 'Connecting…' });
 
-  // Subscribe to Convex live query (the primary channel).
-  unsubscribeConvex = convex.onUpdate(
-    cloudApi.getSnapshot,
-    {},
-    (result) => {
-      void handleRemoteUpdate(result);
-    }
-  );
+  // Pull first so a fresh device merges the cloud before uploading.
+  void (async () => {
+    await runPull('start');
+    await runPush();
+    schedulePoll();
+  })();
 
-  // Subscribe to connection state so reconnects fire a single recovery
-  // cycle instead of needing a fixed-cadence poll to notice we missed
-  // updates while disconnected.
-  const initialConnState = convex.connectionState();
-  wasConnected = initialConnState.isWebSocketConnected;
-  unsubscribeConnectionState = convex.subscribeToConnectionState(handleConnectionStateChange);
+  console.debug('[realtimeSync] started (change feed + delta push)');
+}
 
-  // Visibility-driven catch-up for backgrounded tabs.
-  document.addEventListener('visibilitychange', handleVisibilityForSync);
-
-  // Safety-net interval: long enough to be cheap, short enough to
-  // still feel "real-time" if the live channel ever falls silent.
-  if (safetyInterval) clearInterval(safetyInterval);
-  safetyInterval = setInterval(() => {
-    void recoverNow('safety-net');
-  }, SAFETY_NET_MS);
-
-  const lastSync = Number(localStorage.getItem(LAST_SYNC_KEY)) || null;
-  realtimeSyncStore.set({
-    active: true,
-    lastSyncAt: lastSync,
-    statusLabel: 'Connected',
-    pushCount: 0,
-    pullCount: 0
-  });
-
-  // Initial reconciliation so any offline edits are pushed and any
-  // remote updates from before this session are pulled.
-  void recoverNow('start');
-  schedulePush();
-
-  console.debug('[realtimeSync] started (subscription + event-driven recovery + 60s safety net)');
+/**
+ * Full reconcile on demand ("Sync now"): re-upload everything the
+ * cloud may be missing, retry failed evidence uploads, and pull.
+ */
+export async function syncNow(): Promise<void> {
+  if (!running) return;
+  acknowledged.clear();
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = null;
+  await runPull('manual');
+  await runPush({ retryErrors: true });
+  schedulePoll();
 }
 
 export function stopRealtimeSync(): void {
-  document.removeEventListener('visibilitychange', handleVisibilityForSync);
+  if (!running) {
+    realtimeSyncStore.set(initialState);
+    return;
+  }
+  document.removeEventListener('visibilitychange', handleVisibility);
+  window.removeEventListener('online', handleOnline);
+  window.removeEventListener('offline', handleOffline);
 
-  if (unsubscribeConvex) {
-    unsubscribeConvex();
-    unsubscribeConvex = null;
-  }
-  if (unsubscribeConnectionState) {
-    unsubscribeConnectionState();
-    unsubscribeConnectionState = null;
-  }
-  if (safetyInterval) {
-    clearInterval(safetyInterval);
-    safetyInterval = null;
-  }
-  if (pushTimer) {
-    clearTimeout(pushTimer);
-    pushTimer = null;
-  }
+  if (pollTimer) clearTimeout(pollTimer);
+  pollTimer = null;
+  if (pushTimer) clearTimeout(pushTimer);
+  pushTimer = null;
 
-  // If there's a pending push, flush it synchronously-ish.
-  if (pushPending) {
-    void pushToConvex();
-  }
+  // Flush a pending push while the token is still valid.
+  if (pushPending) void runPush();
   pushPending = false;
+  running = false;
 
-  // Remove onFlush callbacks.
-  for (const entry of allStores()) {
-    entry.store.setOnFlush(undefined);
-  }
+  for (const entry of allStores()) entry.store.setOnFlush(undefined);
 
-  // Reset transient flags so a subsequent startRealtimeSync() begins
-  // from a clean slate. `wasConnected` matches the module-level fresh
-  // initial (startRealtimeSync re-reads the live connection state
-  // before subscribing, so this default only governs the brief window
-  // before that read). `recoveryInFlight` clears any stuck gate from a
-  // failed/aborted cycle so the next start can recover immediately.
-  recoveryInFlight = false;
-  wasConnected = true;
-
+  pullInFlight = false;
   realtimeSyncStore.set(initialState);
   console.debug('[realtimeSync] stopped');
 }

@@ -33,7 +33,7 @@
 
   /** Short tagline rendered under the plan name. Plain text. */
   export let tagline: string =
-    'Real-time cloud sync, encrypted evidence, and cross-device hunting.';
+    'Real-time cloud sync, evidence backup, and cross-device hunting.';
 
   /**
    * Price string. Kept as a placeholder by default so the route can
@@ -50,9 +50,9 @@
    */
   export let features: string[] = [
     'Real-time cloud sync across every device',
-    'End-to-end encrypted evidence storage',
+    'Evidence file backup, up to 1 GB',
     'Cross-device hunting (web, desktop, mobile PWA)',
-    'Encrypted automatic backups',
+    'Encrypted in transit and at rest',
     'Priority email support'
   ];
 </script>

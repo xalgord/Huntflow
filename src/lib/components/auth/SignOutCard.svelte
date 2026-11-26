@@ -9,7 +9,6 @@
    *
    * The button calls `signOut()` from `firebase.ts`, which:
    *   - stops the realtime sync engine
-   *   - resets the Convex auth binding
    *   - signs the user out of Firebase
    *   - resets `authStore` to the canonical signed-out state
    *

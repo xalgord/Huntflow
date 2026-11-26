@@ -7,7 +7,7 @@
  *
  * The rule, restated from design.md:
  *
- *   sync runs ⇔ signedIn && isPro && convexAuthenticated
+ *   sync runs ⇔ signedIn && isPro && cloudAuthenticated
  *
  * No other inputs influence the gate. Callers feed in a snapshot of
  * the relevant `authStore` booleans; the predicate is pure and total.
@@ -27,7 +27,7 @@
 export interface SyncGateInputs {
   signedIn: boolean;
   isPro: boolean;
-  convexAuthenticated: boolean;
+  cloudAuthenticated: boolean;
 }
 
 /**
@@ -36,7 +36,7 @@ export interface SyncGateInputs {
  * on the next reactive evaluation.
  */
 export function shouldStartRealtimeSync(state: SyncGateInputs): boolean {
-  return Boolean(state.signedIn && state.isPro && state.convexAuthenticated);
+  return Boolean(state.signedIn && state.isPro && state.cloudAuthenticated);
 }
 
 /** Action emitted by `decideRealtimeSync`. */

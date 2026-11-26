@@ -5,22 +5,21 @@
    *
    * Renders one of two states driven by `$authStore.isPro`:
    *
-   *   - `isPro === false` → "Upgrade to Pro" CTA. Click invokes the
-   *     Convex `dodo.createCheckoutSession` action with same-origin
-   *     return / cancel URLs and full-page-redirects the browser to
-   *     the Dodo-hosted checkout session.
+   *   - `isPro === false` → "Upgrade to Pro" CTA. Click calls
+   *     `POST /api/billing/checkout` with same-origin return / cancel
+   *     URLs and full-page-redirects the browser to the hosted
+   *     checkout session.
    *
    *   - `isPro === true` → small "Pro" pill plus a "Manage
-   *     subscription" CTA. Click invokes the Convex
-   *     `dodo.getCustomerPortalUrl` action and full-page-redirects
-   *     the browser to the customer portal.
+   *     subscription" CTA. Click calls `POST /api/billing/portal` and
+   *     full-page-redirects the browser to the customer portal.
    *
    * Both flows use `window.location.assign(url)` because Dodo's
    * checkout and customer-portal pages are not embeddable; same-tab
    * navigation is the standard payment-flow pattern (Stripe and Dodo
    * both behave this way). The post-redirect return path lands the
-   * user back on `/account`, where the live `entitlements` query
-   * picks up the new `isPro` value as soon as the webhook upserts it.
+   * user back on `/account`, which re-reads `/api/me` until the
+   * webhook has recorded the new `isPro` value.
    *
    * Auth state assumptions:
    *   - The card renders only when `$authStore.signedIn === true`; the
@@ -28,8 +27,8 @@
    *     users (the action requires an authenticated identity anyway,
    *     and would throw "Not authenticated").
    *
-   * Error handling: Convex `dodo.*` actions throw `ConvexError` on
-   * outbound HTTP failures. `AuthErrorMap` is auth-error-focused, so
+   * Error handling: the billing endpoints return JSON errors on
+   * upstream failures. `AuthErrorMap` is auth-error-focused, so
    * for billing-API failures we surface a generic, brand-clean
    * "Couldn't start checkout. Try again in a minute." string instead
    * of leaking SDK detail. The error region clears on the next click.
@@ -48,9 +47,8 @@
    */
 
   import { Loader2, Sparkles, Settings2 } from 'lucide-svelte';
-  import { anyApi } from 'convex/server';
   import { authStore } from '$lib/cloud/firebase';
-  import { getConvexClient } from '$lib/cloud/convex';
+  import { createCheckoutSession, createCustomerPortalSession } from '$lib/cloud/api';
 
   /**
    * Generic, brand-clean failure copy for billing-API errors. Auth
@@ -89,19 +87,12 @@
     if (busy) return;
     error = '';
 
-    const convex = getConvexClient();
-    if (!convex) {
-      error = UPGRADE_ERROR_MESSAGE;
-      return;
-    }
-
     busy = true;
     try {
       const { returnUrl, cancelUrl } = buildReturnUrls();
-      const result = (await convex.action(
-        anyApi.dodo.createCheckoutSession,
-        { returnUrl, cancelUrl }
-      )) as { checkoutUrl?: unknown } | null;
+      const result = (await createCheckoutSession(returnUrl, cancelUrl)) as
+        | { checkoutUrl?: unknown }
+        | null;
 
       const checkoutUrl =
         result && typeof result.checkoutUrl === 'string'
@@ -127,18 +118,9 @@
     if (busy) return;
     error = '';
 
-    const convex = getConvexClient();
-    if (!convex) {
-      error = MANAGE_ERROR_MESSAGE;
-      return;
-    }
-
     busy = true;
     try {
-      const result = (await convex.action(
-        anyApi.dodo.getCustomerPortalUrl,
-        {}
-      )) as { url?: unknown } | null;
+      const result = (await createCustomerPortalSession()) as { url?: unknown } | null;
 
       const portalUrl =
         result && typeof result.url === 'string' ? result.url : '';

@@ -5,7 +5,7 @@
    * After the Firebase Auth + Dodo Payments migration, this page no longer
    * mounts a third-party `<PricingTable />` widget. The plan presentation is
    * a custom `<PlanCard>` and the upgrade/manage entry point is the
-   * brand-clean `<SubscriptionCard>` (which calls Convex `dodo.*` actions and
+   * brand-clean `<SubscriptionCard>` (which calls the `/api/billing/*` endpoints and
    * full-page-redirects to a Dodo-hosted checkout / customer portal).
    *
    * Three rendering modes, mutually exclusive, keyed off the auth store:
@@ -61,12 +61,12 @@
   // in sync with the value props on the landing page; brand-clean by
   // construction (no provider names, no third-party copy).
   const proFeatures: string[] = [
-    'Real-time cloud sync across every device (web, desktop, mobile PWA)',
-    'End-to-end encrypted evidence and notes',
-    'Conflict-free collaborative editing on the same workspace',
-    'Encrypted automatic backups',
+    'Real-time cloud sync across every device you sign in on (web, desktop, mobile PWA)',
+    'Evidence file backup, up to 1 GB',
+    'Edit offline; changes merge automatically when you reconnect',
+    'Encrypted in transit and at rest, readable only by your account',
     'Priority email support',
-    'Early access to upcoming features (report builder, team workspace)'
+    'Early access to upcoming features'
   ];
 
   function normalizePathname(pathname: string): string {
@@ -99,7 +99,7 @@
   <title>Pricing &middot; HuntFlow</title>
   <meta
     name="description"
-    content="HuntFlow is free forever for the core. Upgrade to Pro for real-time cloud sync, end-to-end encrypted evidence, and priority support."
+    content="HuntFlow is free forever for the core. Upgrade to Pro for real-time cloud sync, evidence backup, and priority support."
   />
   <link rel="canonical" href="https://huntflow.xalgorix.com/pricing" />
 </svelte:head>
@@ -142,8 +142,8 @@
       </a>
 
       <nav class="hidden items-center gap-7 text-sm text-zinc-400 md:flex" aria-label="Pricing nav">
-        <a class="transition hover:text-zinc-100" href="/#features">Features</a>
-        <a class="transition hover:text-zinc-100" href="/#cloud-sync">Cloud Sync</a>
+        <a class="transition hover:text-zinc-100" href="/#workflow">Features</a>
+        <a class="transition hover:text-zinc-100" href="/#private">Privacy</a>
         <a class="transition hover:text-zinc-100" href="/#faq">FAQ</a>
       </nav>
 
@@ -208,7 +208,7 @@
       - `<SubscriptionCard>` for signed-in users (handles both Upgrade
         and Manage states based on `$authStore.isPro` internally), or
       - a "Sign in to upgrade" link for signed-out users (the
-        Convex `dodo.*` actions require an authenticated identity, so
+        billing endpoints require an authenticated identity, so
         we route through the sign-in form first instead of letting the
         click fail). The `redirect=/pricing` query param brings the
         user back here once authenticated.
@@ -218,8 +218,8 @@
       <div class="mx-auto max-w-md">
         <PlanCard
           name="HuntFlow Pro"
-          tagline="Real-time cloud sync, encrypted evidence, and cross-device hunting."
-          price="$6 / month"
+          tagline="Real-time cloud sync, evidence backup, and cross-device hunting."
+          price="$9 / month"
           features={proFeatures}
         >
           <svelte:fragment slot="cta">
@@ -260,7 +260,7 @@
           </div>
           <h3 class="mt-5 text-lg font-semibold text-foreground">Real-time sync</h3>
           <p class="mt-2.5 text-sm leading-6 text-zinc-400">
-            Every edit is reflected on every signed-in device in under a second. Same data on laptop, phone, tablet.
+            Every edit reaches your other signed-in devices within seconds. Same data on laptop, phone, tablet.
           </p>
         </article>
         <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-tranzinc-y-0.5">
@@ -268,9 +268,10 @@
           <div class="flex h-11 w-11 items-center justify-center rounded-xl border border-primary-500/20 bg-primary-500/10 text-primary-400 shadow-[0_0_12px_rgba(225,29,52,0.08)] transition-shadow group-hover:shadow-[0_0_20px_rgba(225,29,52,0.15)]">
             <Lock size={20} aria-hidden="true" />
           </div>
-          <h3 class="mt-5 text-lg font-semibold text-foreground">Encrypted at rest</h3>
+          <h3 class="mt-5 text-lg font-semibold text-foreground">Private by design</h3>
           <p class="mt-2.5 text-sm leading-6 text-zinc-400">
-            Notes, evidence and report drafts are encrypted client-side. Even we can&apos;t read your findings.
+            Your workspace always lives on your device first. The cloud copy is encrypted in transit and at rest and is
+            readable only by your signed-in account.
           </p>
         </article>
         <article class="value-card group relative overflow-hidden rounded-2xl border border-white/[0.08] p-6 backdrop-blur-sm transition-all duration-300 hover:border-primary-500/30 hover:-tranzinc-y-0.5">
@@ -339,9 +340,9 @@
       <div class="grid grid-cols-2 gap-x-12 gap-y-3 text-sm sm:grid-cols-3">
         <div>
           <p class="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Product</p>
-          <a class="mt-3 block text-zinc-300 hover:text-zinc-100" href="/#features">Features</a>
+          <a class="mt-3 block text-zinc-300 hover:text-zinc-100" href="/#workflow">Features</a>
           <a class="mt-2 block text-zinc-300 hover:text-zinc-100" href="/pricing">Pricing</a>
-          <a class="mt-2 block text-zinc-300 hover:text-zinc-100" href="/#cloud-sync">Cloud sync</a>
+          <a class="mt-2 block text-zinc-300 hover:text-zinc-100" href="/#private">Privacy</a>
           <a class="mt-2 block text-zinc-300 hover:text-zinc-100" href="/account">Open app</a>
         </div>
         <div>
