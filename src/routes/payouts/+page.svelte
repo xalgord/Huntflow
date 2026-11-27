@@ -177,7 +177,7 @@
       </button>
     </header>
 
-    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       <MetricCard icon={TrendingUp} label={`Paid in ${currentYear}`} value={formatMoney(yearPaidTotal)} detail="Tax-year total" tone="success" />
       <MetricCard icon={CircleDollarSign} label="Paid all time" value={formatMoney(paidTotal)} detail={`${paidPayouts.length} paid payout${paidPayouts.length === 1 ? '' : 's'}`} tone="success" />
       <MetricCard icon={Banknote} label="Pending" value={formatMoney(pendingTotal)} detail="Awarded, not yet paid" tone="warning" />
@@ -204,13 +204,13 @@
     {/if}
 
     {#if $payoutStore.length > 0}
-      <section class="grid gap-4 xl:grid-cols-[minmax(0,1.4fr)_minmax(20rem,0.6fr)]">
+      <section class="grid gap-5 xl:grid-cols-[minmax(0,1.4fr)_minmax(20rem,0.6fr)]">
         <IncomeChart payouts={$payoutStore} />
         <TaxExport payouts={$payoutStore} />
       </section>
     {/if}
 
-    <section class="flex flex-col gap-3 lg:flex-row lg:items-center">
+    <section class="flex flex-col gap-3 xl:flex-row xl:items-center">
       <div class="hf-segmented self-start" role="radiogroup" aria-label="Payout status">
         {#each statusSegments as segment}
           <button
@@ -229,7 +229,7 @@
         <Search size={14} class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" aria-hidden="true" />
         <input bind:value={query} class="hf-input pl-8" placeholder="Search program, platform or severity" />
       </label>
-      <div class="grid grid-cols-3 gap-2 lg:flex">
+      <div class="grid grid-cols-3 gap-2 xl:flex">
         <select bind:value={platformFilter} class="hf-select lg:w-36" aria-label="Platform">
           <option value="all">All platforms</option>
           {#each Object.entries(platformLabels) as [value, label]}
@@ -244,7 +244,7 @@
           <option value="low">Low</option>
           <option value="informational">Informational</option>
         </select>
-        <select bind:value={yearFilter} class="hf-select lg:w-28" aria-label="Year">
+        <select bind:value={yearFilter} class="hf-select xl:w-28" aria-label="Year">
           <option value="all">All years</option>
           {#each years as year}
             <option value={year}>{year}</option>
@@ -256,7 +256,7 @@
     {#if filteredPayouts.length > 0}
       <section class="hf-card overflow-hidden">
         <div
-          class="hidden grid-cols-[minmax(12rem,1fr)_7rem_6.5rem_7rem_7.5rem_minmax(14rem,auto)] gap-4 border-b-[0.5px] border-zinc-800 px-4 py-2 text-[0.6875rem] font-semibold text-zinc-500 lg:grid"
+          class="hidden grid-cols-[minmax(12rem,1fr)_7rem_6.5rem_7rem_7.5rem_minmax(14rem,auto)] gap-x-4 border-b-[0.5px] border-zinc-800 px-5 py-2.5 text-[0.6875rem] font-semibold text-zinc-500 xl:grid"
         >
           <span>Program</span>
           <span>Severity</span>
@@ -269,19 +269,19 @@
           {#each filteredPayouts as payout (payout.id)}
             {@const next = nextStatus(payout.status)}
             <li
-              class="grid gap-x-4 gap-y-2 px-4 py-3 lg:grid-cols-[minmax(12rem,1fr)_7rem_6.5rem_7rem_7.5rem_minmax(14rem,auto)] lg:items-center"
+              class="grid gap-x-4 gap-y-2 px-5 py-3.5 xl:grid-cols-[minmax(12rem,1fr)_7rem_6.5rem_7rem_7.5rem_minmax(14rem,auto)] xl:items-center"
             >
               <div class="min-w-0">
                 <p class="truncate text-[0.8125rem] font-semibold text-zinc-100">{payout.program}</p>
-                <p class="text-xs text-zinc-500">{platformLabels[payout.platform]}<span class="lg:hidden"> · {formatDate(payout.date)}</span></p>
+                <p class="text-xs text-zinc-500">{platformLabels[payout.platform]}<span class="xl:hidden"> · {formatDate(payout.date)}</span></p>
               </div>
               <div><SeverityBadge severity={payout.severity} variant="dot" /></div>
-              <span class="font-mono text-[0.8125rem] font-semibold tabular-nums text-zinc-50 lg:text-right">
+              <span class="font-mono text-[0.8125rem] font-semibold tabular-nums text-zinc-50 xl:text-right">
                 {formatMoney(payout.amount, 'USD', 2)}
               </span>
-              <span class="hidden text-xs text-zinc-500 lg:block">{formatDate(payout.date)}</span>
+              <span class="hidden text-xs text-zinc-500 xl:block">{formatDate(payout.date)}</span>
               <span><StatusBadge label={statusLabels[payout.status]} tone={statusTone(payout.status)} /></span>
-              <div class="flex items-center justify-start gap-1 lg:justify-end">
+              <div class="flex items-center justify-start gap-1 xl:justify-end">
                 {#if next}
                   <button type="button" class="hf-button-tinted h-7 min-h-0 px-2.5 text-xs" on:click={() => advancePayout(payout)}>
                     Mark {statusLabels[next]}

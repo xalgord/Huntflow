@@ -187,7 +187,7 @@
           </div>
 
           {#if noteAssets.length > 0}
-            <div class="mt-4 grid gap-3 sm:grid-cols-2">
+            <div class="mt-4 grid gap-4 sm:grid-cols-2">
               {#each noteAssets.slice(0, 4) as asset (asset.id)}
                 <a href={`/assets?target=${workingNote.targetId}&note=${workingNote.id}`} class="rounded-[14px] border border-border/70 bg-background/40 p-3 transition hover:border-primary/40 hover:bg-muted/40">
                   <p class="truncate text-sm font-semibold text-foreground">{asset.title}</p>

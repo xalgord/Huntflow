@@ -73,15 +73,15 @@
     </button>
   </div>
 
-  <nav class="flex-1 overflow-y-auto px-2.5 pb-3" aria-label="Sections">
+  <nav class="flex-1 overflow-y-auto px-3 pb-4" aria-label="Sections">
     {#each groups as group}
-      <div class="mb-3">
+      <div class="mb-5">
         {#if group.label && !rail}
-          <p class="px-2 pb-1 pt-2 text-[0.6875rem] font-semibold text-zinc-500">{group.label}</p>
+          <p class="px-2.5 pb-1.5 pt-1 text-[0.6875rem] font-semibold text-zinc-500">{group.label}</p>
         {:else if group.label}
           <div class="mx-2 my-2 h-px bg-zinc-800/60" aria-hidden="true"></div>
         {/if}
-        <ul class="space-y-px">
+        <ul class="space-y-0.5">
           {#each group.items as item}
             {@const active = item.match(pathname)}
             <li>
@@ -104,7 +104,7 @@
     {/each}
   </nav>
 
-  <div class="shrink-0 px-2.5 pb-3 pt-1">
+  <div class="shrink-0 px-3 pb-4 pt-1">
     {#each systemItems as item}
       {@const active = item.match(pathname)}
       <a
@@ -138,10 +138,10 @@
   .hf-source-item {
     display: flex;
     align-items: center;
-    gap: 0.625rem;
+    gap: 0.75rem;
     width: 100%;
-    min-height: 1.875rem;
-    padding: 0.25rem 0.5rem;
+    min-height: 2.25rem;
+    padding: 0.375rem 0.625rem;
     border-radius: 9px;
     font-size: 0.8125rem;
     font-weight: 500;

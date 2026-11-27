@@ -203,7 +203,7 @@
     background: transparent;
     color: hsl(var(--foreground));
     font-size: 0.875rem;
-    line-height: 1.43;
+    line-height: 1.5;
     letter-spacing: -0.006em;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -439,16 +439,18 @@
   }
 
   /* ── Page scaffolding ──────────────────────────────────────────────── */
+  /* Breathing room: generous page margins, a comfortable reading width
+     and clear separation between sections (closer to the landing page). */
   .hf-page {
-    @apply min-h-screen px-4 pb-20 pt-5 text-foreground sm:px-6 lg:px-8;
+    @apply min-h-screen px-4 pb-24 pt-7 text-foreground sm:px-8 sm:pt-10 lg:px-12 xl:px-14;
   }
 
   .hf-page-inner {
-    @apply mx-auto w-full max-w-[1600px] space-y-5;
+    @apply mx-auto w-full max-w-[1360px] space-y-8 sm:space-y-10;
   }
 
   .hf-page-header {
-    @apply flex flex-col gap-3 pb-1 sm:flex-row sm:items-end sm:justify-between;
+    @apply flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between;
   }
 
   /* Apple large titles don't carry an eyebrow above them. */
@@ -465,7 +467,7 @@
   }
 
   .hf-description {
-    @apply mt-1 max-w-2xl text-[0.8125rem] leading-5 text-zinc-500;
+    @apply mt-2 max-w-2xl text-[0.875rem] leading-6 text-zinc-500;
   }
 
   .hf-section-title {
@@ -475,7 +477,7 @@
   /* ── Grouped containers ────────────────────────────────────────────── */
   .hf-card {
     position: relative;
-    border-radius: 16px;
+    border-radius: 18px;
     background: var(--hf-glass);
     color: hsl(var(--card-foreground));
     box-shadow:
@@ -511,7 +513,23 @@
   }
 
   .hf-list-row {
-    @apply flex min-h-[44px] items-center gap-3 px-4 py-2.5 text-[0.8125rem] transition-colors;
+    @apply flex min-h-[52px] items-center gap-4 px-5 py-3.5 text-[0.8125rem] transition-colors;
+  }
+
+  /* Roomier card padding without touching every component. Phones keep
+     the tighter padding so short labels don't truncate. */
+  @media (min-width: 640px) {
+    :where(.hf-card, .op-panel).p-3 {
+      padding: 1rem;
+    }
+
+    :where(.hf-card, .op-panel).p-4 {
+      padding: 1.25rem;
+    }
+
+    :where(.hf-card, .op-panel).p-5 {
+      padding: 1.5rem;
+    }
   }
 
   a.hf-list-row:hover,
@@ -523,9 +541,9 @@
   .hf-input,
   .hf-select {
     @apply w-full rounded-lg px-3 text-[0.8125rem] text-zinc-100 transition disabled:cursor-not-allowed disabled:opacity-50;
-    min-height: 2.125rem;
-    padding-top: 0.4375rem;
-    padding-bottom: 0.4375rem;
+    min-height: 2.5rem;
+    padding-top: 0.5625rem;
+    padding-bottom: 0.5625rem;
     border: 0.5px solid transparent;
     background-color: var(--hf-fill);
   }
@@ -562,8 +580,8 @@
   }
 
   .hf-button-primary {
-    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 text-[0.8125rem] font-semibold transition disabled:pointer-events-none disabled:opacity-40;
-    min-height: 2.125rem;
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] px-4 text-[0.8125rem] font-semibold transition disabled:pointer-events-none disabled:opacity-40;
+    min-height: 2.375rem;
     background:
       linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 55%),
       hsl(var(--primary));
@@ -584,8 +602,8 @@
   }
 
   .hf-button-secondary {
-    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 text-[0.8125rem] font-medium text-zinc-100 transition disabled:pointer-events-none disabled:opacity-40;
-    min-height: 2.125rem;
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] px-4 text-[0.8125rem] font-medium text-zinc-100 transition disabled:pointer-events-none disabled:opacity-40;
+    min-height: 2.375rem;
     background: var(--hf-fill);
     box-shadow:
       inset 0 1px 0 var(--hf-glass-sheen),
@@ -602,8 +620,8 @@
   }
 
   .hf-button-tinted {
-    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 text-[0.8125rem] font-semibold transition disabled:pointer-events-none disabled:opacity-40;
-    min-height: 2.125rem;
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] px-4 text-[0.8125rem] font-semibold transition disabled:pointer-events-none disabled:opacity-40;
+    min-height: 2.375rem;
     background: hsl(var(--primary) / 0.14);
     color: hsl(var(--primary-text));
   }
@@ -613,8 +631,8 @@
   }
 
   .hf-button-ghost {
-    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[0.8125rem] font-medium text-zinc-400 transition hover:text-zinc-100;
-    min-height: 2.125rem;
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] px-3 text-[0.8125rem] font-medium text-zinc-400 transition hover:text-zinc-100;
+    min-height: 2.375rem;
   }
 
   .hf-button-ghost:hover {
@@ -622,8 +640,8 @@
   }
 
   .hf-button-danger {
-    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 text-[0.8125rem] font-semibold transition disabled:pointer-events-none disabled:opacity-40;
-    min-height: 2.125rem;
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[10px] px-4 text-[0.8125rem] font-semibold transition disabled:pointer-events-none disabled:opacity-40;
+    min-height: 2.375rem;
     background: hsl(var(--hf-red-500) / 0.14);
     color: hsl(var(--hf-red-400));
   }
@@ -643,8 +661,8 @@
   }
 
   .hf-chip {
-    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[0.75rem] font-medium text-zinc-300 transition focus-visible:outline-none;
-    min-height: 1.75rem;
+    @apply inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-[0.75rem] font-medium text-zinc-300 transition focus-visible:outline-none;
+    min-height: 2rem;
     background: var(--hf-fill);
   }
 
@@ -659,7 +677,7 @@
   }
 
   .hf-icon-button {
-    @apply inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40;
+    @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] text-zinc-400 transition hover:text-zinc-100 disabled:cursor-not-allowed disabled:opacity-40;
   }
 
   .hf-icon-button:hover {
@@ -677,13 +695,13 @@
 
   /* Segmented control (iOS UISegmentedControl / macOS NSSegmentedControl) */
   .hf-segmented {
-    @apply inline-flex items-center gap-0.5 rounded-lg p-0.5;
+    @apply inline-flex items-center gap-0.5 rounded-[10px] p-[3px];
     background: var(--hf-fill);
   }
 
   .hf-segment {
-    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[7px] px-3 text-[0.75rem] font-medium text-zinc-300 transition;
-    min-height: 1.625rem;
+    @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-[8px] px-3.5 text-[0.75rem] font-medium text-zinc-300 transition;
+    min-height: 1.875rem;
   }
 
   .hf-segment:hover {
@@ -740,7 +758,7 @@
   }
 
   .hf-stat-tile {
-    @apply rounded-[10px] p-3;
+    @apply rounded-[12px] p-4;
     background: var(--hf-fill);
   }
 
@@ -822,12 +840,12 @@
     .min-h-\[48px\],
     .min-h-\[44px\],
     .min-h-\[42px\] {
-      min-height: 2.25rem;
+      min-height: 2.5rem;
     }
 
     .min-h-\[40px\],
     .min-h-\[38px\] {
-      min-height: 2.125rem;
+      min-height: 2.375rem;
     }
   }
 

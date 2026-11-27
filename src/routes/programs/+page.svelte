@@ -116,7 +116,7 @@
       </button>
     </header>
 
-    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       <MetricCard icon={FolderKanban} label="All programs" value={String($targetStore.length)} detail="Stored locally" />
       <MetricCard icon={TargetIcon} label="Active programs" value={String(activePrograms.length)} detail="Not archived or closed" />
       <MetricCard icon={Filter} label="High priority" value={String(highPriority)} detail="P0/P1 focus queue" />
@@ -134,7 +134,7 @@
     {/if}
 
     <section class="hf-card p-4">
-      <div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_180px_160px_170px]">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_160px_170px]">
         <label class="block">
           <span class="hf-label">Search</span>
           <div class="mt-2 flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-500/20">
@@ -178,7 +178,7 @@
 
     {#if filteredPrograms.length > 0}
       <section class="hf-card overflow-hidden">
-        <div class="hidden grid-cols-[minmax(220px,1.4fr)_130px_110px_110px_90px_90px_140px_80px] border-b border-zinc-800 px-4 py-3 text-xs font-medium text-zinc-500 lg:grid">
+        <div class="hidden grid-cols-[minmax(200px,1.8fr)_minmax(96px,1fr)_104px_104px_64px_68px_minmax(92px,1fr)_48px] gap-x-4 border-b border-zinc-800 px-5 py-3 text-xs font-medium text-zinc-500 xl:grid">
           <span>Program</span>
           <span>Platform</span>
           <span>Priority</span>
@@ -190,7 +190,7 @@
         </div>
         <div class="divide-y divide-zinc-900">
           {#each filteredPrograms as program}
-            <a href={`/programs/${program.id}`} class="grid gap-3 px-4 py-4 transition hover:bg-zinc-950 lg:grid-cols-[minmax(220px,1.4fr)_130px_110px_110px_90px_90px_140px_80px] lg:items-center">
+            <a href={`/programs/${program.id}`} class="grid gap-3 px-5 py-4 transition hover:bg-[var(--hf-fill)] xl:grid-cols-[minmax(200px,1.8fr)_minmax(96px,1fr)_104px_104px_64px_68px_minmax(92px,1fr)_48px] xl:items-center xl:gap-x-4">
               <span class="min-w-0">
                 <span class="block truncate text-sm font-medium text-zinc-100">{program.name}</span>
                 <span class="mt-1 block truncate font-mono text-xs text-zinc-500">{programUrlHost(program)}</span>

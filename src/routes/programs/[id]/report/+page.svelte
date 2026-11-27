@@ -145,14 +145,14 @@
         </div>
       </header>
 
-      <div class="grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]" data-print="flat">
+      <div class="grid gap-6 xl:grid-cols-[320px_minmax(0,1fr)]" data-print="flat">
         <aside class="space-y-4 xl:sticky xl:top-[4.5rem] xl:self-start" data-print="hide" aria-label="Report settings">
           <section class="hf-card space-y-3 p-4">
             <label class="block">
               <span class="hf-label">Title</span>
               <input class="hf-input mt-1.5" value={settings.title ?? ''} placeholder={report.settings.title} on:input={(event) => update({ title: value(event) })} />
             </label>
-            <div class="grid grid-cols-2 gap-3 xl:grid-cols-1">
+            <div class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-1">
               <label class="block">
                 <span class="hf-label">Prepared for</span>
                 <input class="hf-input mt-1.5" value={settings.preparedFor ?? ''} placeholder={program.name} on:input={(event) => update({ preparedFor: value(event) })} />
@@ -162,7 +162,7 @@
                 <input class="hf-input mt-1.5" value={settings.preparedBy ?? ''} placeholder="Your name or company" on:input={(event) => update({ preparedBy: value(event) })} />
               </label>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-3 sm:gap-4">
               <label class="block">
                 <span class="hf-label">Testing from</span>
                 <input type="date" class="hf-input mt-1.5" value={settings.periodStart ?? report.period.start ?? ''} on:change={(event) => update({ periodStart: value(event) })} />
