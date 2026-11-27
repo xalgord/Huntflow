@@ -387,7 +387,7 @@
       {/if}
 
       <div
-        class="sticky -bottom-5 -mx-5 -mb-5 flex flex-col-reverse gap-2 px-5 pb-5 pt-3 backdrop-blur-xl sm:flex-row sm:justify-end"
+        class="sticky -bottom-5 -mx-5 -mb-5 flex flex-col-reverse gap-2 px-5 pb-5 pt-3 backdrop-blur-md sm:flex-row sm:justify-end"
         style="background: var(--hf-material)"
       >
         <button type="button" class="hf-button-secondary" on:click={close}>Cancel</button>

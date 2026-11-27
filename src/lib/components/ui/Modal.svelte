@@ -49,7 +49,7 @@
 
 {#if open}
   <div
-    class="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-black/20 p-0 backdrop-blur-[3px] sm:items-center sm:p-4 dark:bg-black/45"
+    class="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-black/20 p-0 backdrop-blur-[1.5px] sm:items-center sm:p-4 dark:bg-black/45"
     role="presentation"
     on:click={handleOverlayClick}
   >

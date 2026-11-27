@@ -33,7 +33,7 @@
 {#if mobileOpen}
   <button
     type="button"
-    class="fixed inset-0 z-40 bg-black/25 animate-fade-in backdrop-blur-[2px] lg:hidden"
+    class="fixed inset-0 z-40 bg-black/25 animate-fade-in backdrop-blur-[1.5px] lg:hidden"
     aria-label="Close navigation overlay"
     on:click={() => dispatch('closeMobile')}
   ></button>

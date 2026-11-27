@@ -41,9 +41,9 @@
   --hf-text-green: #1a7f37;
   --hf-surface: #ffffff;
   --hf-surface-elevated: #ffffff;
-  --hf-sidebar: rgb(248 248 252 / 0.56);
-  --hf-toolbar: rgb(246 246 250 / 0.5);
-  --hf-material: rgb(255 255 255 / 0.72);
+  --hf-sidebar: rgb(248 248 252 / 0.44);
+  --hf-toolbar: rgb(246 246 250 / 0.38);
+  --hf-material: rgb(255 255 255 / 0.66);
   --hf-fill: rgb(118 118 128 / 0.12);
   --hf-fill-strong: rgb(118 118 128 / 0.2);
   --hf-fill-hover: rgb(118 118 128 / 0.16);
@@ -60,13 +60,13 @@
      pane its shape. Chrome that floats over content (toolbar, sidebar,
      tab bar, sheets, menus) also blurs what is behind it. */
   --hf-ambient-base: #f1f2f7;
-  --hf-ambient-a: hsl(var(--primary) / 0.19);
-  --hf-ambient-b: rgb(52 132 255 / 0.21);
-  --hf-ambient-c: rgb(160 110 255 / 0.17);
-  --hf-ambient-d: rgb(20 190 180 / 0.13);
-  --hf-glass: rgb(255 255 255 / 0.52);
-  --hf-glass-hover: rgb(255 255 255 / 0.68);
-  --hf-glass-thick: rgb(255 255 255 / 0.74);
+  --hf-ambient-a: hsl(var(--primary) / 0.15);
+  --hf-ambient-b: rgb(52 132 255 / 0.17);
+  --hf-ambient-c: rgb(160 110 255 / 0.14);
+  --hf-ambient-d: rgb(20 190 180 / 0.1);
+  --hf-glass: rgb(255 255 255 / 0.42);
+  --hf-glass-hover: rgb(255 255 255 / 0.58);
+  --hf-glass-thick: rgb(255 255 255 / 0.68);
   --hf-glass-selected: rgb(255 255 255 / 0.82);
   --hf-glass-rim: rgb(255 255 255 / 0.95);
   --hf-glass-rim-soft: rgb(255 255 255 / 0.32);
@@ -74,7 +74,10 @@
   --hf-glass-sheen: rgb(255 255 255 / 0.7);
   --hf-glass-shadow: 0 1px 2px rgb(20 20 60 / 0.04), 0 10px 30px -14px rgb(30 30 80 / 0.2);
   --hf-glass-shadow-lg: 0 2px 8px rgb(20 20 60 / 0.06), 0 30px 70px -24px rgb(30 30 80 / 0.36);
-  --hf-glass-blur: 28px;
+  /* Frost: how much floating chrome blurs what is behind it. */
+  --hf-glass-blur: 14px;
+  --hf-glass-blur-thin: 10px;
+  --hf-glass-saturate: 150%;
 
   /* Legacy aliases still referenced by a few components */
   --color-bg-page: hsl(var(--background));
@@ -113,9 +116,9 @@
   --hf-text-green: #bbf7d0;
   --hf-surface: #1c1c1e;
   --hf-surface-elevated: #2c2c2e;
-  --hf-sidebar: rgb(26 26 32 / 0.5);
-  --hf-toolbar: rgb(10 10 14 / 0.46);
-  --hf-material: rgb(38 38 46 / 0.7);
+  --hf-sidebar: rgb(26 26 32 / 0.4);
+  --hf-toolbar: rgb(10 10 14 / 0.36);
+  --hf-material: rgb(38 38 46 / 0.64);
   --hf-fill: rgb(118 118 128 / 0.24);
   --hf-fill-strong: rgb(118 118 128 / 0.36);
   --hf-fill-hover: rgb(118 118 128 / 0.3);
@@ -128,13 +131,13 @@
   --hf-shadow-xl: 0 28px 72px rgb(0 0 0 / 0.6), 0 0 0 0.5px rgb(255 255 255 / 0.1);
 
   --hf-ambient-base: #050507;
-  --hf-ambient-a: hsl(var(--primary) / 0.26);
-  --hf-ambient-b: rgb(40 100 255 / 0.22);
-  --hf-ambient-c: rgb(130 70 255 / 0.2);
-  --hf-ambient-d: rgb(0 170 160 / 0.12);
-  --hf-glass: rgb(40 40 48 / 0.42);
-  --hf-glass-hover: rgb(58 58 68 / 0.56);
-  --hf-glass-thick: rgb(40 40 48 / 0.7);
+  --hf-ambient-a: hsl(var(--primary) / 0.22);
+  --hf-ambient-b: rgb(40 100 255 / 0.18);
+  --hf-ambient-c: rgb(130 70 255 / 0.16);
+  --hf-ambient-d: rgb(0 170 160 / 0.1);
+  --hf-glass: rgb(40 40 48 / 0.34);
+  --hf-glass-hover: rgb(58 58 68 / 0.48);
+  --hf-glass-thick: rgb(40 40 48 / 0.64);
   --hf-glass-selected: rgb(255 255 255 / 0.12);
   --hf-glass-rim: rgb(255 255 255 / 0.24);
   --hf-glass-rim-soft: rgb(255 255 255 / 0.05);
@@ -345,20 +348,20 @@
   /* Thick glass for sheets, menus and popovers. */
   .hf-material {
     background: var(--hf-material);
-    -webkit-backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
-    backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
+    -webkit-backdrop-filter: saturate(var(--hf-glass-saturate)) blur(var(--hf-glass-blur));
+    backdrop-filter: saturate(var(--hf-glass-saturate)) blur(var(--hf-glass-blur));
   }
 
   .hf-toolbar-material {
     background: var(--hf-toolbar);
-    -webkit-backdrop-filter: saturate(180%) blur(24px);
-    backdrop-filter: saturate(180%) blur(24px);
+    -webkit-backdrop-filter: saturate(var(--hf-glass-saturate)) blur(var(--hf-glass-blur-thin));
+    backdrop-filter: saturate(var(--hf-glass-saturate)) blur(var(--hf-glass-blur-thin));
   }
 
   .hf-sidebar-material {
     background: var(--hf-sidebar);
-    -webkit-backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
-    backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
+    -webkit-backdrop-filter: saturate(var(--hf-glass-saturate)) blur(var(--hf-glass-blur));
+    backdrop-filter: saturate(var(--hf-glass-saturate)) blur(var(--hf-glass-blur));
   }
 
   /* A glass pane: translucent fill, hairline edge, soft lift and a
@@ -375,8 +378,8 @@
   }
 
   .hf-glass-blur {
-    -webkit-backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
-    backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
+    -webkit-backdrop-filter: saturate(var(--hf-glass-saturate)) blur(var(--hf-glass-blur));
+    backdrop-filter: saturate(var(--hf-glass-saturate)) blur(var(--hf-glass-blur));
   }
 
   .hf-glass-elevated {
@@ -876,7 +879,8 @@
 /* Phones: lighter blur keeps scrolling smooth under the floating chrome. */
 @media (max-width: 640px) {
   :root {
-    --hf-glass-blur: 20px;
+    --hf-glass-blur: 10px;
+    --hf-glass-blur-thin: 8px;
   }
 }
 
