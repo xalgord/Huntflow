@@ -620,6 +620,12 @@ export interface Settings {
    */
   accentColor: AccentColor;
   fontSize: 'small' | 'medium' | 'large';
+  /**
+   * Solid surfaces instead of glass (no translucency, blur or ambient
+   * backdrop). The OS "Reduce transparency" setting applies on top.
+   * Optional so older backups still import.
+   */
+  reduceTransparency?: boolean;
   onboardingCompleted: boolean;
   lastExportAt?: number;
 }
@@ -635,6 +641,7 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: 'system',
   accentColor: 'crimson',
   fontSize: 'medium',
+  reduceTransparency: false,
   onboardingCompleted: false
 };
 

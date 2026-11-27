@@ -19,6 +19,32 @@ test.describe('settings, data management, account, and PWA surfaces', () => {
     await consoleWatcher.assertClean();
   });
 
+  test('Reduce transparency swaps glass for solid surfaces and survives a reload', async ({ page }) => {
+    const consoleWatcher = watchConsole(page);
+    await seedDemoApp(page);
+    await gotoAppRoute(page, '/settings');
+
+    const html = page.locator('html');
+    await expect(html).toHaveAttribute('data-transparency', 'glass');
+    const card = page.locator('section.hf-card').first();
+    const glassBackground = await card.evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(glassBackground).toMatch(/rgba\(/);
+
+    const toggle = page.getByRole('switch', { name: 'Reduce transparency' });
+    await expect(toggle).toHaveAttribute('aria-checked', 'false');
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await expect(html).toHaveAttribute('data-transparency', 'reduced');
+    await expect
+      .poll(() => card.evaluate((el) => getComputedStyle(el).backgroundColor))
+      .toMatch(/^rgb\(/);
+
+    await page.reload();
+    await expect(page.locator('html')).toHaveAttribute('data-transparency', 'reduced');
+    await expect(page.getByRole('switch', { name: 'Reduce transparency' })).toHaveAttribute('aria-checked', 'true');
+    await consoleWatcher.assertClean();
+  });
+
   test('export JSON, invalid import validation, and clear-data confirmation work', async ({ page }) => {
     const consoleWatcher = watchConsole(page);
     await seedDemoApp(page);

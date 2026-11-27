@@ -468,6 +468,9 @@ export function validateSettings(value: unknown): ValidationResult {
     errors.push('settings.accentColor is invalid');
   }
   if (!FONT_SIZES.includes(settings.fontSize as Settings['fontSize'])) errors.push('settings.fontSize is invalid');
+  if (settings.reduceTransparency !== undefined && !isBoolean(settings.reduceTransparency)) {
+    errors.push('settings.reduceTransparency must be a boolean when provided');
+  }
   if (!isBoolean(settings.onboardingCompleted)) {
     errors.push('settings.onboardingCompleted must be a boolean');
   }

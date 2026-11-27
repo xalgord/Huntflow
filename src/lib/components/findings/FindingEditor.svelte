@@ -424,7 +424,7 @@
                 </button>
                 {#if attachOpen}
                   <div class="fixed inset-0 z-30" role="presentation" on:click={() => (attachOpen = false)}></div>
-                  <ul class="hf-material absolute right-0 z-40 mt-1 max-h-72 w-72 overflow-y-auto rounded-[10px] p-1 shadow-dark-lg" role="menu">
+                  <ul class="hf-material hf-floating-pane absolute right-0 z-40 mt-1 max-h-72 w-72 overflow-y-auto rounded-[14px] p-1" role="menu">
                     {#each attachableEvidence as asset (asset.id)}
                       <li>
                         <button

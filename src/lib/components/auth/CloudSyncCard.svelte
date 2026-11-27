@@ -65,7 +65,7 @@
   }
 </script>
 
-<section class="sync-card" aria-labelledby="account-sync-heading" data-testid="cloud-sync-card">
+<section class="sync-card hf-rim" aria-labelledby="account-sync-heading" data-testid="cloud-sync-card">
   <header class="sync-card__header">
     <h2 id="account-sync-heading" class="sync-card__title">Cloud sync</h2>
     <p class="sync-card__subtitle">
@@ -110,12 +110,14 @@
 
 <style>
   .sync-card {
-    border-radius: 0.875rem;
-    border: 1px solid var(--hf-hairline-strong);
-    background-color: var(--hf-surface);
+    border-radius: 16px;
+    background-color: var(--hf-glass);
     padding: 1.25rem;
     color: hsl(var(--foreground));
-    box-shadow: inset 0 1px 0 var(--hf-hairline);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      var(--hf-glass-shadow);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -147,9 +149,8 @@
     align-items: flex-start;
     gap: 0.625rem;
     padding: 0.75rem 0.875rem;
-    border-radius: 0.625rem;
-    background-color: var(--hf-window);
-    border: 1px solid var(--hf-hairline);
+    border-radius: 0.75rem;
+    background-color: var(--hf-fill);
   }
 
   .sync-card__label {
@@ -207,8 +208,11 @@
     min-height: 40px;
     padding: 0.5rem 1rem;
     border-radius: 0.5rem;
-    border: 1px solid var(--hf-hairline-strong);
-    background-color: var(--hf-window);
+    border: 0;
+    background-color: var(--hf-glass-thick);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge);
     color: hsl(var(--foreground));
     font-size: 0.875rem;
     font-weight: 600;
@@ -217,7 +221,7 @@
   }
 
   .secondary-btn:hover:not(:disabled) {
-    background-color: var(--hf-hairline);
+    background-color: var(--hf-glass-selected);
   }
 
   .secondary-btn:active:not(:disabled) {

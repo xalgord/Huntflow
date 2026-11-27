@@ -24,7 +24,7 @@
 </script>
 
 <header
-  class="hf-toolbar-material hf-hairline-b fixed left-0 right-0 top-0 z-30 h-[3.25rem] transition-[left] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:left-[var(--hf-sidebar-width)]"
+  class="hf-toolbar-material hf-hairline-b fixed left-0 right-0 top-0 z-30 h-[3.25rem] transition-[left] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:left-[calc(var(--hf-sidebar-width)+0.5rem)]"
 >
   <div class="flex h-full w-full items-center gap-1.5 px-3 sm:px-4">
     <button

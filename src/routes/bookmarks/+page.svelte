@@ -334,7 +334,7 @@
             <textarea
               bind:value={formDescription}
               rows={2}
-              class="mt-2 min-h-[80px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 focus:border-primary-500 focus:outline-none"
+              class="mt-2 min-h-[80px] w-full resize-y rounded-md border border-zinc-600 bg-[var(--hf-fill)] px-3 py-2.5 text-sm text-zinc-100 focus:border-primary-500 focus:outline-none"
             ></textarea>
           </label>
 
@@ -412,7 +412,7 @@
                   </span>
                 {/if}
                 {#each bookmark.tags as tag}
-                  <span class="rounded-md border border-zinc-700 bg-zinc-850 px-1.5 py-0.5 text-[11px] text-zinc-400">{tag}</span>
+                  <span class="rounded-md border border-zinc-700 bg-[var(--hf-fill)] px-1.5 py-0.5 text-[11px] text-zinc-400">{tag}</span>
                 {/each}
               </div>
             {/if}

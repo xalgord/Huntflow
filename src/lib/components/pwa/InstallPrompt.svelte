@@ -62,9 +62,11 @@
 </script>
 
 {#if visible}
-  <section class="fixed inset-x-4 bottom-4 z-40 mx-auto max-w-xl rounded-lg border border-primary-500/30 bg-zinc-800 p-4 shadow-dark-xl">
+  <section
+    class="hf-material hf-rim hf-floating-pane fixed inset-x-4 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl rounded-[22px] p-4 lg:bottom-4"
+  >
     <div class="flex gap-3">
-      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary-500/10 text-primary-400">
+      <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary-500/10 text-primary-400">
         <Download size={20} aria-hidden="true" />
       </div>
       <div class="min-w-0 flex-1">
@@ -76,19 +78,19 @@
           {#if deferredPrompt}
             <button
               type="button"
-              class="inline-flex min-h-[44px] items-center justify-center rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-primary-700"
+              class="hf-button-primary"
               on:click={install}
             >
               Install
             </button>
           {:else}
-            <p class="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400">
+            <p class="hf-card-muted px-3 py-2 text-xs text-zinc-400">
               Use Share, then Add to Home Screen.
             </p>
           {/if}
           <button
             type="button"
-            class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-zinc-600 bg-zinc-700 px-4 py-2.5 text-sm font-medium text-zinc-100 transition hover:bg-zinc-600"
+            class="hf-button-secondary"
             on:click={dismiss}
           >
             Not now
@@ -97,7 +99,7 @@
       </div>
       <button
         type="button"
-        class="inline-flex h-10 min-h-[40px] w-10 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-100"
+        class="inline-flex h-10 min-h-[40px] w-10 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-[var(--hf-fill)] hover:text-zinc-100"
         aria-label="Dismiss install prompt"
         on:click={dismiss}
       >

@@ -41,9 +41,9 @@
   --hf-text-green: #1a7f37;
   --hf-surface: #ffffff;
   --hf-surface-elevated: #ffffff;
-  --hf-sidebar: rgb(236 236 241 / 0.78);
-  --hf-toolbar: rgb(245 245 247 / 0.72);
-  --hf-material: rgb(255 255 255 / 0.78);
+  --hf-sidebar: rgb(248 248 252 / 0.56);
+  --hf-toolbar: rgb(246 246 250 / 0.5);
+  --hf-material: rgb(255 255 255 / 0.72);
   --hf-fill: rgb(118 118 128 / 0.12);
   --hf-fill-strong: rgb(118 118 128 / 0.2);
   --hf-fill-hover: rgb(118 118 128 / 0.16);
@@ -54,6 +54,27 @@
   --hf-shadow-md: 0 4px 16px rgb(0 0 0 / 0.06), 0 0 0 0.5px rgb(0 0 0 / 0.06);
   --hf-shadow-lg: 0 12px 32px rgb(0 0 0 / 0.1), 0 0 0 0.5px rgb(0 0 0 / 0.08);
   --hf-shadow-xl: 0 24px 64px rgb(0 0 0 / 0.18), 0 0 0 0.5px rgb(0 0 0 / 0.1);
+
+  /* Liquid glass. Surfaces are translucent over a soft ambient backdrop;
+     a specular rim (brightest top-left) and a hairline edge give each
+     pane its shape. Chrome that floats over content (toolbar, sidebar,
+     tab bar, sheets, menus) also blurs what is behind it. */
+  --hf-ambient-base: #f1f2f7;
+  --hf-ambient-a: hsl(var(--primary) / 0.19);
+  --hf-ambient-b: rgb(52 132 255 / 0.21);
+  --hf-ambient-c: rgb(160 110 255 / 0.17);
+  --hf-ambient-d: rgb(20 190 180 / 0.13);
+  --hf-glass: rgb(255 255 255 / 0.52);
+  --hf-glass-hover: rgb(255 255 255 / 0.68);
+  --hf-glass-thick: rgb(255 255 255 / 0.74);
+  --hf-glass-selected: rgb(255 255 255 / 0.82);
+  --hf-glass-rim: rgb(255 255 255 / 0.95);
+  --hf-glass-rim-soft: rgb(255 255 255 / 0.32);
+  --hf-glass-edge: rgb(20 20 60 / 0.08);
+  --hf-glass-sheen: rgb(255 255 255 / 0.7);
+  --hf-glass-shadow: 0 1px 2px rgb(20 20 60 / 0.04), 0 10px 30px -14px rgb(30 30 80 / 0.2);
+  --hf-glass-shadow-lg: 0 2px 8px rgb(20 20 60 / 0.06), 0 30px 70px -24px rgb(30 30 80 / 0.36);
+  --hf-glass-blur: 28px;
 
   /* Legacy aliases still referenced by a few components */
   --color-bg-page: hsl(var(--background));
@@ -92,9 +113,9 @@
   --hf-text-green: #bbf7d0;
   --hf-surface: #1c1c1e;
   --hf-surface-elevated: #2c2c2e;
-  --hf-sidebar: rgb(28 28 30 / 0.78);
-  --hf-toolbar: rgb(0 0 0 / 0.66);
-  --hf-material: rgb(44 44 46 / 0.78);
+  --hf-sidebar: rgb(26 26 32 / 0.5);
+  --hf-toolbar: rgb(10 10 14 / 0.46);
+  --hf-material: rgb(38 38 46 / 0.7);
   --hf-fill: rgb(118 118 128 / 0.24);
   --hf-fill-strong: rgb(118 118 128 / 0.36);
   --hf-fill-hover: rgb(118 118 128 / 0.3);
@@ -105,6 +126,57 @@
   --hf-shadow-md: 0 8px 24px rgb(0 0 0 / 0.4), 0 0 0 0.5px rgb(255 255 255 / 0.07);
   --hf-shadow-lg: 0 16px 40px rgb(0 0 0 / 0.5), 0 0 0 0.5px rgb(255 255 255 / 0.08);
   --hf-shadow-xl: 0 28px 72px rgb(0 0 0 / 0.6), 0 0 0 0.5px rgb(255 255 255 / 0.1);
+
+  --hf-ambient-base: #050507;
+  --hf-ambient-a: hsl(var(--primary) / 0.26);
+  --hf-ambient-b: rgb(40 100 255 / 0.22);
+  --hf-ambient-c: rgb(130 70 255 / 0.2);
+  --hf-ambient-d: rgb(0 170 160 / 0.12);
+  --hf-glass: rgb(40 40 48 / 0.42);
+  --hf-glass-hover: rgb(58 58 68 / 0.56);
+  --hf-glass-thick: rgb(40 40 48 / 0.7);
+  --hf-glass-selected: rgb(255 255 255 / 0.12);
+  --hf-glass-rim: rgb(255 255 255 / 0.24);
+  --hf-glass-rim-soft: rgb(255 255 255 / 0.05);
+  --hf-glass-edge: rgb(0 0 0 / 0.55);
+  --hf-glass-sheen: rgb(255 255 255 / 0.12);
+  --hf-glass-shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -14px rgb(0 0 0 / 0.7);
+  --hf-glass-shadow-lg: 0 2px 8px rgb(0 0 0 / 0.4), 0 32px 80px -24px rgb(0 0 0 / 0.85);
+}
+
+/* Reduce transparency — the OS accessibility setting, or the in-app
+   toggle (html[data-transparency='reduced']). Glass becomes solid,
+   blurs and the ambient backdrop switch off. */
+:root[data-transparency='reduced'] {
+  --hf-glass: var(--hf-surface);
+  --hf-glass-hover: var(--hf-surface);
+  --hf-glass-thick: var(--hf-surface-elevated);
+  --hf-glass-selected: var(--hf-fill-strong);
+  --hf-glass-rim: transparent;
+  --hf-glass-rim-soft: transparent;
+  --hf-glass-sheen: transparent;
+  --hf-glass-edge: var(--hf-hairline);
+  --hf-sidebar: var(--hf-surface);
+  --hf-toolbar: var(--hf-window);
+  --hf-material: var(--hf-surface-elevated);
+  --hf-ambient-base: var(--hf-window);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --hf-glass: var(--hf-surface);
+    --hf-glass-hover: var(--hf-surface);
+    --hf-glass-thick: var(--hf-surface-elevated);
+    --hf-glass-selected: var(--hf-fill-strong);
+    --hf-glass-rim: transparent;
+    --hf-glass-rim-soft: transparent;
+    --hf-glass-sheen: transparent;
+    --hf-glass-edge: var(--hf-hairline);
+    --hf-sidebar: var(--hf-surface);
+    --hf-toolbar: var(--hf-window);
+    --hf-material: var(--hf-surface-elevated);
+    --hf-ambient-base: var(--hf-window);
+  }
 }
 
 @layer base {
@@ -114,7 +186,7 @@
 
   html {
     min-height: 100%;
-    background: var(--hf-window);
+    background: var(--hf-ambient-base);
     font-family: theme('fontFamily.sans');
     font-feature-settings: 'cv11', 'ss01';
     -webkit-text-size-adjust: 100%;
@@ -123,7 +195,8 @@
   body {
     min-height: 100vh;
     margin: 0;
-    background: var(--hf-window);
+    /* Transparent so the fixed ambient layer (body::before) shows. */
+    background: transparent;
     color: hsl(var(--foreground));
     font-size: 0.875rem;
     line-height: 1.43;
@@ -132,6 +205,34 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Ambient backdrop: soft colour fields (one follows the accent) that
+     give the glass something to refract. Fixed, static, GPU-cheap. A
+     faint grain breaks up gradient banding on large displays. */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E"),
+      radial-gradient(52vmax 40vmax at 4% -4%, var(--hf-ambient-a), transparent 70%),
+      radial-gradient(44vmax 38vmax at 98% 2%, var(--hf-ambient-b), transparent 70%),
+      radial-gradient(52vmax 42vmax at 84% 100%, var(--hf-ambient-c), transparent 70%),
+      radial-gradient(40vmax 34vmax at 14% 92%, var(--hf-ambient-d), transparent 70%),
+      var(--hf-ambient-base);
+  }
+
+  :root[data-transparency='reduced'] body::before {
+    background: var(--hf-window);
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    body::before {
+      background: var(--hf-window);
+    }
   }
 
   html[data-font-size='small'] {
@@ -241,10 +342,11 @@
   }
 
   /* ── Materials ─────────────────────────────────────────────────────── */
+  /* Thick glass for sheets, menus and popovers. */
   .hf-material {
     background: var(--hf-material);
-    -webkit-backdrop-filter: saturate(180%) blur(30px);
-    backdrop-filter: saturate(180%) blur(30px);
+    -webkit-backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
+    backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
   }
 
   .hf-toolbar-material {
@@ -255,8 +357,73 @@
 
   .hf-sidebar-material {
     background: var(--hf-sidebar);
-    -webkit-backdrop-filter: saturate(180%) blur(30px);
-    backdrop-filter: saturate(180%) blur(30px);
+    -webkit-backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
+    backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
+  }
+
+  /* A glass pane: translucent fill, hairline edge, soft lift and a
+     specular rim (::after). Content panes don't blur — they sit on the
+     static ambient backdrop, so translucency alone reads as glass and
+     scrolling stays cheap. Use .hf-glass-blur for panes over content. */
+  .hf-glass {
+    position: relative;
+    background: var(--hf-glass);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      var(--hf-glass-shadow);
+  }
+
+  .hf-glass-blur {
+    -webkit-backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
+    backdrop-filter: saturate(180%) blur(var(--hf-glass-blur));
+  }
+
+  .hf-glass-elevated {
+    background: var(--hf-glass-thick);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      var(--hf-glass-shadow-lg);
+  }
+
+  /* Specular rim: a 1px gradient ring, bright where light would catch
+     the top-left edge and fading around the pane. */
+  .hf-glass::after,
+  .hf-card::after,
+  .op-panel::after,
+  .hf-rim::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: linear-gradient(
+      160deg,
+      var(--hf-glass-rim) 0%,
+      var(--hf-glass-rim-soft) 26%,
+      transparent 52%,
+      var(--hf-glass-rim-soft) 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+  }
+
+  .hf-rim {
+    position: relative;
+  }
+
+  /* Chrome that floats above content: sidebar, tab bar, sheets, menus. */
+  .hf-floating-pane {
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      var(--hf-glass-shadow-lg);
   }
 
   .hf-hairline-b {
@@ -304,10 +471,13 @@
   /* ── Grouped containers ────────────────────────────────────────────── */
   .hf-card {
     position: relative;
-    border-radius: 12px;
-    background: var(--hf-surface);
+    border-radius: 16px;
+    background: var(--hf-glass);
     color: hsl(var(--card-foreground));
-    box-shadow: var(--hf-shadow-sm);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      var(--hf-glass-shadow);
   }
 
   .hf-card-muted {
@@ -321,7 +491,11 @@
   }
 
   .hf-interactive:hover {
-    box-shadow: var(--hf-shadow-md);
+    background: var(--hf-glass-hover);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      var(--hf-glass-shadow-lg);
   }
 
   .hf-interactive:active {
@@ -361,7 +535,7 @@
   .hf-select:focus {
     outline: none;
     border-color: hsl(var(--primary) / 0.7);
-    background-color: var(--hf-surface);
+    background-color: var(--hf-glass-thick);
     box-shadow: 0 0 0 3.5px hsl(var(--primary) / 0.25);
   }
 
@@ -386,8 +560,14 @@
   .hf-button-primary {
     @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 text-[0.8125rem] font-semibold transition disabled:pointer-events-none disabled:opacity-40;
     min-height: 2.125rem;
-    background: hsl(var(--primary));
+    background:
+      linear-gradient(180deg, rgb(255 255 255 / 0.16), rgb(255 255 255 / 0) 55%),
+      hsl(var(--primary));
     color: hsl(var(--primary-foreground));
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.3),
+      inset 0 -1px 0 rgb(0 0 0 / 0.08),
+      0 6px 16px -6px hsl(var(--primary) / 0.6);
   }
 
   .hf-button-primary:hover {
@@ -403,6 +583,9 @@
     @apply inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 text-[0.8125rem] font-medium text-zinc-100 transition disabled:pointer-events-none disabled:opacity-40;
     min-height: 2.125rem;
     background: var(--hf-fill);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge);
   }
 
   .hf-button-secondary:hover {
@@ -505,14 +688,51 @@
 
   .hf-segment-active {
     @apply text-zinc-50;
-    background: var(--hf-surface-elevated);
+    background: var(--hf-glass-selected);
     box-shadow:
-      0 1px 2px rgb(0 0 0 / 0.12),
-      0 0 0 0.5px rgb(0 0 0 / 0.04);
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 1px 3px rgb(0 0 0 / 0.12),
+      0 0 0 0.5px var(--hf-glass-edge);
   }
 
   .dark .hf-segment-active {
-    background: #636366;
+    background: rgb(255 255 255 / 0.18);
+  }
+
+  /* iOS switch with a glass knob */
+  .hf-switch {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    width: 2.625rem;
+    height: 1.5rem;
+    min-height: 0;
+    border-radius: 999px;
+    background: var(--hf-fill-strong);
+    transition: background-color 200ms ease;
+  }
+
+  .hf-switch--on {
+    background: hsl(var(--hf-green-500));
+  }
+
+  .hf-switch__knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #fff, #f4f4f6);
+    box-shadow:
+      0 2px 5px rgb(0 0 0 / 0.2),
+      0 0 0 0.5px rgb(0 0 0 / 0.06),
+      inset 0 1px 0 rgb(255 255 255 / 0.9);
+    transition: transform 240ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .hf-switch--on .hf-switch__knob {
+    transform: translateX(1.125rem);
   }
 
   .hf-stat-tile {
@@ -544,15 +764,18 @@
   .op-panel {
     position: relative;
     overflow: hidden;
-    border-radius: 12px;
-    background: var(--hf-surface);
-    box-shadow: var(--hf-shadow-sm);
+    border-radius: 16px;
+    background: var(--hf-glass);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      var(--hf-glass-shadow);
   }
 
   .op-panel-amber {
     background:
-      linear-gradient(180deg, hsl(var(--hf-orange-500) / 0.08), transparent 60%),
-      var(--hf-surface);
+      linear-gradient(180deg, hsl(var(--hf-orange-500) / 0.1), transparent 60%),
+      var(--hf-glass);
   }
 
   .op-kicker {
@@ -638,10 +861,22 @@
 @media (prefers-reduced-transparency: reduce) {
   .hf-material,
   .hf-toolbar-material,
-  .hf-sidebar-material {
+  .hf-sidebar-material,
+  .hf-glass-blur {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    background: var(--hf-surface);
+  }
+}
+
+:root[data-transparency='reduced'] :is(.hf-material, .hf-toolbar-material, .hf-sidebar-material, .hf-glass-blur) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Phones: lighter blur keeps scrolling smooth under the floating chrome. */
+@media (max-width: 640px) {
+  :root {
+    --hf-glass-blur: 20px;
   }
 }
 
@@ -658,6 +893,10 @@
   body,
   .hf-shell {
     background: #fff !important;
+  }
+
+  body::before {
+    display: none;
   }
 
   [data-print='hide'] {

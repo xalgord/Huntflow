@@ -7,8 +7,8 @@
   export let footer: 'sign-in' | 'sign-up' | null = null;
 </script>
 
-<div class="auth-shell min-h-screen overflow-hidden text-foreground" style="background: var(--hf-window)">
-  <header class="hf-toolbar-material sticky top-0 z-10 border-b-[0.5px] border-zinc-800">
+<div class="auth-shell min-h-screen overflow-hidden text-foreground">
+  <header class="hf-toolbar-material hf-hairline-b sticky top-0 z-10">
     <div class="mx-auto flex h-12 max-w-[1024px] items-center justify-between gap-4 px-5">
       <a href="/" class="flex items-center gap-2 text-[0.9375rem] font-semibold">
         <BrandMark size={24} />
@@ -30,7 +30,7 @@
         {/if}
       </div>
 
-      <div class="mt-8 rounded-[18px] p-6 sm:p-8" style="background: var(--hf-surface); box-shadow: var(--hf-shadow-lg)">
+      <div class="hf-glass hf-glass-elevated hf-glass-blur mt-8 rounded-[24px] p-6 sm:p-8">
         <slot />
       </div>
 

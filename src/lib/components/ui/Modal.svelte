@@ -49,13 +49,13 @@
 
 {#if open}
   <div
-    class="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-black/30 p-0 sm:items-center sm:p-4 dark:bg-black/50"
+    class="fixed inset-0 z-50 flex animate-fade-in items-end justify-center bg-black/20 p-0 backdrop-blur-[3px] sm:items-center sm:p-4 dark:bg-black/45"
     role="presentation"
     on:click={handleOverlayClick}
   >
     <div
       bind:this={dialog}
-      class="hf-material max-h-[92vh] w-full animate-scale-in overflow-y-auto rounded-t-[14px] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-card-foreground sm:pb-5 shadow-sheet outline-none sm:max-w-lg sm:rounded-[14px] lg:max-w-xl"
+      class="hf-material hf-rim hf-floating-pane max-h-[92vh] w-full animate-scale-in overflow-y-auto rounded-t-[26px] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-card-foreground outline-none sm:max-w-lg sm:rounded-[24px] sm:pb-5 lg:max-w-xl"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title || labelledBy ? titleId : undefined}

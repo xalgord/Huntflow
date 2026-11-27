@@ -34,9 +34,9 @@
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-50 flex items-end justify-center bg-zinc-950/80 p-4 backdrop-blur-sm sm:items-center">
+  <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/20 p-4 backdrop-blur-[3px] dark:bg-black/45 sm:items-center">
     <section
-      class="w-full max-w-md rounded-xl border border-zinc-700 bg-zinc-800 p-6 text-zinc-100 shadow-xl animate-scale-in"
+      class="hf-material hf-rim hf-floating-pane w-full max-w-md rounded-[24px] p-6 text-zinc-100 animate-scale-in"
       role="dialog"
       aria-modal="true"
       aria-labelledby="session-complete-title"
@@ -70,7 +70,7 @@
         <span class="hf-label">Quick note</span>
         <textarea
           bind:value={quickNote}
-          class="mt-2 min-h-[100px] w-full resize-y rounded-md border border-zinc-600 bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
+          class="mt-2 min-h-[100px] w-full resize-y rounded-md border border-zinc-600 bg-[var(--hf-fill)] px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50"
           placeholder="What did you find?"
         />
       </label>

@@ -52,6 +52,24 @@
   </div>
 
   <div class="hf-list border-t border-zinc-900">
+    <div class="hf-list-row justify-between gap-4">
+      <span class="min-w-0">
+        <span id="transparency-label" class="block text-zinc-100">Reduce transparency</span>
+        <span class="mt-0.5 block text-xs leading-5 text-zinc-500">
+          Solid surfaces instead of glass. Helps contrast and battery on older devices.
+        </span>
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={Boolean(settings.reduceTransparency)}
+        aria-labelledby="transparency-label"
+        class="hf-switch {settings.reduceTransparency ? 'hf-switch--on' : ''}"
+        on:click={() => settingsStore.setValue('reduceTransparency', !settings.reduceTransparency)}
+      >
+        <span class="hf-switch__knob" aria-hidden="true"></span>
+      </button>
+    </div>
     <div class="hf-list-row flex-wrap justify-between gap-y-2">
       <span class="text-zinc-100">Accent color</span>
       <ColorPicker

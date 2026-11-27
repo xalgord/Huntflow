@@ -46,7 +46,7 @@
 
 <div class="space-y-2">
   <label class="hf-label" for="note-tags">Tags</label>
-  <div class="rounded-md border border-zinc-600 bg-zinc-850 p-2 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50">
+  <div class="rounded-md border border-zinc-600 bg-[var(--hf-fill)] p-2 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50">
     <div class="flex flex-wrap gap-2">
       {#each tags as tag}
         <button

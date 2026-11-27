@@ -297,7 +297,7 @@
   {#if isLanding}
     <!-- Marketing and auth pages follow the visitor's appearance, like the
          app. Each page renders its own <main>. -->
-    <div class="relative min-h-screen text-foreground" style="background: var(--hf-window)">
+    <div class="relative min-h-screen text-foreground">
       <PageTransition name={pathname}>
         <slot />
       </PageTransition>

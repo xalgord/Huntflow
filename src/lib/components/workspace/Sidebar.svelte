@@ -33,16 +33,16 @@
 {#if mobileOpen}
   <button
     type="button"
-    class="fixed inset-0 z-40 bg-black/40 animate-fade-in lg:hidden"
+    class="fixed inset-0 z-40 bg-black/25 animate-fade-in backdrop-blur-[2px] lg:hidden"
     aria-label="Close navigation overlay"
     on:click={() => dispatch('closeMobile')}
   ></button>
 {/if}
 
 <aside
-  class="hf-sidebar-material hf-hairline-r fixed inset-y-0 left-0 z-50 flex w-[17rem] flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:w-[var(--hf-sidebar-width)] {mobileOpen
-    ? 'translate-x-0 shadow-sheet'
-    : '-translate-x-full lg:translate-x-0'}"
+  class="hf-sidebar-material hf-rim hf-floating-pane fixed bottom-2 left-2 top-[max(0.5rem,env(safe-area-inset-top))] z-50 flex w-[17rem] flex-col rounded-[22px] transition-[transform,width] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] lg:w-[var(--hf-sidebar-width)] {mobileOpen
+    ? 'translate-x-0'
+    : '-translate-x-[calc(100%+1rem)] lg:translate-x-0'}"
   aria-label="Primary"
 >
   <div class="flex h-[3.25rem] shrink-0 items-center gap-2.5 {rail ? 'justify-center px-2' : 'px-4'}">
@@ -142,7 +142,7 @@
     width: 100%;
     min-height: 1.875rem;
     padding: 0.25rem 0.5rem;
-    border-radius: 7px;
+    border-radius: 9px;
     font-size: 0.8125rem;
     font-weight: 500;
     color: hsl(var(--hf-gray-text-200));
@@ -155,8 +155,12 @@
 
   .hf-source-item--active,
   .hf-source-item--active:hover {
-    background: var(--hf-fill-strong);
+    background: var(--hf-glass-selected);
     color: hsl(var(--hf-gray-text-50));
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      0 2px 6px -2px rgb(0 0 0 / 0.12);
   }
 
   .hf-source-item :global(.hf-source-icon) {

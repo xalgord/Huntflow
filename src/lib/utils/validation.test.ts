@@ -443,6 +443,11 @@ describe('validateSettings', () => {
     expect(validateSettings({ ...validSettings, theme: 'invalid' }).valid).toBe(false);
   });
 
+  it('accepts an optional reduceTransparency flag and rejects non-booleans', () => {
+    expect(validateSettings({ ...validSettings, reduceTransparency: true }).valid).toBe(true);
+    expect(validateSettings({ ...validSettings, reduceTransparency: 'yes' }).valid).toBe(false);
+  });
+
   it('fails for negative defaultDuration', () => {
     expect(validateSettings({ ...validSettings, defaultDuration: -1 }).valid).toBe(false);
   });

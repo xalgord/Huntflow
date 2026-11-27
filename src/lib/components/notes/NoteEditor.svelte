@@ -247,7 +247,7 @@
   }
 </script>
 
-<section class="rounded-lg border border-zinc-700 bg-zinc-800 shadow-dark-sm">
+<section class="hf-card overflow-hidden">
   <div class="grid gap-4 border-b border-zinc-700 p-4 lg:grid-cols-[minmax(0,1fr)_220px_220px]">
     <label class="block">
       <span class="hf-label">Title</span>
@@ -295,7 +295,7 @@
     </label>
   </div>
 
-  <div class="flex border-b border-zinc-700 bg-zinc-850 px-4 pt-3">
+  <div class="flex border-b border-zinc-700 bg-[var(--hf-fill)] px-4 pt-3">
     {#each ['write', 'preview'] as tab}
       <button
         type="button"
@@ -324,7 +324,7 @@
       <textarea
         bind:this={textarea}
         bind:value={note.content}
-        class="min-h-[28rem] w-full resize-y rounded-b-lg border-0 bg-zinc-850 p-4 font-mono text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
+        class="min-h-[28rem] w-full resize-y rounded-b-lg border-0 bg-transparent p-4 font-mono text-sm leading-6 text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-primary-500/50"
         maxlength="50000"
         placeholder="Write markdown notes, paste requests / payloads / screenshots — they'll be auto-filed."
         on:input={emitChange}
@@ -372,7 +372,7 @@
       <div class="flex w-full flex-col gap-2 sm:flex-row sm:justify-end lg:w-auto">
         <button
           type="button"
-          class="inline-flex min-h-[44px] items-center justify-center rounded-md border border-zinc-600 bg-zinc-800 px-4 py-2.5 text-sm font-medium text-zinc-200 transition hover:border-zinc-500 hover:bg-zinc-750 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          class="hf-button-secondary min-h-[44px] px-4"
           disabled={!canSave}
           on:click={promoteToSubmission}
           title="Save and open the submission form pre-filled with this note"
@@ -381,7 +381,7 @@
         </button>
         <button
           type="button"
-          class="inline-flex min-h-[44px] items-center justify-center rounded-md bg-primary-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-500"
+          class="hf-button-primary min-h-[44px] px-4"
           disabled={!canSave}
           on:click={save}
         >

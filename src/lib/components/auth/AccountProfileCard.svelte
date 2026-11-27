@@ -165,7 +165,7 @@
 </script>
 
 <section
-  class="profile-card"
+  class="profile-card hf-rim"
   aria-labelledby="account-profile-heading"
   data-testid="account-profile-card"
 >
@@ -324,12 +324,14 @@
   /* on the same surface so the avatar reads as a single composition.        */
   /* ----------------------------------------------------------------------- */
   .profile-card {
-    border-radius: 0.875rem;
-    border: 1px solid var(--hf-hairline-strong); /* zinc-800 */
-    background-color: var(--hf-surface);
+    border-radius: 16px;
+    background-color: var(--hf-glass);
     padding: 1.25rem;
     color: hsl(var(--foreground)); /* zinc-50 */
-    box-shadow: inset 0 1px 0 var(--hf-hairline);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      var(--hf-glass-shadow);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -549,7 +551,7 @@
     padding: 0.375rem 0.875rem;
     border-radius: 0.5rem;
     border: 1px solid var(--hf-hairline-strong);
-    background-color: var(--hf-surface);
+    background-color: var(--hf-glass-thick);
     color: hsl(var(--foreground) / 0.85);
     font-size: 0.8125rem;
     font-weight: 500;
