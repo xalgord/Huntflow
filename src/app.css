@@ -41,9 +41,9 @@
   --hf-text-green: #1a7f37;
   --hf-surface: #ffffff;
   --hf-surface-elevated: #ffffff;
-  --hf-sidebar: rgb(248 248 252 / 0.44);
-  --hf-toolbar: rgb(246 246 250 / 0.38);
-  --hf-material: rgb(255 255 255 / 0.66);
+  --hf-sidebar: rgb(248 248 251 / 0.8);
+  --hf-toolbar: rgb(245 245 248 / 0.78);
+  --hf-material: rgb(255 255 255 / 0.88);
   --hf-fill: rgb(118 118 128 / 0.12);
   --hf-fill-strong: rgb(118 118 128 / 0.2);
   --hf-fill-hover: rgb(118 118 128 / 0.16);
@@ -55,25 +55,26 @@
   --hf-shadow-lg: 0 12px 32px rgb(0 0 0 / 0.1), 0 0 0 0.5px rgb(0 0 0 / 0.08);
   --hf-shadow-xl: 0 24px 64px rgb(0 0 0 / 0.18), 0 0 0 0.5px rgb(0 0 0 / 0.1);
 
-  /* Liquid glass. Surfaces are translucent over a soft ambient backdrop;
+  /* Subtle glass. Surfaces are lightly translucent over a faint ambient
+     backdrop;
      a specular rim (brightest top-left) and a hairline edge give each
      pane its shape. Chrome that floats over content (toolbar, sidebar,
      tab bar, sheets, menus) also blurs what is behind it. */
   --hf-ambient-base: #f1f2f7;
-  --hf-ambient-a: hsl(var(--primary) / 0.15);
-  --hf-ambient-b: rgb(52 132 255 / 0.17);
-  --hf-ambient-c: rgb(160 110 255 / 0.14);
-  --hf-ambient-d: rgb(20 190 180 / 0.1);
-  --hf-glass: rgb(255 255 255 / 0.42);
-  --hf-glass-hover: rgb(255 255 255 / 0.58);
-  --hf-glass-thick: rgb(255 255 255 / 0.68);
-  --hf-glass-selected: rgb(255 255 255 / 0.82);
-  --hf-glass-rim: rgb(255 255 255 / 0.95);
-  --hf-glass-rim-soft: rgb(255 255 255 / 0.32);
-  --hf-glass-edge: rgb(20 20 60 / 0.08);
-  --hf-glass-sheen: rgb(255 255 255 / 0.7);
-  --hf-glass-shadow: 0 1px 2px rgb(20 20 60 / 0.04), 0 10px 30px -14px rgb(30 30 80 / 0.2);
-  --hf-glass-shadow-lg: 0 2px 8px rgb(20 20 60 / 0.06), 0 30px 70px -24px rgb(30 30 80 / 0.36);
+  --hf-ambient-a: hsl(var(--primary) / 0.07);
+  --hf-ambient-b: rgb(52 132 255 / 0.08);
+  --hf-ambient-c: rgb(160 110 255 / 0.06);
+  --hf-ambient-d: rgb(20 190 180 / 0.04);
+  --hf-glass: rgb(255 255 255 / 0.84);
+  --hf-glass-hover: rgb(255 255 255 / 0.94);
+  --hf-glass-thick: rgb(255 255 255 / 0.9);
+  --hf-glass-selected: rgb(255 255 255 / 0.92);
+  --hf-glass-rim: rgb(255 255 255 / 0.7);
+  --hf-glass-rim-soft: rgb(255 255 255 / 0.15);
+  --hf-glass-edge: rgb(20 20 60 / 0.07);
+  --hf-glass-sheen: rgb(255 255 255 / 0.5);
+  --hf-glass-shadow: 0 1px 2px rgb(20 20 60 / 0.04), 0 6px 20px -12px rgb(30 30 80 / 0.14);
+  --hf-glass-shadow-lg: 0 2px 8px rgb(20 20 60 / 0.06), 0 24px 56px -24px rgb(30 30 80 / 0.28);
   /* Frost: how much floating chrome blurs what is behind it. */
   --hf-glass-blur: 14px;
   --hf-glass-blur-thin: 10px;
@@ -116,9 +117,9 @@
   --hf-text-green: #bbf7d0;
   --hf-surface: #1c1c1e;
   --hf-surface-elevated: #2c2c2e;
-  --hf-sidebar: rgb(26 26 32 / 0.4);
-  --hf-toolbar: rgb(10 10 14 / 0.36);
-  --hf-material: rgb(38 38 46 / 0.64);
+  --hf-sidebar: rgb(24 24 28 / 0.82);
+  --hf-toolbar: rgb(8 8 10 / 0.78);
+  --hf-material: rgb(36 36 40 / 0.9);
   --hf-fill: rgb(118 118 128 / 0.24);
   --hf-fill-strong: rgb(118 118 128 / 0.36);
   --hf-fill-hover: rgb(118 118 128 / 0.3);
@@ -131,16 +132,16 @@
   --hf-shadow-xl: 0 28px 72px rgb(0 0 0 / 0.6), 0 0 0 0.5px rgb(255 255 255 / 0.1);
 
   --hf-ambient-base: #050507;
-  --hf-ambient-a: hsl(var(--primary) / 0.22);
-  --hf-ambient-b: rgb(40 100 255 / 0.18);
-  --hf-ambient-c: rgb(130 70 255 / 0.16);
-  --hf-ambient-d: rgb(0 170 160 / 0.1);
-  --hf-glass: rgb(40 40 48 / 0.34);
-  --hf-glass-hover: rgb(58 58 68 / 0.48);
-  --hf-glass-thick: rgb(40 40 48 / 0.64);
-  --hf-glass-selected: rgb(255 255 255 / 0.12);
-  --hf-glass-rim: rgb(255 255 255 / 0.24);
-  --hf-glass-rim-soft: rgb(255 255 255 / 0.05);
+  --hf-ambient-a: hsl(var(--primary) / 0.1);
+  --hf-ambient-b: rgb(40 100 255 / 0.08);
+  --hf-ambient-c: rgb(130 70 255 / 0.07);
+  --hf-ambient-d: rgb(0 170 160 / 0.04);
+  --hf-glass: rgb(28 28 31 / 0.84);
+  --hf-glass-hover: rgb(38 38 42 / 0.9);
+  --hf-glass-thick: rgb(36 36 40 / 0.9);
+  --hf-glass-selected: rgb(255 255 255 / 0.1);
+  --hf-glass-rim: rgb(255 255 255 / 0.14);
+  --hf-glass-rim-soft: rgb(255 255 255 / 0.03);
   --hf-glass-edge: rgb(0 0 0 / 0.55);
   --hf-glass-sheen: rgb(255 255 255 / 0.12);
   --hf-glass-shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 12px 32px -14px rgb(0 0 0 / 0.7);
@@ -570,7 +571,7 @@
     box-shadow:
       inset 0 1px 0 rgb(255 255 255 / 0.3),
       inset 0 -1px 0 rgb(0 0 0 / 0.08),
-      0 6px 16px -6px hsl(var(--primary) / 0.6);
+      0 3px 10px -4px hsl(var(--primary) / 0.4);
   }
 
   .hf-button-primary:hover {
