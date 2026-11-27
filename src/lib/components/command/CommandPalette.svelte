@@ -504,13 +504,13 @@
 
 {#if open}
   <div
-    class="fixed inset-0 z-[70] flex items-start justify-center bg-background/80 px-4 pb-4 pt-16 backdrop-blur-md sm:pt-24"
+    class="fixed inset-0 z-[70] flex items-start justify-center bg-black/20 px-4 pb-4 pt-16 backdrop-blur-[3px] dark:bg-black/45 sm:pt-24"
     role="presentation"
     on:click|self={close}
   >
     <div
       bind:this={containerEl}
-      class="relative w-full max-w-2xl overflow-hidden rounded-2xl border border-border bg-card/95 shadow-dark-xl backdrop-blur-xl"
+      class="hf-material hf-rim hf-floating-pane relative w-full max-w-2xl overflow-hidden rounded-[24px]"
       role="dialog"
       aria-modal="true"
       aria-label="Command palette"

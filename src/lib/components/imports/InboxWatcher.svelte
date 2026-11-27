@@ -69,7 +69,7 @@
 
 {#if enabled && next && !open}
   <div
-    class="fixed inset-x-3 bottom-[calc(4.25rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md animate-scale-in items-center gap-3 rounded-[14px] px-3.5 py-2.5 shadow-sheet lg:bottom-5 lg:left-auto lg:right-5 lg:mx-0"
+    class="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-40 mx-auto flex max-w-md animate-scale-in items-center gap-3 rounded-[14px] px-3.5 py-2.5 shadow-sheet lg:bottom-5 lg:left-auto lg:right-5 lg:mx-0"
     style="background: var(--hf-surface-elevated)"
     role="status"
     data-print="hide"

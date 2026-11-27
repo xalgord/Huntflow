@@ -22,11 +22,11 @@
   let timer: ReturnType<typeof setTimeout> | null = null;
 
   const typeClass = {
-    success: 'border-green-500 text-green-400',
-    warning: 'border-amber-500 text-amber-400',
-    danger: 'border-red-500 text-red-400',
-    info: 'border-blue-500 text-blue-400',
-    primary: 'border-primary-500 text-primary-400'
+    success: 'text-green-400',
+    warning: 'text-amber-400',
+    danger: 'text-red-400',
+    info: 'text-blue-400',
+    primary: 'text-primary-400'
   };
 
   const iconByType = {
@@ -57,7 +57,7 @@
 
 {#if open}
   <section
-    class="fixed inset-x-4 top-4 z-50 animate-slide-up rounded-lg border-l-4 bg-zinc-800 px-4 py-3 shadow-dark-lg dark:bg-zinc-800 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto sm:w-96 {typeClass[
+    class="hf-material hf-rim hf-floating-pane fixed inset-x-4 top-4 z-50 animate-slide-up rounded-[18px] px-4 py-3 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:top-auto sm:w-96 {typeClass[
       type ?? 'info'
     ]}"
     role="status"
@@ -76,7 +76,7 @@
       </div>
       <button
         type="button"
-        class="inline-flex h-11 min-h-[44px] w-11 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-700 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
+        class="inline-flex h-11 min-h-[44px] w-11 shrink-0 items-center justify-center rounded-full text-zinc-400 transition hover:bg-[var(--hf-fill)] hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50"
         aria-label="Dismiss notification"
         on:click={dismiss}
       >

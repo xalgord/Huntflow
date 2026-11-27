@@ -14,16 +14,14 @@
   export let disabled = false;
 
   const variantClass = {
-    standard:
-      'border border-border/80 bg-card/90 p-4 text-card-foreground shadow-dark-sm backdrop-blur-xl hover:border-border',
+    standard: 'hf-glass p-4 text-card-foreground',
     interactive:
-      'cursor-pointer border border-border/80 bg-card/90 p-4 text-card-foreground shadow-dark-sm backdrop-blur-xl hover:-tranzinc-y-0.5 hover:border-primary/30 hover:bg-card hover:shadow-dark-md active:tranzinc-y-0 active:scale-[0.99]',
-    feature:
-      'border border-primary/30 bg-card/95 p-6 text-card-foreground shadow-dark-md backdrop-blur-xl'
+      'hf-glass hf-interactive cursor-pointer p-4 text-card-foreground hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]',
+    feature: 'hf-glass hf-glass-elevated p-6 text-card-foreground'
   };
 
   $: classes = cn(
-    variant === 'feature' ? 'rounded-xl' : 'rounded-lg',
+    variant === 'feature' ? 'rounded-[20px]' : 'rounded-2xl',
     'transition duration-200',
     variantClass[variant ?? 'standard'],
     disabled && 'pointer-events-none opacity-60'

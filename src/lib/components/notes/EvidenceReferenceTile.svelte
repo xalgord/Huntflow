@@ -98,7 +98,7 @@
 {:else if thumbnailUrl}
   <a
     href={href}
-    class="inline-flex max-w-full items-stretch gap-2 overflow-hidden rounded-md border border-zinc-700 bg-zinc-900/80 align-middle text-left transition hover:border-primary-400/50 hover:bg-zinc-900"
+    class="inline-flex max-w-full items-stretch gap-2 overflow-hidden rounded-md border border-zinc-700 bg-[var(--hf-fill)] align-middle text-left transition hover:border-primary-400/50 hover:bg-zinc-900"
   >
     <img
       src={thumbnailUrl}
@@ -113,7 +113,7 @@
 {:else}
   <a
     href={href}
-    class="inline-flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-900/70 px-2 py-1.5 align-middle transition hover:border-primary-400/50 hover:bg-zinc-900"
+    class="inline-flex items-center gap-2 rounded-md border border-zinc-700 bg-[var(--hf-fill)] px-2 py-1.5 align-middle transition hover:border-primary-400/50 hover:bg-zinc-900"
   >
     <span class="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-zinc-800 text-primary-200">
       <svelte:component this={Icon} size={14} aria-hidden="true" />

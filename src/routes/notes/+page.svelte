@@ -70,7 +70,7 @@
       <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_180px]">
         <label class="block">
           <span class="hf-label">Search</span>
-          <div class="mt-2 flex items-center gap-2 rounded-md border border-zinc-600 bg-zinc-850 px-3 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50">
+          <div class="mt-2 flex items-center gap-2 rounded-md border border-zinc-600 bg-[var(--hf-fill)] px-3 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50">
             <Search size={18} class="text-zinc-500" aria-hidden="true" />
             <input
               bind:value={query}

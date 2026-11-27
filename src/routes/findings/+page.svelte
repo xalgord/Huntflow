@@ -191,7 +191,7 @@
   <div class="mx-auto grid max-w-[1800px] lg:h-[calc(100vh-3.25rem)] lg:grid-cols-[22rem_minmax(0,1fr)]">
     <!-- List column -->
     <section
-      class="flex min-h-0 flex-col lg:border-r-[0.5px] lg:border-zinc-800 {mobileDetail ? 'hidden lg:flex' : 'flex'}"
+      class="flex min-h-0 flex-col {mobileDetail ? 'hidden lg:flex' : 'flex'}"
       aria-label="Findings list"
     >
       <div class="space-y-3 lg:px-4 lg:pt-5">
@@ -297,7 +297,7 @@
     <!-- Detail column -->
     <section class="min-h-0 {mobileDetail ? 'block' : 'hidden lg:block'}" aria-label="Finding detail">
       {#if selected}
-        <div class="hf-card h-full overflow-hidden lg:rounded-none lg:shadow-none" style="background: var(--hf-surface)">
+        <div class="hf-card h-full overflow-hidden lg:my-2 lg:mr-2 lg:h-[calc(100%-1rem)] lg:rounded-[20px]">
           <FindingEditor
             finding={selected}
             programs={$targetStore}

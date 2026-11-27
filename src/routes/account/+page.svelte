@@ -249,7 +249,7 @@
               <p class="mt-1 text-sm text-muted-foreground">
                 The hosted version at
                 <span class="font-medium text-foreground">huntflow.xalgorix.com</span>
-                adds real-time cloud sync and end-to-end encrypted evidence. Same app, plus a
+                adds real-time cloud sync and evidence backup. Same app, plus a
                 sync backbone. Your local install keeps working either way.
               </p>
               <div class="mt-4">
@@ -383,7 +383,7 @@
                 </li>
                 <li class="flex items-start gap-2">
                   <CheckCircle2 size={14} class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />
-                  End-to-end encrypted evidence and notes
+                  Evidence backup, private to your account
                 </li>
                 <li class="flex items-start gap-2">
                   <Sparkles size={14} class="mt-0.5 shrink-0 text-primary" aria-hidden="true" />

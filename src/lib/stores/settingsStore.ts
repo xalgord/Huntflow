@@ -39,7 +39,7 @@ function applyTheme(theme: Settings['theme']): void {
   document.documentElement.classList.toggle('dark', dark);
   document.documentElement.classList.toggle('light', !dark);
   const meta = document.querySelector('meta[name="theme-color"]:not([media])');
-  meta?.setAttribute('content', dark ? '#000000' : '#f5f5f7');
+  meta?.setAttribute('content', dark ? '#050507' : '#f1f2f7');
 }
 
 /** Normalise legacy values written by earlier versions. */
@@ -62,10 +62,12 @@ function applyAppearance(settings: Settings): void {
   const accent = settings.accentColor === 'green' ? 'crimson' : settings.accentColor;
   document.documentElement.dataset.accent = accent;
   document.documentElement.dataset.fontSize = settings.fontSize;
+  const transparency = settings.reduceTransparency ? 'reduced' : 'glass';
+  document.documentElement.dataset.transparency = transparency;
   try {
     localStorage.setItem(
       APPEARANCE_CACHE_KEY,
-      JSON.stringify({ theme: settings.theme, accent, fontSize: settings.fontSize })
+      JSON.stringify({ theme: settings.theme, accent, fontSize: settings.fontSize, transparency })
     );
   } catch {
     /* storage disabled — the boot script falls back to system appearance */

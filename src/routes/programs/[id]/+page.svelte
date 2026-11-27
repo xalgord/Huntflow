@@ -232,8 +232,8 @@
           <button
             type="button"
             class="min-h-[40px] whitespace-nowrap rounded-lg px-3 text-sm font-medium transition {activeTab === tab.id
-              ? 'bg-zinc-900 text-zinc-50'
-              : 'text-zinc-500 hover:bg-zinc-950 hover:text-zinc-200'}"
+              ? 'hf-segment-active text-zinc-50'
+              : 'text-zinc-500 hover:bg-[var(--hf-fill)] hover:text-zinc-200'}"
             aria-current={activeTab === tab.id ? 'page' : undefined}
             on:click={() => selectTab(tab.id)}
           >

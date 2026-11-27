@@ -498,13 +498,13 @@
 
 {#if open}
   <div
-    class="fixed inset-0 z-[80] flex items-start justify-center bg-background/80 px-4 pb-4 pt-10 backdrop-blur-md sm:pt-16"
+    class="fixed inset-0 z-[80] flex items-start justify-center bg-black/20 px-4 pb-4 pt-10 backdrop-blur-[3px] dark:bg-black/45 sm:pt-16"
     role="presentation"
     on:click|self={close}
   >
     <div
       bind:this={containerEl}
-      class="relative flex w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-border bg-card/95 shadow-dark-xl backdrop-blur-xl"
+      class="hf-material hf-rim hf-floating-pane relative flex w-full max-w-3xl flex-col overflow-hidden rounded-[24px]"
       role="dialog"
       aria-modal="true"
       aria-label="Quick capture"

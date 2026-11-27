@@ -48,7 +48,7 @@
 </script>
 
 <section
-  class="signout-card"
+  class="signout-card hf-rim"
   aria-labelledby="account-signout-heading"
   data-testid="account-signout-card"
 >
@@ -91,12 +91,14 @@
 
 <style>
   .signout-card {
-    border-radius: 0.875rem;
-    border: 1px solid var(--hf-hairline-strong);
-    background-color: var(--hf-surface);
+    border-radius: 16px;
+    background-color: var(--hf-glass);
     padding: 1.25rem;
     color: hsl(var(--foreground));
-    box-shadow: inset 0 1px 0 var(--hf-hairline);
+    box-shadow:
+      inset 0 1px 0 var(--hf-glass-sheen),
+      0 0 0 0.5px var(--hf-glass-edge),
+      var(--hf-glass-shadow);
     display: flex;
     flex-direction: column;
     gap: 1rem;

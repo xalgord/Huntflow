@@ -92,7 +92,7 @@
       <span class="hf-label">Name</span>
       <input
         bind:value={name}
-        class="mt-2 w-full rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.name
+        class="mt-2 w-full rounded-md border bg-[var(--hf-fill)] px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.name
           ? 'border-red-500 ring-1 ring-red-500/50'
           : 'border-zinc-600'}"
         placeholder="Example Corp"
@@ -118,7 +118,7 @@
       <span class="hf-label">Program URL</span>
       <input
         bind:value={programUrl}
-        class="mt-2 w-full rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.programUrl
+        class="mt-2 w-full rounded-md border bg-[var(--hf-fill)] px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.programUrl
           ? 'border-red-500 ring-1 ring-red-500/50'
           : 'border-zinc-600'}"
         placeholder="https://hackerone.com/example"
@@ -144,7 +144,7 @@
     <span class="hf-label">Scope</span>
     <textarea
       bind:value={scope}
-      class="mt-2 min-h-[120px] w-full resize-y rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.scope
+      class="mt-2 min-h-[120px] w-full resize-y rounded-md border bg-[var(--hf-fill)] px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.scope
         ? 'border-red-500 ring-1 ring-red-500/50'
         : 'border-zinc-600'}"
       placeholder="*.example.com&#10;api.example.com"
@@ -156,7 +156,7 @@
     <span class="hf-label">Notes</span>
     <textarea
       bind:value={notes}
-      class="mt-2 min-h-[120px] w-full resize-y rounded-md border bg-zinc-850 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.notes
+      class="mt-2 min-h-[120px] w-full resize-y rounded-md border bg-[var(--hf-fill)] px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500/50 {errors.notes
         ? 'border-red-500 ring-1 ring-red-500/50'
         : 'border-zinc-600'}"
       placeholder="Program notes"

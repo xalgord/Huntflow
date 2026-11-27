@@ -83,7 +83,7 @@
     <div class="fixed inset-0 z-40" role="presentation" on:click={() => close()}></div>
     <div
       bind:this={menu}
-      class="hf-material absolute right-0 top-[calc(100%+0.375rem)] z-50 w-52 animate-scale-in rounded-[10px] p-[5px] shadow-dark-lg"
+      class="hf-material hf-floating-pane absolute right-0 top-[calc(100%+0.375rem)] z-50 w-52 animate-scale-in rounded-[14px] p-[5px]"
       style="transform-origin: top right"
       role="menu"
     >

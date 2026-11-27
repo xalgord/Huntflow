@@ -557,7 +557,7 @@
     padding: 0.5rem 0.875rem;
     border-radius: 0.5rem;
     border: 1px solid var(--hf-hairline-strong); /* zinc-800 */
-    background-color: var(--hf-surface);
+    background-color: var(--hf-glass-thick);
     color: hsl(var(--foreground) / 0.85); /* zinc-300 */
     font-size: 0.8125rem;
     font-weight: 500;
