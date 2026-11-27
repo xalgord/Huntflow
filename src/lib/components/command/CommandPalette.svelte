@@ -504,7 +504,7 @@
 
 {#if open}
   <div
-    class="fixed inset-0 z-[70] flex items-start justify-center bg-black/20 px-4 pb-4 pt-16 backdrop-blur-[3px] dark:bg-black/45 sm:pt-24"
+    class="fixed inset-0 z-[70] flex items-start justify-center bg-black/20 px-4 pb-4 pt-16 backdrop-blur-[1.5px] dark:bg-black/45 sm:pt-24"
     role="presentation"
     on:click|self={close}
   >

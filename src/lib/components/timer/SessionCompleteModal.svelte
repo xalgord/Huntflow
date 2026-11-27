@@ -34,7 +34,7 @@
 </script>
 
 {#if open}
-  <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/20 p-4 backdrop-blur-[3px] dark:bg-black/45 sm:items-center">
+  <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/20 p-4 backdrop-blur-[1.5px] dark:bg-black/45 sm:items-center">
     <section
       class="hf-material hf-rim hf-floating-pane w-full max-w-md rounded-[24px] p-6 text-zinc-100 animate-scale-in"
       role="dialog"
