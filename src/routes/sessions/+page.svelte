@@ -70,14 +70,14 @@
       </nav>
     </header>
 
-    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       <MetricCard icon={Timer} label="Total sessions" value={String($sessionStore.length)} detail="All local sessions" />
       <MetricCard icon={Clock} label="Completed" value={String(completedSessions.length)} detail={formatDuration(totalSeconds)} />
       <MetricCard icon={Clock} label="Today" value={String(todaySessions.length)} detail={formatDuration(todaySessions.reduce((sum, session) => sum + session.durationActual, 0))} />
       <MetricCard icon={FileText} label="Session notes" value={String($noteStore.filter((note) => note.sessionId).length)} detail="Linked to timed work" />
     </section>
 
-    <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
+    <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
       <article class="hf-card p-6">
         <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
           <div>
@@ -98,7 +98,7 @@
         </div>
 
         {#if activeSession}
-          <div class="mt-6 grid gap-4 lg:grid-cols-3">
+          <div class="mt-6 grid gap-5 lg:grid-cols-3">
             <div class="rounded-xl border border-zinc-800 bg-zinc-950 p-4">
               <p class="hf-label">Current target</p>
               <p class="mt-2 text-sm text-zinc-200">{activeProgram?.name ?? 'Missing program'}</p>
@@ -113,7 +113,7 @@
             </div>
           </div>
 
-          <div class="mt-5 grid gap-3">
+          <div class="mt-5 grid gap-4">
             <label>
               <span class="hf-label">Quick note input</span>
               <textarea bind:value={quickNote} class="hf-input mt-2 min-h-[110px]" placeholder="Observation, payload result, evidence reminder, next action..." />

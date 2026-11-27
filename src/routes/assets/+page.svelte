@@ -840,7 +840,7 @@
       </div>
     </header>
 
-    <section class="grid grid-cols-2 gap-3 lg:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
       <div class="hf-card px-5 py-6">
         <p class="op-kicker">Vault</p>
         <p class="mt-3 text-3xl font-bold tabular-nums tracking-tight text-foreground">{$evidenceAssetStore.length}</p>
@@ -893,7 +893,7 @@
             aria-label="Upload evidence folder"
             on:change={handleFolderInput}
           />
-          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.65fr)]">
+          <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.65fr)]">
             <div class="rounded-[14px] border border-border/70 bg-background/45 p-5">
               <div class="flex items-start gap-3">
                 <div class="rounded-[14px] border border-primary/30 bg-primary/10 p-3 text-primary">
@@ -917,7 +917,7 @@
                   Select folder
                 </button>
               </div>
-              <div class="mt-6 grid gap-3 grid-cols-1 sm:grid-cols-3">
+              <div class="mt-6 grid gap-4 grid-cols-1 sm:grid-cols-3">
                 <label class="space-y-1.5">
                   <span class="hf-label">Program</span>
                   <select bind:value={selectedTargetId} class="hf-select">
@@ -948,7 +948,7 @@
                   </select>
                 </label>
               </div>
-              <div class="mt-4 grid gap-4 sm:grid-cols-2">
+              <div class="mt-4 grid gap-5 sm:grid-cols-2">
                 <label class="space-y-1.5">
                   <span class="hf-label">Tags</span>
                   <input bind:value={tagsInput} class="hf-input" placeholder="high, needs-report" />
@@ -1053,7 +1053,7 @@
             </div>
           </div>
 
-          <div class="mt-5 grid gap-3">
+          <div class="mt-5 grid gap-4">
             {#if filteredAssets.length > 0}
               {#each groupedAssetSections as section (section.key)}
                 <div class="space-y-2.5">
@@ -1153,7 +1153,7 @@
               {/if}
             </div>
 
-            <div class="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+            <div class="mt-5 grid gap-4 text-sm sm:grid-cols-2">
               <div class="hf-stat-tile">
                 <p class="text-xs text-muted-foreground">File</p>
                 <p class="mt-1.5 truncate font-medium text-foreground">

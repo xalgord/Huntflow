@@ -5,6 +5,7 @@
   import { importData, validateImportData, ImportValidationError } from '$lib/db/import';
   import { getHuntFlowDB, resetMemoryDB } from '$lib/db';
   import {
+    flushAllStores,
     checklistInstanceStore,
     noteStore,
     payoutStore,
@@ -62,6 +63,11 @@
   }
 
   async function clearStores(): Promise<void> {
+    // Drain every debounced write first. Otherwise a save scheduled just
+    // before the wipe (e.g. `lastExportAt` after an export) can land after
+    // the object stores are cleared and resurrect the old settings —
+    // which also re-hides the welcome sheet.
+    await flushAllStores();
     const db = await getHuntFlowDB();
     if (db) {
       // Clear every user-data object store so a "Clear" wipe is total. We

@@ -180,7 +180,7 @@
       <HuntingActivity />
     {:else}
 
-    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       <MetricCard icon={Clock} label="Total hunt time" value={formatDuration(totalSeconds)} detail={`${completedSessions.length} completed sessions`} />
       <MetricCard icon={CircleDollarSign} label="Paid bounty" value={formatMoney(totalPayout)} detail="Paid payout records" tone="success" />
       <MetricCard icon={TrendingUp} label="Accepted rate" value={`${acceptedRate}%`} detail={`${acceptedReports.length}/${decidedReports.length} decided`} />
@@ -201,7 +201,7 @@
       />
     {/if}
 
-    <section class="grid gap-4 xl:grid-cols-2">
+    <section class="grid gap-5 xl:grid-cols-2">
       <AnalyticsCard title="Hunt hours per week" subtitle="Completed session duration by week">
         {#if weekHours.length > 0}
           <div class="space-y-3">

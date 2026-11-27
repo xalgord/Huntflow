@@ -67,7 +67,7 @@
     </header>
 
     <section class="hf-card p-4">
-      <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_180px]">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-[minmax(0,1fr)_180px_180px_180px]">
         <label class="block">
           <span class="hf-label">Search</span>
           <div class="mt-2 flex items-center gap-2 rounded-md border border-zinc-600 bg-[var(--hf-fill)] px-3 focus-within:border-primary-500 focus-within:ring-1 focus-within:ring-primary-500/50">
@@ -114,7 +114,7 @@
     </section>
 
     {#if filteredNotes.length > 0}
-      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Note list">
+      <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-label="Note list">
         {#each filteredNotes as note (note.id)}
           <NoteCard note={note} target={targetById.get(note.targetId)} template={note.templateId ? templateById.get(note.templateId) : undefined} />
         {/each}

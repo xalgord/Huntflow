@@ -208,7 +208,7 @@
         </div>
       </header>
 
-      <section class="grid gap-4 md:grid-cols-4">
+      <section class="grid gap-5 md:grid-cols-4">
         <article class="hf-card p-4">
           <p class="text-xs text-zinc-500">Targets</p>
           <p class="mt-2 font-mono text-2xl text-zinc-50">{programAssets.length}</p>
@@ -243,10 +243,10 @@
       </nav>
 
       {#if activeTab === 'overview'}
-        <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <article class="hf-card p-5">
             <h2 class="text-base font-semibold text-zinc-100">Program overview</h2>
-            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+            <div class="mt-5 grid gap-5 sm:grid-cols-2">
               <div>
                 <p class="hf-label">Platform</p>
                 <p class="mt-2 text-sm text-zinc-200">{platformLabels[program.platform]}</p>
@@ -292,7 +292,7 @@
           </article>
         </section>
       {:else if activeTab === 'scope'}
-        <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
           <article class="hf-card p-5">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -361,7 +361,7 @@
         </section>
       {:else if activeTab === 'targets'}
         {#if programAssets.length > 0}
-          <section class="grid gap-3 lg:grid-cols-2">
+          <section class="grid gap-4 lg:grid-cols-2">
             {#each programAssets as asset}
               <a href={`/targets?asset=${asset.id}`} class="hf-card hf-interactive block p-4">
                 <div class="flex items-start justify-between gap-3">
@@ -383,7 +383,7 @@
         <ProgramActivity programId={program.id} />
       {:else if activeTab === 'notes'}
         {#if programNotes.length > 0}
-          <section class="grid gap-3 lg:grid-cols-2">
+          <section class="grid gap-4 lg:grid-cols-2">
             {#each programNotes as note}
               <a href={`/notes/${note.id}`} class="hf-card hf-interactive block p-4">
                 <p class="truncate text-sm font-medium text-zinc-100">{note.title || 'Untitled note'}</p>
@@ -398,7 +398,7 @@
         {#if programFindings.length > 0}
           <section class="hf-card divide-y divide-zinc-900 overflow-hidden">
             {#each programFindings as finding}
-              <a href={`/findings?id=${finding.id}`} class="grid gap-3 px-4 py-3 transition hover:bg-zinc-950 sm:grid-cols-[140px_1fr_120px] sm:items-center">
+              <a href={`/findings?id=${finding.id}`} class="grid gap-4 px-4 py-3 transition hover:bg-zinc-950 sm:grid-cols-[140px_1fr_120px] sm:items-center">
                 <SeverityBadge severity={finding.severity} />
                 <span class="min-w-0">
                   <span class="block truncate text-sm font-medium text-zinc-100">{finding.title}</span>
@@ -415,7 +415,7 @@
         {#if programPayouts.length > 0}
           <section class="hf-card divide-y divide-zinc-900 overflow-hidden">
             {#each programPayouts as payout}
-              <a href="/payouts" class="grid gap-3 px-4 py-3 transition hover:bg-zinc-950 sm:grid-cols-[1fr_130px_120px] sm:items-center">
+              <a href="/payouts" class="grid gap-4 px-4 py-3 transition hover:bg-zinc-950 sm:grid-cols-[1fr_130px_120px] sm:items-center">
                 <span>
                   <span class="block text-sm font-medium text-zinc-100">{payout.program}</span>
                   <span class="text-xs text-zinc-500">{formatDate(payout.date)}</span>

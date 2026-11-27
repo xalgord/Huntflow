@@ -320,7 +320,7 @@
       </div>
     </header>
 
-    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4">
+    <section class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
       <MetricCard icon={TargetIcon} label="All targets" value={String($reconAssetStore.length)} detail="Recon assets tracked" />
       <MetricCard icon={ShieldCheck} label="In scope" value={String(inScopeCount)} detail="Safe to test when policy allows" />
       <MetricCard icon={Filter} label="Needs attention" value={String(testingCount)} detail="New, testing, or potential finding" tone="warning" />
@@ -333,8 +333,8 @@
           <h2 class="text-base font-semibold text-zinc-100">New target asset</h2>
           <p class="mt-1 text-sm text-zinc-500">Add in-scope assets manually. HuntFlow keeps the asset linked to its local program.</p>
         </div>
-        <form class="grid gap-4" on:submit|preventDefault={createAsset}>
-          <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_220px]">
+        <form class="grid gap-5" on:submit|preventDefault={createAsset}>
+          <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_220px]">
             <label class="block">
               <span class="hf-label">URL, domain, IP, API, app, or repo</span>
               <input bind:value={identifier} class="hf-input mt-2 font-mono text-sm" placeholder="https://app.example.com or api.example.com" />
@@ -349,7 +349,7 @@
             </label>
           </div>
 
-          <div class="grid gap-4 md:grid-cols-4">
+          <div class="grid gap-5 md:grid-cols-4">
             <label class="block">
               <span class="hf-label">Type</span>
               <select bind:value={assetType} class="hf-select mt-2">
@@ -385,7 +385,7 @@
             </label>
           </div>
 
-          <div class="grid gap-4 md:grid-cols-3">
+          <div class="grid gap-5 md:grid-cols-3">
             <label class="block">
               <span class="hf-label">Tech stack</span>
               <input bind:value={technologiesInput} class="hf-input mt-2" placeholder="Next.js, GraphQL, AWS" />
@@ -418,7 +418,7 @@
     {/if}
 
     <section class="hf-card p-4">
-      <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_190px_150px_150px_150px_150px]">
+      <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-[minmax(0,1fr)_190px_150px_150px_150px_150px]">
         <label class="block">
           <span class="hf-label">Search</span>
           <div class="mt-2 flex items-center gap-2 rounded-lg border border-zinc-800 bg-zinc-950 px-3 focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-500/20">
@@ -484,8 +484,8 @@
     </section>
 
     {#if filteredAssets.length > 0}
-      <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
-        <div class="grid gap-3 md:grid-cols-2">
+      <section class="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
+        <div class="grid gap-4 md:grid-cols-2">
           {#each filteredAssets as asset}
             {@const program = programFor(asset.targetId)}
             <button
@@ -525,7 +525,7 @@
               <CopyButton value={selectedAsset.url ?? selectedAsset.hostname} compact label="Copy target" />
             </div>
 
-            <div class="mt-5 grid gap-3">
+            <div class="mt-5 grid gap-4">
               <label>
                 <span class="hf-label">Status</span>
                 <select

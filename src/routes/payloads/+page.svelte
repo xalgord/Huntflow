@@ -99,7 +99,7 @@
     </header>
 
     <section class="hf-card p-4">
-      <div class="grid gap-4 lg:grid-cols-[minmax(0,1fr)_auto]">
+      <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_auto]">
         <label class="block">
           <span class="hf-label">Search</span>
           <div
@@ -162,7 +162,7 @@
     </section>
 
     {#if filtered.length > 0}
-      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="Payloads">
+      <section class="grid gap-5 sm:grid-cols-2 xl:grid-cols-3" aria-label="Payloads">
         {#each filtered as payload (payload.id)}
           <PayloadCard
             {payload}

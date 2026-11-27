@@ -209,7 +209,7 @@
       </section>
     {/if}
 
-    <section class="grid grid-cols-2 gap-3 xl:grid-cols-4" aria-label="This week">
+    <section class="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4" aria-label="This week">
       <MetricCard
         icon={Clock}
         label="Hunted this week"
@@ -243,9 +243,9 @@
       />
     </section>
 
-    <div class="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,1fr)]">
+    <div class="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(20rem,1fr)]">
       <section class="min-w-0" aria-labelledby="attention-heading">
-        <div class="mb-2 flex items-baseline justify-between px-1">
+        <div class="mb-3 flex items-baseline justify-between px-1">
           <h2 id="attention-heading" class="text-[1.25rem] font-bold tracking-[-0.015em] text-zinc-50">Needs Attention</h2>
           {#if attention.length > 0}
             <span class="text-xs font-medium text-zinc-500">{attention.length} item{attention.length === 1 ? '' : 's'}</span>
@@ -343,7 +343,7 @@
 
         {#if activePrograms.length > 0}
           <section aria-labelledby="programs-heading">
-            <div class="mb-2 flex items-baseline justify-between px-1">
+            <div class="mb-3 flex items-baseline justify-between px-1">
               <h2 id="programs-heading" class="text-[1.25rem] font-bold tracking-[-0.015em] text-zinc-50">Programs</h2>
               <a href="/programs" class="text-[0.8125rem] font-medium text-primary">See All</a>
             </div>

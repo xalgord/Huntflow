@@ -303,7 +303,7 @@
             <input bind:value={formUrl} type="url" class="hf-input mt-2" required />
           </label>
 
-          <div class="grid gap-4 sm:grid-cols-2">
+          <div class="grid gap-5 sm:grid-cols-2">
             <label class="block">
               <span class="hf-label">Category</span>
               <select bind:value={formCategory} class="hf-select mt-2">
@@ -351,7 +351,7 @@
     {/if}
 
     {#if filtered.length > 0}
-      <section class="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+      <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {#each filtered as bookmark (bookmark.id)}
           <article class="hf-card flex flex-col gap-3 p-4">
             <div class="flex items-start justify-between gap-2">
